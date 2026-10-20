@@ -1,0 +1,27 @@
+# Formatação é do swift-format; o SwiftLint cobre só o que ele não cobre.
+included:
+  - App
+  - Packages
+excluded:
+  - "**/.build"
+strict: true
+disabled_rules:
+  - trailing_comma
+  - opening_brace
+  - line_length
+  - closure_parameter_position
+  - identifier_name # o domínio é pt-BR e usa nomes curtos como `id`
+opt_in_rules:
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - unowned_variable_capture
+  - weak_delegate
+  - empty_count
+  - first_where
+  - private_swiftui_state
+  - accessibility_label_for_image
+cyclomatic_complexity: { warning: 15, error: 15 }
+function_body_length: { warning: 60, error: 60 }
+file_length: { warning: 400, error: 400 }
+analyzer_rules:
+  - unused_import

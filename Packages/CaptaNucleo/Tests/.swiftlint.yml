@@ -1,0 +1,3 @@
+# Em teste, `URL(string: "literal")!` é aceitável: a falha aparece no próprio teste.
+disabled_rules:
+  - force_unwrapping

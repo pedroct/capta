@@ -1,0 +1,34 @@
+<!-- @dsCard height=288 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600&display=swap">
+<style>
+  html, body { margin: 0; background: var(--superficie-janela); }
+  svg { display: block; width: 960px; height: 288px; }
+  .chao { fill: var(--superficie-janela); }
+  .tinta { fill: var(--marca-ardosia); rx: var(--raio-painel); }
+  .agua { fill: var(--marca-verde-agua); rx: var(--raio-painel); }
+  .alivio { fill: var(--superficie-canvas); rx: var(--raio-cartao); }
+  .foco { fill: var(--marca-foco); }
+  .canto { fill: none; stroke: var(--superficie-janela); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+  .nome { font: 600 120px/1 var(--font-marca); letter-spacing: -0.02em; fill: var(--texto); }
+  .lema { font: 400 14px/1 var(--font-sans); fill: var(--texto-secundario); }
+</style>
+<!--
+Derivação
+Blocos: tinta = marca-ardosia 184x270 · agua = marca-verde-agua 270x190 sangrando no alto e à direita · alívio = superficie-canvas 122x110 · foco = marca-foco disco de 80 (metade do lado menor como raio).
+Arranjo: laje alta de tinta à esquerda do bloco, bloco de água sangrando no canto superior direito, alívio e disco abaixo dele; nada à esquerda de x=480.
+Padrão: motivo literal. Quatro cantos de moldura de seleção sobre o bloco de água, na cor do chão; é o gesto da marca (selecionar uma região) e o C do símbolo é feito dos mesmos cantos arredondados.
+Passos e raios: espaco-3/4/6 (12, 16, 24) como folgas, raio-painel (14) nas lajes, raio-cartao (10) no alívio, braço de canto de 28 = 7 passos de 4.
+-->
+<svg viewBox="0 0 960 288" role="img" aria-label="Capta">
+  <rect class="chao" width="960" height="288"/>
+  <rect class="tinta" x="504" y="32" width="184" height="270"/>
+  <rect class="agua" x="704" y="-14" width="270" height="190"/>
+  <rect class="alivio" x="704" y="188" width="122" height="110"/>
+  <rect class="foco" x="838" y="204" width="80" height="80" rx="40"/>
+  <path class="canto" d="M732 52V40a12 12 0 0 1 12-12h28"/>
+  <path class="canto" d="M932 52V40a12 12 0 0 0-12-12h-28"/>
+  <path class="canto" d="M732 124v12a12 12 0 0 0 12 12h28"/>
+  <path class="canto" d="M932 124v12a12 12 0 0 1-12 12h-28"/>
+  <text class="nome" x="44" y="226">Capta</text>
+  <text class="lema" x="48" y="256">Captura, anota, cola.</text>
+</svg>

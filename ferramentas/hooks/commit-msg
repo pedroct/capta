@@ -1,0 +1,9 @@
+#!/bin/sh
+# Valida o assunto da mensagem como Conventional Commit.
+assunto=$(head -n 1 "$1")
+padrao='^(feat|fix|refactor|test|docs|chore|perf|ci|build|revert)(\([a-z0-9-]+\))?!?: .+'
+if ! printf '%s\n' "$assunto" | grep -Eq "$padrao"; then
+  echo "Mensagem de commit inválida: '$assunto'" >&2
+  echo "Use: tipo(escopo opcional): descrição (ex.: feat(nucleo): adiciona esquema)" >&2
+  exit 1
+fi

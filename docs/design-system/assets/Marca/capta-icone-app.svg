@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Ícone do app Capta">
+  <defs>
+    <linearGradient id="fundo" x1="100" y1="100" x2="924" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#14202b"/>
+      <stop offset="1" stop-color="#17b8a6"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#fundo)"/>
+  <g transform="translate(512 512) scale(2.4) translate(-128 -128)">
+    <path d="M204 70H92a38 38 0 0 0-38 38v40a38 38 0 0 0 38 38h112" fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="138" cy="128" r="22" fill="#ff6b4a"/>
+  </g>
+</svg>

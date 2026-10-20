@@ -1,0 +1,29 @@
+<!-- @dsCard group="Interface" height=260 subtitle="Painel de propriedades da ferramenta selecionada" -->
+<style>
+  body { margin: 0; padding: var(--espaco-4); background: var(--superficie-janela); color: var(--texto); font-family: var(--font-sans); display: flex; gap: var(--espaco-6); flex-wrap: wrap; }
+  .painel { width: 220px; padding: var(--espaco-4); background: var(--superficie-painel); border: 1px solid var(--borda); border-radius: var(--raio-painel); }
+  h4 { margin: 0 0 var(--espaco-3); font: 600 10px/12px var(--font-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--texto-secundario); }
+  .cores { display: flex; gap: var(--espaco-2); margin-bottom: var(--espaco-4); }
+  .cor { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--borda-controle); padding: 0; }
+  .cor.sel { outline: 2px solid var(--destaque); outline-offset: 2px; }
+  .linha { display: flex; justify-content: space-between; align-items: center; font: 400 13px/18px var(--font-sans); margin-bottom: var(--espaco-2); }
+  .valor { font: 400 12px/16px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--texto-secundario); }
+  .trilho { position: relative; height: 4px; border-radius: 2px; background: var(--borda-controle); margin: 0 0 var(--espaco-4); }
+  .trilho i { position: absolute; left: 0; top: 0; height: 4px; border-radius: 2px; background: var(--destaque); }
+  .trilho b { position: absolute; top: -6px; width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 1px solid var(--borda-controle); box-sizing: border-box; }
+</style>
+<div class="painel" role="group" aria-label="Propriedades da seta">
+  <h4>Propriedades</h4>
+  <div class="cores" role="radiogroup" aria-label="Cor">
+    <button class="cor sel" role="radio" aria-checked="true" aria-label="Vermelho" style="background:var(--anotacao-vermelho)"></button>
+    <button class="cor" role="radio" aria-checked="false" aria-label="Laranja" style="background:var(--anotacao-laranja)"></button>
+    <button class="cor" role="radio" aria-checked="false" aria-label="Amarelo" style="background:var(--anotacao-amarelo)"></button>
+    <button class="cor" role="radio" aria-checked="false" aria-label="Verde" style="background:var(--anotacao-verde)"></button>
+    <button class="cor" role="radio" aria-checked="false" aria-label="Azul" style="background:var(--anotacao-azul)"></button>
+    <button class="cor" role="radio" aria-checked="false" aria-label="Preto" style="background:var(--anotacao-preto)"></button>
+  </div>
+  <div class="linha"><span>Largura</span><span class="valor">6 pt</span></div>
+  <div class="trilho"><i style="width:40%"></i><b style="left:calc(40% - 8px)"></b></div>
+  <div class="linha"><span>Opacidade</span><span class="valor">100%</span></div>
+  <div class="trilho"><i style="width:100%"></i><b style="left:calc(100% - 16px)"></b></div>
+</div>

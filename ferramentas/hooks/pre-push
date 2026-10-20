@@ -1,0 +1,3 @@
+#!/bin/sh
+# Portão local: verificação completa antes de cada push.
+exec make verificar

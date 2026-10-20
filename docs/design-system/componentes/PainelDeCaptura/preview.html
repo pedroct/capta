@@ -1,0 +1,27 @@
+<!-- @dsCard group="Interface" height=290 subtitle="Popover de captura na barra de menus" -->
+<style>
+  body { margin: 0; padding: var(--espaco-4); background: var(--superficie-canvas); color: var(--texto); font-family: var(--font-sans); }
+  .pop { width: 300px; padding: var(--espaco-3); background: var(--superficie-janela); border: 1px solid var(--borda); border-radius: var(--raio-painel); box-shadow: var(--sombra-painel); }
+  .abas { display: flex; gap: var(--espaco-1); margin-bottom: var(--espaco-3); }
+  .aba { flex: 1; height: 28px; border: 0; border-radius: var(--raio-controle); background: transparent; color: var(--texto-secundario); font: 400 13px/18px var(--font-sans); }
+  .aba.ativa { background: var(--destaque-fundo); color: var(--destaque); font-weight: 600; }
+  .lin { display: flex; justify-content: space-between; align-items: center; min-height: 30px; font: 400 13px/18px var(--font-sans); }
+  .tgl { position: relative; width: 34px; height: 20px; border-radius: var(--raio-chip); background: var(--borda-controle); border: 0; padding: 0; }
+  .tgl::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+  .tgl.on { background: var(--destaque); } .tgl.on::after { left: 16px; }
+  .rodape { display: flex; justify-content: space-between; align-items: center; margin-top: var(--espaco-3); }
+  .atalho { font: 400 12px/16px var(--font-mono); color: var(--texto-secundario); }
+  .primario { height: 28px; padding: 0 var(--espaco-4); border: 0; border-radius: var(--raio-controle); background: var(--destaque); color: var(--sobre-destaque); font: 600 13px/18px var(--font-sans); }
+</style>
+<div class="pop" role="dialog" aria-label="Capturar">
+  <div class="abas" role="tablist">
+    <button class="aba ativa" role="tab" aria-selected="true">All-In-One</button>
+    <button class="aba" role="tab" aria-selected="false">Imagem</button>
+    <button class="aba" role="tab" aria-selected="false">Vídeo</button>
+  </div>
+  <div class="lin"><span>Visualizar no Editor</span><button class="tgl on" role="switch" aria-checked="true" aria-label="Visualizar no Editor"></button></div>
+  <div class="lin"><span>Copiar para a área de transferência</span><button class="tgl" role="switch" aria-checked="false" aria-label="Copiar para a área de transferência"></button></div>
+  <div class="lin"><span>Cursor</span><button class="tgl on" role="switch" aria-checked="true" aria-label="Cursor"></button></div>
+  <div class="lin"><span>Atraso de 5 segundos</span><button class="tgl" role="switch" aria-checked="false" aria-label="Atraso de 5 segundos"></button></div>
+  <div class="rodape"><span class="atalho">⌃⌥C</span><button class="primario">Capturar</button></div>
+</div>

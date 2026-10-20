@@ -1,0 +1,3 @@
+#!/bin/sh
+# Portão local: lint antes de cada commit.
+exec make lint

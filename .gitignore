@@ -1,0 +1,17 @@
+.build/
+build/
+.swiftpm/
+*.xcodeproj
+xcuserdata/
+DerivedData/
+project.local.yml
+.env
+.env.*
+!.env.example
+# Segredos de assinatura — o repositório é público
+*.p12
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+*.dmg

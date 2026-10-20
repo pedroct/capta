@@ -1,0 +1,29 @@
+<!-- @dsCard group="Interface" height=150 subtitle="Barra de ferramentas do Editor, com os estados do botão de ferramenta" -->
+<style>
+  body { margin: 0; padding: var(--espaco-4); background: var(--superficie-janela); color: var(--texto); font-family: var(--font-sans); }
+  .barra { display: flex; align-items: center; gap: var(--espaco-2); padding: var(--espaco-2) var(--espaco-3); background: var(--superficie-painel); border: 1px solid var(--borda); border-radius: var(--raio-painel); }
+  .ferr { display: flex; gap: var(--espaco-1); }
+  .btn { height: 28px; min-width: 28px; padding: 0 var(--espaco-2); border: 0; border-radius: var(--raio-controle); background: transparent; color: var(--texto-secundario); font: 400 13px/18px var(--font-sans); display: inline-flex; align-items: center; justify-content: center; cursor: default; }
+  .btn:hover { background: var(--borda); color: var(--texto); }
+  .btn.ativo { background: var(--destaque-fundo); color: var(--destaque); font-weight: 600; }
+  .btn.off { opacity: .35; }
+  .btn:focus-visible { outline: 2px solid var(--anel-foco); outline-offset: 1px; }
+  .sep { width: 1px; height: 20px; background: var(--borda); }
+  .primario { margin-left: auto; height: 28px; padding: 0 var(--espaco-3); border: 0; border-radius: var(--raio-controle); background: var(--destaque); color: var(--sobre-destaque); font: 600 13px/18px var(--font-sans); }
+  .legenda { margin: var(--espaco-3) 0 0; color: var(--texto-secundario); font: 400 11px/14px var(--font-sans); }
+</style>
+<div class="barra" role="toolbar" aria-label="Ferramentas">
+  <div class="ferr">
+    <button class="btn ativo" aria-pressed="true" aria-label="Seleção">↖</button>
+    <button class="btn" aria-label="Seta">↗</button>
+    <button class="btn" aria-label="Texto">A</button>
+    <button class="btn" aria-label="Forma">▭</button>
+    <button class="btn" aria-label="Etapa">①</button>
+    <button class="btn off" aria-label="Recorte" disabled>⌗</button>
+  </div>
+  <span class="sep"></span>
+  <button class="btn" aria-label="Desfazer">↶</button>
+  <button class="btn" aria-label="Refazer">↷</button>
+  <button class="primario">Copiar</button>
+</div>
+<p class="legenda">Seleção ativa · seta, texto, forma e etapa em repouso · recorte desabilitado. Passe o cursor para ver o estado de hover.</p>
