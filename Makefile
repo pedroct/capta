@@ -2,10 +2,18 @@ ifeq ($(origin DEVELOPER_DIR), undefined)
   export DEVELOPER_DIR := $(firstword $(wildcard /Applications/Xcode.app/Contents/Developer /Applications/Xcode-beta.app/Contents/Developer))
 endif
 
-# Só os diretórios que já existem (App entra com a tarefa do app).
-FONTES := $(wildcard App Packages)
+FONTES := App Packages
 
-.PHONY: format lint test verificar
+# project.local.yml (assinatura) é opcional: o project.yml só o inclui se existir.
+export CAPTA_LOCAL := $(if $(wildcard project.local.yml),true,false)
+
+SHELL := /bin/bash
+.SHELLFLAGS := -eu -o pipefail -c
+
+.PHONY: gerar format lint build test tokens entitlements verificar app
+
+gerar:
+	xcodegen generate
 
 format:
 	xcrun swift-format format --in-place --recursive $(FONTES)
@@ -14,7 +22,19 @@ lint:
 	xcrun swift-format lint --strict --recursive $(FONTES)
 	swiftlint lint --quiet
 
+build: gerar
+	xcodebuild -scheme Capta -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build | xcbeautify
+
 test:
 	cd Packages/CaptaNucleo && swift test
 
-verificar: lint test
+tokens:
+	./ferramentas/conferir_tokens.sh
+
+entitlements:
+	./ferramentas/conferir_entitlements.sh
+
+verificar: lint build test tokens entitlements
+
+app: gerar
+	./ferramentas/empacotar.sh

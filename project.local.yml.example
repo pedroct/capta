@@ -1,0 +1,4 @@
+# Copie para project.local.yml (ignorado pelo Git) e troque pelo ID do seu time Apple.
+settings:
+  base:
+    DEVELOPMENT_TEAM: SEU_TIME_AQUI

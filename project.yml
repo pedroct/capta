@@ -1,0 +1,39 @@
+name: Capta
+options:
+  deploymentTarget: { macOS: "14.0" }
+  developmentLanguage: pt-BR
+# Assinatura local: DEVELOPMENT_TEAM vem de project.local.yml (fora do Git; veja o .example).
+# O Makefile exporta CAPTA_LOCAL=true só quando o arquivo existe.
+include:
+  - path: project.local.yml
+    enable: ${CAPTA_LOCAL}
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+    ENABLE_HARDENED_RUNTIME: YES
+    PRODUCT_BUNDLE_IDENTIFIER: com.pedroct.capta   # A confirmar: domínio/ID definitivo
+packages:
+  CaptaNucleo: { path: Packages/CaptaNucleo }
+targets:
+  Capta:
+    type: application
+    platform: macOS
+    sources: [App/Fontes, App/Recursos]
+    dependencies:
+      - package: CaptaNucleo
+        product: CaptaNucleo
+      - package: CaptaNucleo
+        product: CaptaSistema
+    settings:
+      base:
+        INFOPLIST_FILE: App/Info.plist
+        # Arquivo à mão (com um comentário por chave); a chave `entitlements:` do XcodeGen o sobrescreveria.
+        CODE_SIGN_ENTITLEMENTS: App/Capta.entitlements
+        PRODUCT_NAME: Capta
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+        # DEVELOPMENT_TEAM fica fora do Git: vem de `project.local.yml` (no .gitignore)

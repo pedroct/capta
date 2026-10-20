@@ -1,0 +1,17 @@
+{
+  "sourceLanguage" : "pt-BR",
+  "strings" : {
+    "Sair do Capta" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sair do Capta"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

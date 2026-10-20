@@ -5,7 +5,13 @@ núcleo num pacote SwiftPM local (`CaptaNucleo`) e o app gerado por XcodeGen.
 
 ## Status
 
-Em construção: esqueleto do repositório e do núcleo. Ainda não há app utilizável.
+Em construção: esqueleto do repositório e do núcleo. O app já abre na barra de menus, mas ainda não captura nada.
+
+## Ferramentas
+
+- XcodeGen 2.46.0 (`brew install xcodegen`): gera `Capta.xcodeproj` com `make gerar`.
+- `make app` monta `build/Capta.app` assinado; exige `project.local.yml` (copie de
+  `project.local.yml.example` e informe o `DEVELOPMENT_TEAM`).
 
 ## Verificação
 
@@ -13,7 +19,8 @@ Em construção: esqueleto do repositório e do núcleo. Ainda não há app util
 make verificar
 ```
 
-Roda o lint (swift-format e SwiftLint) e os testes do núcleo. Para ativar os ganchos do Git:
+Roda o lint (swift-format e SwiftLint), a compilação do app em modo estrito, os testes do núcleo e
+os portões de tokens de cor e de entitlements. Para ativar os ganchos do Git:
 
 ```sh
 git config core.hooksPath ferramentas/hooks

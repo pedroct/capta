@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Cada chave tem um motivo. Adicionar uma nova exige decisão registrada em docs/. -->
+<plist version="1.0">
+<dict>
+	<!-- Sandbox: o app roda isolado, com acesso só ao que o usuário entrega. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Salvar capturas onde o usuário escolher (painel de salvar do sistema). -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<!-- Gravação de Tela é permissão TCC, não entitlement. Rede: ausente de propósito. -->
+</dict>
+</plist>
