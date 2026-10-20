@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    # A confirmar: assume que a imagem `macos-26` existe e traz Xcode >= 26.
+    # O projeto usa Swift 6.4 (Xcode 27). Se o runner trouxer Swift mais antigo,
+    # `make test` pode falhar por versão de toolchain; nesse caso, registrar a causa
+    # em docs/padroes-stack-swift.md (seção 7) em vez de contornar no código.
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Selecionar o Xcode mais novo instalado
+        run: |
+          set -eu
+          # Ordem de versão: o último de `ls -d /Applications/Xcode*.app` (ex.: Xcode_27.app > Xcode_26.app).
+          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -n 1)
+          echo "Xcode escolhido: $xcode"
+          echo "DEVELOPER_DIR=$xcode/Contents/Developer" >> "$GITHUB_ENV"
+
+      - name: Mostrar versões
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Instalar SwiftLint
+        run: brew install swiftlint
+
+      - name: Lint
+        run: make lint
+
+      - name: Testes do núcleo
+        run: make test
+
+  commits:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validar mensagens de commit (Conventional Commits)
+        env:
+          EVENTO: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_ANTES: ${{ github.event.before }}
+          PUSH_DEPOIS: ${{ github.sha }}
+        run: |
+          set -eu
+          zero=0000000000000000000000000000000000000000
+          if [ "$EVENTO" = pull_request ]; then
+            intervalo="$PR_BASE..$PR_HEAD"
+          elif [ "$PUSH_ANTES" = "$zero" ] || ! git cat-file -e "$PUSH_ANTES^{commit}" 2>/dev/null; then
+            # Primeiro push ou histórico reescrito: valida só o commit publicado.
+            intervalo="$PUSH_DEPOIS^!"
+          else
+            intervalo="$PUSH_ANTES..$PUSH_DEPOIS"
+          fi
+          echo "Intervalo: $intervalo"
+          arquivo=$(mktemp)
+          falhas=0
+          for sha in $(git rev-list --no-merges "$intervalo"); do
+            git log -1 --format=%B "$sha" > "$arquivo"
+            if ! sh ferramentas/hooks/commit-msg "$arquivo"; then
+              echo "Commit $sha reprovado" >&2
+              falhas=$((falhas + 1))
+            fi
+          done
+          [ "$falhas" -eq 0 ]
