@@ -12,4 +12,6 @@ public enum ErroDocumento: Error, Equatable, Sendable {
     case recorteInvalido
     /// Referência a uma anotação que não existe no documento.
     case objetoInexistente(UUID)
+    /// Duas anotações compartilham o mesmo `id`.
+    case idDuplicado(UUID)
 }

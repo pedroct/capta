@@ -42,19 +42,19 @@ private func sessao(com objetos: [Anotacao]) throws -> SessaoEdicao {
     instantes.append(s.documento)
 
     for indice in stride(from: 2, through: 0, by: -1) {
-        let r_desfazer = s.desfazer()
-        #expect(r_desfazer)
+        let resultadoDesfazer = s.desfazer()
+        #expect(resultadoDesfazer)
         #expect(s.documento == instantes[indice])
     }
-    let n_desfazer = s.desfazer()
-    #expect(!n_desfazer)
+    let semDesfazer = s.desfazer()
+    #expect(!semDesfazer)
     for indice in 1...3 {
-        let r_refazer = s.refazer()
-        #expect(r_refazer)
+        let resultadoRefazer = s.refazer()
+        #expect(resultadoRefazer)
         #expect(s.documento == instantes[indice])
     }
-    let n_refazer = s.refazer()
-    #expect(!n_refazer)
+    let semRefazer = s.refazer()
+    #expect(!semRefazer)
 }
 
 @Test func aplicarDepoisDeDesfazerLimpaORefazer() throws {
@@ -151,6 +151,16 @@ private func sessao(com objetos: [Anotacao]) throws -> SessaoEdicao {
     #expect(s.documento.recorte == nil)
     #expect(!s.podeDesfazer)
 
+    // Invertidos, mas inteiramente dentro da base: só o tamanho cru os denuncia.
+    for invertido in [
+        CGRect(x: 0, y: 50, width: 10, height: -10),
+        CGRect(x: 50, y: 0, width: -10, height: 10),
+        CGRect(x: 50, y: 50, width: -10, height: -10),
+    ] {
+        #expect(throws: ErroDocumento.recorteInvalido) { try s.aplicar(.definirRecorte(invertido)) }
+    }
+    #expect(!s.podeDesfazer)
+
     let valido = CGRect(x: 10, y: 10, width: 20, height: 20)
     try s.aplicar(.definirRecorte(valido))
     #expect(s.documento.recorte == valido)
@@ -158,4 +168,23 @@ private func sessao(com objetos: [Anotacao]) throws -> SessaoEdicao {
     #expect(s.documento.recorte == nil)
     s.desfazer()
     #expect(s.documento.recorte == valido)
+}
+
+@Test func adicionarIdDuplicadoELancadoESemEfeito() throws {
+    let a = retangulo(0)
+    var s = try sessao(com: [a])
+    let antes = s.documento
+    #expect(throws: ErroDocumento.idDuplicado(a.id)) { try s.aplicar(.adicionar(a)) }
+    #expect(s.documento == antes)
+    s.desfazer()
+    #expect(s.documento.objetos.isEmpty)
+    #expect(!s.podeDesfazer)
+}
+
+@Test func conjuntosVaziosSaoNoOpSemHistorico() throws {
+    var s = SessaoEdicao(documento: vazio())
+    try s.aplicar(.remover([]))
+    try s.aplicar(.mover([], deslocamento: CGVector(dx: 1, dy: 1)))
+    #expect(!s.podeDesfazer)
+    #expect(s.documento == vazio())
 }

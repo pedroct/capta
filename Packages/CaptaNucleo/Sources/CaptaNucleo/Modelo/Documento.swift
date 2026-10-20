@@ -61,11 +61,16 @@ public struct Documento: Codable, Equatable, Sendable {
         if let recorte {
             try exigirFinitos(recorte.numeros)
             let limites = CGRect(origin: .zero, size: tamanhoBase)
-            guard recorte.width > 0, recorte.height > 0, limites.contains(recorte) else {
+            // `width`/`height` e `contains` padronizam o retângulo; o tamanho cru pega o invertido.
+            guard recorte.size.width > 0, recorte.size.height > 0, limites.contains(recorte) else {
                 throw ErroDocumento.recorteInvalido
             }
         }
+        var vistos = Set<UUID>()
         for objeto in objetos {
+            guard vistos.insert(objeto.id).inserted else {
+                throw ErroDocumento.idDuplicado(objeto.id)
+            }
             try objeto.validar()
         }
     }

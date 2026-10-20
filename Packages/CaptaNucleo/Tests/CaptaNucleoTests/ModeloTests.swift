@@ -122,3 +122,41 @@ func ciclaJSONParaCadaGeometria(geometria: Geometria) throws {
         }
     }
 }
+
+@Test func validarRecorteDoDocumento() throws {
+    var doc = Documento.novo(tamanhoBase: CGSize(width: 100, height: 100), escala: 1)
+    // Exatamente igual à base é válido.
+    doc.recorte = CGRect(x: 0, y: 0, width: 100, height: 100)
+    #expect(throws: Never.self) { try doc.validar() }
+    let invalidos = [
+        CGRect(x: 0, y: 0, width: 0, height: 10),
+        CGRect(x: 0, y: 0, width: 10, height: 0),
+        CGRect(x: 90, y: 0, width: 20, height: 10),
+        CGRect(x: -1, y: 0, width: 10, height: 10),
+        // Invertidos, mas inteiramente dentro da base.
+        CGRect(x: 0, y: 50, width: 10, height: -10),
+        CGRect(x: 50, y: 0, width: -10, height: 10),
+        CGRect(x: 50, y: 50, width: -10, height: -10),
+    ]
+    for recorte in invalidos {
+        doc.recorte = recorte
+        #expect(throws: ErroDocumento.recorteInvalido) { try doc.validar() }
+    }
+}
+
+@Test func validarRejeitaIdDuplicado() throws {
+    let a = anotacao(.realce(retangulo))
+    var doc = documento(com: a)
+    doc.objetos.append(Anotacao(id: a.id, geometria: .realce(retangulo)))
+    #expect(throws: ErroDocumento.idDuplicado(a.id)) { try doc.validar() }
+}
+
+@Test func decodificacaoComIdDuplicadoLanca() throws {
+    let a = anotacao(.realce(retangulo))
+    var doc = documento(com: a)
+    doc.objetos.append(Anotacao(id: a.id, geometria: .realce(retangulo)))
+    let dados = try JSONEncoder().encode(doc)
+    #expect(throws: ErroDocumento.idDuplicado(a.id)) {
+        try JSONDecoder().decode(Documento.self, from: dados)
+    }
+}
