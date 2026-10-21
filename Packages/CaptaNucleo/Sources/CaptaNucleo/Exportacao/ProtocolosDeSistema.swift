@@ -64,4 +64,7 @@ public protocol AtalhoGlobal: Sendable {
         _ combinacao: CombinacaoDeTeclas,
         acao: @escaping @Sendable () -> Void
     ) throws
+
+    /// Desfaz o registro corrente (se houver) e descarta a ação. Pode ser chamada sem registro.
+    func liberar()
 }

@@ -94,6 +94,14 @@ public final class AtalhoGlobalCarbon: AtalhoGlobal, @unchecked Sendable {
         self.acao = acao
     }
 
+    public func liberar() {
+        trava.lock()
+        defer { trava.unlock() }
+        if let atalho { UnregisterEventHotKey(atalho) }
+        atalho = nil
+        acao = nil
+    }
+
     fileprivate func executar() {
         trava.lock()
         let corrente = acao
