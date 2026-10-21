@@ -144,11 +144,15 @@ jobs:
           echo "Xcode escolhido: $xcode"
           echo "DEVELOPER_DIR=$xcode/Contents/Developer" >> "$GITHUB_ENV"
 
-      - name: Instalar SonarScanner
-        run: brew install sonar-scanner
+      - name: Instalar SonarScanner, XcodeGen e xcbeautify
+        run: brew install sonar-scanner xcodegen xcbeautify
 
-      - name: Gerar a cobertura
+      - name: Gerar a cobertura do pacote
         run: make cobertura
+
+      # O Sonar precisa dos dois relatórios; sem este, `App/Fontes` aparece com 0 %.
+      - name: Gerar a cobertura do app
+        run: make cobertura-app
 
       - name: Analisar no SonarCloud
         env:
