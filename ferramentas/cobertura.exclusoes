@@ -4,3 +4,5 @@
 # que chama API do sistema e não roda sem tela ou permissão); o motivo é obrigatório; arquivo
 # listado que não existe mais falha o portão. Lógica real fica fora da casca e é testada.
 # O portão do app (cobertura_app.sh) não usa este arquivo.
+Packages/CaptaNucleo/Sources/CaptaSistema/Casca/CapturadorSC.swift | chama ScreenCaptureKit / CoreGraphics, exige tela e permissão reais; coberto pela lista manual
+Packages/CaptaNucleo/Sources/CaptaSistema/Casca/PermissaoCG.swift | chama ScreenCaptureKit / CoreGraphics, exige tela e permissão reais; coberto pela lista manual
