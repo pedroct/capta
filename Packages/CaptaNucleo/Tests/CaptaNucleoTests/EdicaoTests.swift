@@ -188,3 +188,72 @@ private func sessao(com objetos: [Anotacao]) throws -> SessaoEdicao {
     #expect(!s.podeDesfazer)
     #expect(s.documento == vazio())
 }
+
+private func deslocar(_ geometria: Geometria, por d: CGVector) throws -> Geometria? {
+    let objeto = Anotacao(geometria: geometria)
+    var s = try sessao(com: [objeto])
+    try s.aplicar(.mover([objeto.id], deslocamento: d))
+    return s.documento.objetos.first?.geometria
+}
+
+@Test func deslocarMoveTextoEPreservaConteudoEFonte() throws {
+    let original = Geometria.texto(
+        CGRect(x: 10, y: 20, width: 30, height: 40),
+        conteudo: "Olá",
+        tamanhoFonte: 18,
+        negrito: true,
+        italico: false
+    )
+    let movido = try deslocar(original, por: CGVector(dx: 5, dy: -7))
+    #expect(
+        movido
+            == .texto(
+                CGRect(x: 15, y: 13, width: 30, height: 40),
+                conteudo: "Olá",
+                tamanhoFonte: 18,
+                negrito: true,
+                italico: false
+            )
+    )
+}
+
+@Test func deslocarMoveCentroDaEtapaEPreservaDiametroEReinicio() throws {
+    let original = Geometria.etapa(
+        centro: CGPoint(x: 10, y: 20),
+        diametro: 32,
+        reiniciaSequencia: true
+    )
+    let movido = try deslocar(original, por: CGVector(dx: 3, dy: 4))
+    #expect(
+        movido == .etapa(centro: CGPoint(x: 13, y: 24), diametro: 32, reiniciaSequencia: true)
+    )
+}
+
+@Test func deslocarMoveRetanguloDoDesfoquePreservandoTipoEIntensidade() throws {
+    let original = Geometria.desfoque(
+        CGRect(x: 10, y: 20, width: 30, height: 40),
+        .pixelizar,
+        intensidade: 0.6
+    )
+    let movido = try deslocar(original, por: CGVector(dx: -2, dy: 9))
+    #expect(
+        movido
+            == .desfoque(
+                CGRect(x: 8, y: 29, width: 30, height: 40),
+                .pixelizar,
+                intensidade: 0.6
+            )
+    )
+}
+
+@Test func variosIdsInexistentesFalhamComOMenorIdEDocumentoIntacto() throws {
+    var s = try sessao(com: [retangulo(0)])
+    let antes = s.documento
+    let ids = (0..<5).map { _ in UUID() }
+    let menor = ids.min { $0.uuidString < $1.uuidString }
+    let esperado = try #require(menor)
+    #expect(throws: ErroDocumento.objetoInexistente(esperado)) {
+        try s.aplicar(.remover(Set(ids)))
+    }
+    #expect(s.documento == antes)
+}

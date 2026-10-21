@@ -90,6 +90,56 @@ func ciclaJSONParaCadaGeometria(geometria: Geometria) throws {
     }
 }
 
+@Test func corForaDaFaixaEhRejeitadaPeloValidar() {
+    let cores = [
+        CorRGBA(r: 1.5, g: 0, b: 0),
+        CorRGBA(r: 0, g: -0.1, b: 0),
+        CorRGBA(r: 0, g: 0, b: 1.01),
+        CorRGBA(r: 0, g: 0, b: 0, a: 2),
+    ]
+    for cor in cores {
+        let estilo = Estilo(
+            cor: cor,
+            largura: 4,
+            opacidade: 1,
+            preenchimento: nil,
+            tracejado: false
+        )
+        let objeto = Anotacao(geometria: .realce(retangulo), estilo: estilo)
+        #expect(throws: ErroDocumento.valorForaDeFaixa("cor")) {
+            try documento(com: objeto).validar()
+        }
+    }
+}
+
+@Test func preenchimentoForaDaFaixaTambemEhRejeitado() {
+    let estilo = Estilo(
+        cor: .vermelho,
+        largura: 4,
+        opacidade: 1,
+        preenchimento: CorRGBA(r: 0, g: 2, b: 0),
+        tracejado: false
+    )
+    let objeto = Anotacao(geometria: .realce(retangulo), estilo: estilo)
+    #expect(throws: ErroDocumento.valorForaDeFaixa("cor")) {
+        try documento(com: objeto).validar()
+    }
+}
+
+@Test func corComComponenteNaNEhRejeitadaComoNaoFinita() {
+    let estilo = Estilo(
+        cor: CorRGBA(r: .nan, g: 0, b: 0),
+        largura: 4,
+        opacidade: 1,
+        preenchimento: nil,
+        tracejado: false
+    )
+    let objeto = Anotacao(geometria: .realce(retangulo), estilo: estilo)
+    #expect(throws: ErroDocumento.valorNaoFinito) {
+        try documento(com: objeto).validar()
+    }
+}
+
 @Test func rejeitaTamanhoBaseNaoPositivo() {
     let casos: [(CGSize, Double)] = [
         (CGSize(width: 0, height: 100), 2),
