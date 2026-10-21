@@ -34,11 +34,13 @@ public enum PacoteCapta {
     /// Valida as entradas, escreve tudo numa pasta temporária irmã e só então a coloca no lugar:
     /// `moveItem` se `destino` não existe, `replaceItemAt` (substituição atômica) se existe.
     /// Em qualquer falha a pasta temporária é removida e o `destino` anterior fica intacto.
+    /// Com `substituir == false`, um destino existente lança ``ErroPacote/destinoJaExiste``.
     public static func gravar(
         _ documento: Documento,
         baseDados: Data,
         miniaturaDados: Data,
-        em destino: URL
+        em destino: URL,
+        substituir: Bool = true
     ) throws {
         guard !baseDados.isEmpty, !miniaturaDados.isEmpty else { throw ErroPacote.dadosVazios }
         try documento.validar()
@@ -58,10 +60,18 @@ public enum PacoteCapta {
         try baseDados.write(to: temporario.appendingPathComponent(nomeBase))
         try miniaturaDados.write(to: temporario.appendingPathComponent(nomeMiniatura))
 
-        if gerenciador.fileExists(atPath: destino.path) {
+        if substituir, gerenciador.fileExists(atPath: destino.path) {
             _ = try gerenciador.replaceItemAt(destino, withItemAt: temporario)
         } else {
-            try gerenciador.moveItem(at: temporario, to: destino)
+            do {
+                // `moveItem` falha se o destino existe, então nunca substitui em silêncio.
+                try gerenciador.moveItem(at: temporario, to: destino)
+            } catch {
+                if !substituir, gerenciador.fileExists(atPath: destino.path) {
+                    throw ErroPacote.destinoJaExiste
+                }
+                throw error
+            }
         }
     }
 

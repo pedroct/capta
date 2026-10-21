@@ -30,27 +30,34 @@ public enum Rascunho {
         let miniaturaDados = try CodificadorPNG.codificar(miniatura, escala: 1)
 
         try FileManager.default.createDirectory(at: pasta, withIntermediateDirectories: true)
-        let destino = urlLivre(em: pasta, nome: nome)
-        try PacoteCapta.gravar(
-            documento,
-            baseDados: baseDados,
-            miniaturaDados: miniaturaDados,
-            em: destino
-        )
-        return destino
+        // A checagem prévia é só um atalho: o passo final não substitui, e se alguém criar o
+        // mesmo nome no meio do caminho tentamos o próximo sufixo.
+        for numero in 1...limiteDeTentativas {
+            let destino = url(em: pasta, nome: nome, numero: numero)
+            if FileManager.default.fileExists(atPath: destino.path) { continue }
+            do {
+                try PacoteCapta.gravar(
+                    documento,
+                    baseDados: baseDados,
+                    miniaturaDados: miniaturaDados,
+                    em: destino,
+                    substituir: false
+                )
+                return destino
+            } catch ErroPacote.destinoJaExiste {
+                continue
+            }
+        }
+        throw ErroPacote.destinoJaExiste
     }
 
-    private static func urlLivre(em pasta: URL, nome: String) -> URL {
-        let extensao = PacoteCapta.extensao
-        var candidato = pasta.appendingPathComponent("\(nome).\(extensao)", isDirectory: true)
-        var numero = 2
-        while FileManager.default.fileExists(atPath: candidato.path) {
-            candidato = pasta.appendingPathComponent(
-                "\(nome) \(numero).\(extensao)",
-                isDirectory: true
-            )
-            numero += 1
-        }
-        return candidato
+    private static let limiteDeTentativas = 1000
+
+    private static func url(em pasta: URL, nome: String, numero: Int) -> URL {
+        let sufixo = numero == 1 ? "" : " \(numero)"
+        return pasta.appendingPathComponent(
+            "\(nome)\(sufixo).\(PacoteCapta.extensao)",
+            isDirectory: true
+        )
     }
 }

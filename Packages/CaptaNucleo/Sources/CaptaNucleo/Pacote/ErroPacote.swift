@@ -8,4 +8,6 @@ public enum ErroPacote: Error, Equatable, Sendable {
     case versaoMaisNova(Int)
     /// Dados de imagem vazios (na gravação ou em `base.png` lido do disco).
     case dadosVazios
+    /// Gravação sem substituição e já existe algo no destino; o destino ficou intacto.
+    case destinoJaExiste
 }

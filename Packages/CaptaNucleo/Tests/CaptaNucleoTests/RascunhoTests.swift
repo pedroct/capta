@@ -80,6 +80,7 @@ private func itens(_ url: URL) throws -> [String] {
 }
 
 @Test func pastaSemPermissaoDeEscritaLanca() throws {
+    try #require(getuid() != 0, "root ignora permissões de pasta")
     let pasta = try novaPastaTemporaria()
     let gerenciador = FileManager.default
     try gerenciador.setAttributes([.posixPermissions: 0o500], ofItemAtPath: pasta.path)
@@ -103,4 +104,61 @@ private func itens(_ url: URL) throws -> [String] {
         _ = try Rascunho.gravar(c, documento: documento, em: pasta, nome: "N")
     }
     #expect(try itens(pasta).isEmpty)
+}
+
+@Test func escalaInvalidaNaoCriaPastaInexistente() throws {
+    let raiz = try novaPastaTemporaria()
+    defer { remover(raiz) }
+    let pasta = raiz.appendingPathComponent("nova", isDirectory: true)
+    let documento = Documento.novo(tamanhoBase: CGSize(width: 40, height: 30), escala: 0)
+    #expect(throws: (any Error).self) {
+        _ = try Rascunho.gravar(captura(escala: 0), documento: documento, em: pasta, nome: "N")
+    }
+    #expect(!FileManager.default.fileExists(atPath: pasta.path))
+}
+
+@Test func gravarSemSubstituirNaoToscaPacoteExistente() throws {
+    let pasta = try novaPastaTemporaria()
+    defer { remover(pasta) }
+    let c = captura()
+    let documento = try Documento.novo(de: c)
+    let destino = pasta.appendingPathComponent("N.capta", isDirectory: true)
+    let base = Data([1, 2, 3])
+    let miniatura = Data([4, 5])
+    try PacoteCapta.gravar(documento, baseDados: base, miniaturaDados: miniatura, em: destino)
+
+    #expect(throws: ErroPacote.destinoJaExiste) {
+        try PacoteCapta.gravar(
+            documento,
+            baseDados: Data([9, 9]),
+            miniaturaDados: Data([8]),
+            em: destino,
+            substituir: false
+        )
+    }
+    let lido = try PacoteCapta.ler(de: destino)
+    #expect(lido.baseDados == base)
+    #expect(lido.miniaturaDados == miniatura)
+    #expect(lido.documento == documento)
+    #expect(try itens(pasta) == ["N.capta"])
+}
+
+@Test func duasGravacoesComOMesmoNomeProduzemPacotesDistintos() throws {
+    let pasta = try novaPastaTemporaria()
+    defer { remover(pasta) }
+    let vermelha = captura()
+    let azul = ImagemCapturada(
+        imagem: imagemSolida(CGSize(width: 40, height: 30), cor: CorRGBA(r: 0, g: 0, b: 1, a: 1)),
+        escala: 2
+    )
+    let docVermelha = try Documento.novo(de: vermelha)
+    let docAzul = try Documento.novo(de: azul)
+    let a = try Rascunho.gravar(vermelha, documento: docVermelha, em: pasta, nome: "N")
+    let b = try Rascunho.gravar(azul, documento: docAzul, em: pasta, nome: "N")
+    #expect(a != b)
+    let lidoA = try PacoteCapta.ler(de: a)
+    let lidoB = try PacoteCapta.ler(de: b)
+    #expect(lidoA.baseDados != lidoB.baseDados)
+    #expect(lidoA.baseDados == (try CodificadorPNG.codificar(vermelha.imagem, escala: 2)))
+    #expect(lidoB.baseDados == (try CodificadorPNG.codificar(azul.imagem, escala: 2)))
 }
