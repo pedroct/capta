@@ -110,12 +110,23 @@ extension Anotacao {
     /// Confere finitude e faixas da geometria e do estilo.
     func validar() throws {
         try exigirFinitos(geometria.numeros)
-        try exigirFinitos([estilo.largura, estilo.opacidade])
+        try exigirFinitos([estilo.largura, estilo.opacidade, rotacao])
         let cores = [estilo.cor] + (estilo.preenchimento.map { [$0] } ?? [])
         try exigirFinitos(cores.flatMap { [$0.r, $0.g, $0.b, $0.a] })
         guard estilo.largura >= 0 else { throw ErroDocumento.valorForaDeFaixa("largura") }
         guard (0...1).contains(estilo.opacidade) else {
             throw ErroDocumento.valorForaDeFaixa("opacidade")
+        }
+        if rotacao != 0 {
+            switch geometria {
+            case .seta, .linha, .desfoque: throw ErroDocumento.valorForaDeFaixa("rotacao")
+            default: break
+            }
+        }
+        if let familia = estilo.familiaFonte,
+            familia.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        {
+            throw ErroDocumento.valorForaDeFaixa("familiaFonte")
         }
         for cor in cores where !cor.componentes.allSatisfy({ (0...1).contains($0) }) {
             throw ErroDocumento.valorForaDeFaixa("cor")
