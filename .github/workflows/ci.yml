@@ -51,7 +51,11 @@ jobs:
         if: always()
         run: |
           if [ -f build/cobertura/resumo.txt ]; then
-            cat build/cobertura/resumo.txt >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo '```text'
+              cat build/cobertura/resumo.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Sem relatório de cobertura." >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -102,7 +106,11 @@ jobs:
         if: always()
         run: |
           if [ -f build/cobertura/resumo-app.txt ]; then
-            cat build/cobertura/resumo-app.txt >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo '```text'
+              cat build/cobertura/resumo-app.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Sem relatório de cobertura." >> "$GITHUB_STEP_SUMMARY"
           fi
