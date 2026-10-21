@@ -39,6 +39,7 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
     private let posicaoDoCursor: @MainActor () -> CGPoint
     private let centro: NotificationCenter
     private let appAtivo: @MainActor () -> Bool
+    private let aoMudarAjuda: @MainActor (Bool) -> Void
 
     private(set) var estado: EstadoDoOverlay?
     private(set) var janelasAbertas: [NSWindow] = []
@@ -70,7 +71,8 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
             CGEvent(source: nil)?.location ?? CGPoint(x: CGFloat.nan, y: .nan)
         },
         centro: NotificationCenter = .default,
-        appAtivo: @escaping @MainActor () -> Bool = { NSApp.isActive }
+        appAtivo: @escaping @MainActor () -> Bool = { NSApp.isActive },
+        aoMudarAjuda: @escaping @MainActor (Bool) -> Void = { _ in }
     ) {
         self.atalhoDeEsc = atalhoDeEsc
         self.criarJanela = criarJanela
@@ -78,6 +80,7 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
         self.posicaoDoCursor = posicaoDoCursor
         self.centro = centro
         self.appAtivo = appAtivo
+        self.aoMudarAjuda = aoMudarAjuda
     }
 
     func escolher(
@@ -199,6 +202,7 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
             return
         }
         for vista in vistas { vista.mostrar(novo) }
+        if novo.ajudaVisivel != atual.ajudaVisivel { aoMudarAjuda(novo.ajudaVisivel) }
     }
 
     private func encerrar(_ resultado: ResultadoDoOverlay, motivo: String, sessao: UInt64) {

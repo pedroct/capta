@@ -199,6 +199,39 @@
         }
       }
     },
+    "Captura em 1 segundo. Esc cancela." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Captura em 1 segundo. Esc cancela."
+          }
+        }
+      }
+    },
+    "Captura em %lld segundos. Esc cancela." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Captura em %lld segundos. Esc cancela."
+          }
+        }
+      }
+    },
+    "Esc cancela" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esc cancela"
+          }
+        }
+      }
+    },
     "Esc" : {
       "extractionState" : "manual",
       "localizations" : {

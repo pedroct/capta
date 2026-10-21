@@ -190,4 +190,31 @@ struct GerenciadorDoOverlayTests: BancadaDoOverlay {
         let seletor: any SeletorDeCaptura = gerenciador(AtalhoFalso())
         #expect(seletor is GerenciadorDoOverlay)
     }
+
+    // MARK: - Ajuda lembrada
+
+    @Test func hAvisaAMudancaDaAjudaSoQuandoElaMuda() async throws {
+        let atalho = AtalhoFalso()
+        let avisos = Avisos()
+        let g = GerenciadorDoOverlay(
+            atalhoDeEsc: atalho,
+            ativar: { nil },
+            posicaoDoCursor: { CGPoint(x: 5, y: 5) },
+            centro: centro,
+            appAtivo: { true },
+            aoMudarAjuda: { avisos.valores.append($0) }
+        )
+        let tarefa = try await abrir(g, telas: [try Self.congelada(Self.telaA)])
+        g.aplicar(.tecla(.h))
+        g.aplicar(.tecla(.m))
+        g.aplicar(.tecla(.h))
+        #expect(avisos.valores == [false, true])
+        g.aplicar(.tecla(.esc))
+        _ = await tarefa.value
+    }
+
+    @MainActor
+    private final class Avisos {
+        var valores: [Bool] = []
+    }
 }
