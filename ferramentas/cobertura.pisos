@@ -1,4 +1,4 @@
-# Piso de cobertura de linhas (%) por alvo. Só sobe; nunca desce.
+# Piso de cobertura de linhas (%) por alvo. Só sobe; nunca desce (exceção: o piso do App é provisório e pode ser reajustado ao valor medido na CI).
 CaptaNucleo=98
 CaptaSistema=98
 # App/Fontes sem CaptaApp.swift, medido por `make cobertura-app` (fora do `make verificar`).

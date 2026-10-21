@@ -372,7 +372,7 @@ export CAPTA_LOCAL := $(if $(wildcard project.local.yml),true,false)
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: gerar format lint build test tokens entitlements verificar app
+.PHONY: gerar format lint build test tokens entitlements cobertura cobertura-app verificar app
 
 gerar:
 	xcodegen generate
@@ -396,7 +396,14 @@ tokens:
 entitlements:
 	./ferramentas/conferir_entitlements.sh
 
-verificar: lint build test tokens entitlements
+cobertura:
+	./ferramentas/cobertura.sh
+
+# Fora do `verificar` de propósito (spec §9.1): gera o projeto e roda os testes do app.
+cobertura-app: gerar
+	./ferramentas/cobertura_app.sh
+
+verificar: lint build cobertura tokens entitlements
 
 app: gerar
 	./ferramentas/empacotar.sh
@@ -411,7 +418,9 @@ app: gerar
 | `make test` | Roda os testes do núcleo |
 | `make tokens` | Falha se houver cor crua na interface |
 | `make entitlements` | Confere as chaves de entitlements do app (`ferramentas/conferir_entitlements.sh`) |
-| `make verificar` | `lint`, `build`, `test`, `tokens` e `entitlements` (sem `format`) — é o que o CI roda localmente |
+| `make cobertura` | Roda os testes do núcleo com cobertura e falha se algum alvo ficar abaixo do piso em `ferramentas/cobertura.pisos`; gera o resumo e o XML do Sonar em `build/cobertura/` |
+| `make cobertura-app` | Gera o projeto e roda os testes do app com cobertura (`xccov`); fora do `make verificar` por ser lento |
+| `make verificar` | `lint`, `build`, `cobertura` (que já roda os testes), `tokens` e `entitlements` (sem `format`) — é o que o CI roda localmente |
 | `make app` | Monta o `.app` assinado para uso próprio |
 
 ### `.gitignore`
@@ -469,7 +478,8 @@ Repositório público: minutos em runner macOS são gratuitos. **A confirmar:** 
 | Job | O que roda | Quando |
 | --- | --- | --- |
 | `verificar` | `make lint`, `make cobertura`, `make tokens`, `make entitlements` (relatório publicado como artefato `cobertura-pacote`) | PR + push na `main` |
-| `app` | `brew install xcodegen xcbeautify` `make gerar build` (compila o app, sem assinar) e `make cobertura-app` (artefato `cobertura-app`) | PR + push na `main` |
+| `app` | `brew install xcodegen xcbeautify`, `make gerar build` (compila o app, sem assinar) e `make cobertura-app` (artefato `cobertura-app`) | PR + push na `main` |
+| `sonar` | job do dono do repositório: analisa no SonarCloud usando o XML de cobertura do pacote | push na `main` e PR do próprio repositório |
 | `commits` | script `commit-msg` sobre os commits do PR ou do push | PR + push na `main` |
 
 O `make verificar` completo roda localmente (hook `pre-push`); no CI ele é dividido nos jobs
@@ -480,9 +490,9 @@ O `make verificar` completo roda localmente (hook `pre-push`); no CI ele é divi
 
 - **Piso por alvo**, em `ferramentas/cobertura.pisos`: 98 % de linhas em `CaptaNucleo` e `CaptaSistema`; o App tem piso próprio. O piso só sobe, e subir vai em commit próprio.
 - **Pacote:** `make cobertura` mede com `llvm-cov` direto nos binários de teste. O JSON do SwiftPM não traz `CaptaSistema` e inclui arquivos de teste, por isso não serve de base. O resumo (`resumo.txt`) e o XML genérico do Sonar (`sonar-cobertura.xml`) ficam em `build/cobertura/`.
-- **Contagem de linhas:** o resumo do `llvm-cov` usado no portão conta linhas por região; o XML traz linhas únicas por arquivo. Os totais diferem um pouco, e o portão vale o do resumo.
+- **Contagem de linhas:** o resumo do `llvm-cov` usado no portão soma por função, contando duas vezes linhas compartilhadas por closures; o XML e o portão do app usam linhas únicas. Os números diferem um pouco, e o portão do pacote vale o do resumo.
 - **App:** `make cobertura-app` roda o alvo `CaptaTests` com `xcodebuild test` e mede com `xccov` (`resumo-app.txt`, `sonar-cobertura-app.xml`). Fica fora do `make verificar` por ser lento. O host roda sem assinatura, portanto fora do sandbox.
-- **CI × local:** se os valores divergirem, vale o menor para o piso, com a divergência registrada em comentário no `cobertura.pisos`. O piso do App é provisório até ser medido no runner.
+- **CI × local:** se os valores divergirem, o piso é fixado no menor dos valores medidos na CI e localmente, com a divergência registrada em comentário no `cobertura.pisos`. O piso do App é provisório até ser medido no runner.
 
 Sem assinatura nem notarização no CI: não há segredo no repositório público. A compilação de
 verificação usa `CODE_SIGNING_ALLOWED=NO`; só `make app` assina, com o `DEVELOPMENT_TEAM` de

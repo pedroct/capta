@@ -171,7 +171,6 @@ for alvo in ALVOS:
         for linha in sorted(mapa):
             ET.SubElement(no, "lineToCover", lineNumber=str(linha),
                           covered="true" if mapa[linha] > 0 else "false")
-raiz_xml[:] = sorted(raiz_xml, key=lambda e: e.get("path"))
 ET.indent(raiz_xml)
 ET.ElementTree(raiz_xml).write(os.path.join(saida, "sonar-cobertura.xml"),
                                encoding="utf-8", xml_declaration=True)

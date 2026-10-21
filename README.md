@@ -21,8 +21,9 @@ Em construção: esqueleto do repositório e do núcleo. O app já abre na barra
 make verificar
 ```
 
-Roda o lint (swift-format e SwiftLint), a compilação do app em modo estrito, os testes do núcleo e
-os portões de tokens de cor e de entitlements. Para ativar os ganchos do Git:
+Roda o lint (swift-format e SwiftLint), a compilação do app em modo estrito, os testes do núcleo com
+o portão de cobertura (`make cobertura`, também disponível sozinho) e os portões de tokens de cor e de
+entitlements. Para ativar os ganchos do Git:
 
 ```sh
 git config core.hooksPath ferramentas/hooks
