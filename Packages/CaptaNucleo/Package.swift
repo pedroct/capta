@@ -19,6 +19,11 @@ let package = Package(
             dependencies: ["CaptaNucleo", "CaptaSistema"],
             swiftSettings: rigor
         ),
+        .testTarget(
+            name: "CaptaSistemaTests",
+            dependencies: ["CaptaSistema", "CaptaNucleo"],
+            swiftSettings: rigor
+        ),
     ],
     swiftLanguageModes: [.v6]
 )

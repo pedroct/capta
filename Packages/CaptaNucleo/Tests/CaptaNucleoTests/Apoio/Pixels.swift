@@ -65,3 +65,36 @@ func proximos(
     abs(Int(a.r) - r) <= tolerancia && abs(Int(a.g) - g) <= tolerancia
         && abs(Int(a.b) - b) <= tolerancia
 }
+
+/// Xadrez preto e branco puro, com quadrados de `quadrado` pixels; o pixel (0, 0) é branco.
+func imagemXadrez(_ tamanho: CGSize, quadrado: Int = 2) -> CGImage {
+    let largura = Int(tamanho.width)
+    let altura = Int(tamanho.height)
+    let contexto = contextoRGBA(largura: largura, altura: altura)
+    contexto.setFillColor(red: 1, green: 1, blue: 1, alpha: 1)
+    contexto.fill(CGRect(origin: .zero, size: tamanho))
+    contexto.setFillColor(red: 0, green: 0, blue: 0, alpha: 1)
+    for y in 0..<altura {
+        for x in 0..<largura where ((x / quadrado) + (y / quadrado)) % 2 == 1 {
+            // Origem do contexto embaixo: converte para linhas contadas do topo.
+            contexto.fill(CGRect(x: x, y: altura - 1 - y, width: 1, height: 1))
+        }
+    }
+    guard let imagem = contexto.makeImage() else { preconditionFailure("makeImage falhou") }
+    return imagem
+}
+
+/// Desvio-padrão da luminância (0 a 255) dos pixels dentro de `regiao` (origem no topo).
+func desvioPadraoDaLuminancia(_ imagem: CGImage, regiao: CGRect) -> Double {
+    var valores: [Double] = []
+    for y in Int(regiao.minY)..<Int(regiao.maxY) {
+        for x in Int(regiao.minX)..<Int(regiao.maxX) {
+            let p = pixel(imagem, x: x, y: y)
+            valores.append(0.2126 * Double(p.r) + 0.7152 * Double(p.g) + 0.0722 * Double(p.b))
+        }
+    }
+    guard !valores.isEmpty else { return 0 }
+    let media = valores.reduce(0, +) / Double(valores.count)
+    let variancia = valores.map { ($0 - media) * ($0 - media) }.reduce(0, +) / Double(valores.count)
+    return variancia.squareRoot()
+}

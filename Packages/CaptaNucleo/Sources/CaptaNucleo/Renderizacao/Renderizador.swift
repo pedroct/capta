@@ -1,4 +1,5 @@
 import CoreGraphics
+import CoreImage
 import Foundation
 
 /// Compõe a imagem final: a base mais as anotações do documento, na ordem das camadas.
@@ -14,10 +15,14 @@ public struct Renderizador: Sendable {
     /// Renderiza o documento sobre `base`.
     ///
     /// A saída é sRGB, 8 bits por componente, `premultipliedLast`, com o tamanho em pixels da base.
-    /// - Throws: ``ErroDocumento/tamanhoInvalido`` se `base` não tiver o `tamanhoBase` do documento.
+    /// Se o documento tem recorte, ele é aplicado por último e define o tamanho da saída.
+    /// - Throws: ``ErroDocumento/tamanhoInvalido`` se `base` não tiver o `tamanhoBase` do documento;
+    ///   ``ErroDocumento/recorteInvalido`` se o recorte não cabe na imagem;
+    ///   ``ErroRenderizacao`` se o contexto ou a imagem final não puderam ser criados.
     public func renderizar(_ documento: Documento, base: CGImage) throws -> CGImage {
-        guard base.width == Int(documento.tamanhoBase.width),
-            base.height == Int(documento.tamanhoBase.height),
+        // Compara como Double: `Int(...)` de NaN, infinito ou valor enorme encerraria o processo.
+        guard Double(base.width) == documento.tamanhoBase.width,
+            Double(base.height) == documento.tamanhoBase.height,
             base.width > 0, base.height > 0
         else { throw ErroDocumento.tamanhoInvalido }
 
@@ -31,7 +36,7 @@ public struct Renderizador: Sendable {
                 space: espaco,
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             )
-        else { throw ErroDocumento.tamanhoInvalido }
+        else { throw ErroRenderizacao.falhaAoCriarContexto }
 
         contexto.interpolationQuality = .high
         contexto.draw(base, in: CGRect(x: 0, y: 0, width: base.width, height: base.height))
@@ -40,7 +45,28 @@ public struct Renderizador: Sendable {
         contexto.translateBy(x: 0, y: CGFloat(base.height))
         contexto.scaleBy(x: 1, y: -1)
 
+        // Criado só se houver desfoque, e uma única vez por renderização.
+        var ciContexto: CIContext?
+
         for objeto in documento.objetos {
+            // O desfoque lê o compósito até aqui; isso não pode acontecer dentro da camada de
+            // transparência. O trecho filtrado é desenhado sem camada (a opacidade do objeto
+            // entra pelo alfa global).
+            if case .desfoque(let regiao, let tipo, let intensidade) = objeto.geometria {
+                let ci = ciContexto ?? criarContextoCoreImage()
+                ciContexto = ci
+                contexto.saveGState()
+                contexto.setAlpha(CGFloat(objeto.estilo.opacidade))
+                aplicarDesfoque(
+                    regiao: regiao,
+                    tipo: tipo,
+                    intensidade: intensidade,
+                    contexto: contexto,
+                    ciContexto: ci
+                )
+                contexto.restoreGState()
+                continue
+            }
             contexto.saveGState()
             // Camada de transparência: preenchimento e traço compõem juntos e só então
             // recebem a opacidade do objeto.
@@ -51,8 +77,13 @@ public struct Renderizador: Sendable {
             contexto.restoreGState()
         }
 
-        guard let imagem = contexto.makeImage() else { throw ErroDocumento.tamanhoInvalido }
-        return imagem
+        guard let imagem = contexto.makeImage() else { throw ErroRenderizacao.falhaAoGerarImagem }
+        guard let recorte = documento.recorte else { return imagem }
+        // Coordenadas do recorte: pixels da base com origem no topo, as mesmas do `cropping(to:)`.
+        guard let recortada = imagem.cropping(to: recorte.standardized) else {
+            throw ErroDocumento.recorteInvalido
+        }
+        return recortada
     }
 
     private func desenhar(_ objeto: Anotacao, documento: Documento, em contexto: CGContext) {
@@ -86,8 +117,10 @@ public struct Renderizador: Sendable {
                 ),
                 contexto: contexto
             )
-        case .desfoque, .carimbo:
-            // No-op nesta tarefa: desfoque e carimbo entram na Tarefa 7.
+        case .carimbo(let retangulo, let simbolo):
+            desenharCarimbo(simbolo: simbolo, em: retangulo, cor: estilo.cor, contexto: contexto)
+        case .desfoque:
+            // Tratado em `renderizar`, fora da camada de transparência.
             break
         }
     }

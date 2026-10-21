@@ -23,13 +23,6 @@ struct EstiloDeTexto {
 }
 
 private func textoAtribuido(_ conteudo: String, _ estilo: EstiloDeTexto) -> NSAttributedString {
-    let cor = estilo.cor
-    let cgCor =
-        CGColor(
-            colorSpace: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
-            components: [CGFloat(cor.r), CGFloat(cor.g), CGFloat(cor.b), CGFloat(cor.a)]
-        )
-        ?? CGColor(gray: 0, alpha: 1)
     // Chaves do CoreText como strings: evita depender das constantes `CFString` globais.
     let atributos: [NSAttributedString.Key: Any] = [
         NSAttributedString.Key(kCTFontAttributeName as String):
@@ -38,7 +31,7 @@ private func textoAtribuido(_ conteudo: String, _ estilo: EstiloDeTexto) -> NSAt
                 negrito: estilo.negrito,
                 italico: estilo.italico
             ),
-        NSAttributedString.Key(kCTForegroundColorAttributeName as String): cgCor,
+        NSAttributedString.Key(kCTForegroundColorAttributeName as String): cgCor(estilo.cor),
     ]
     return NSAttributedString(string: conteudo, attributes: atributos)
 }
