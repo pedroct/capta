@@ -2,8 +2,9 @@
 CaptaNucleo=98
 CaptaSistema=98
 # App/Fontes sem CaptaApp.swift, medido por `make cobertura-app` (fora do `make verificar`).
-# Provisório: medido localmente com as views: 39,05 % (230/589), arredondado para baixo.
-# As views e o GerenciadorDeJanelas ficam sem teste automático por serem layout e ligação
-# com AppKit/SwiftUI; a lógica testável (fluxo, captura aberta, modelo da ajuda, tema) está
-# coberta. Vale o menor entre CI e local; a CI ainda não mediu. Reajustar quando medir.
-App=39.0
+# Provisório: medido localmente: 84,38 % (616/730), arredondado para baixo.
+# O GerenciadorDeJanelas é testado com janelas reais no app que hospeda os testes; as views
+# entram na conta porque essas janelas as desenham, sem asserção sobre o layout. Ficam fora
+# os caminhos com runModal(), os Ajustes do Sistema, o reinício do app e as ações da barra
+# da captura. Vale o menor entre CI e local; a CI ainda não mediu. Reajustar quando medir.
+App=84.3
