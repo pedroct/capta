@@ -14,7 +14,7 @@ saida="$raiz/build/cobertura"
 trabalho="$raiz/build/cobertura-app"
 resultado="$trabalho/Testes.xcresult"
 
-if [ ! -f "$pisos" ]; then
+if [[ ! -f "$pisos" ]]; then
   echo "cobertura-app: arquivo de pisos não encontrado: $pisos" >&2
   exit 1
 fi

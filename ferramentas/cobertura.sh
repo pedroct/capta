@@ -11,7 +11,7 @@ case "$pisos" in /*) ;; *) pisos="$PWD/$pisos" ;; esac
 saida="$raiz/build/cobertura"
 pacote="$raiz/Packages/CaptaNucleo"
 
-if [ ! -f "$pisos" ]; then
+if [[ ! -f "$pisos" ]]; then
   echo "cobertura: arquivo de pisos não encontrado: $pisos" >&2
   exit 1
 fi
@@ -24,7 +24,7 @@ swift test --enable-code-coverage >&2
 
 bin=$(swift build --show-bin-path)
 perfil="$bin/codecov/default.profdata"
-if [ ! -s "$perfil" ]; then
+if [[ ! -s "$perfil" ]]; then
   echo "cobertura: sem perfil de cobertura em $perfil" >&2
   exit 1
 fi
@@ -35,10 +35,10 @@ for alvo in CaptaNucleo CaptaSistema; do
   # dois alvos (o agrupamento é pelo caminho do arquivo) e o alvo passa a contar também
   # os testes dos outros alvos.
   binario="$bin/${alvo}Tests.xctest/Contents/MacOS/${alvo}Tests"
-  if [ ! -f "$binario" ]; then
+  if [[ ! -f "$binario" ]]; then
     binario="$bin/CaptaNucleoPackageTests.xctest/Contents/MacOS/CaptaNucleoPackageTests"
   fi
-  if [ ! -f "$binario" ]; then
+  if [[ ! -f "$binario" ]]; then
     echo "cobertura: binário de testes não encontrado para $alvo em $bin" >&2
     exit 1
   fi
