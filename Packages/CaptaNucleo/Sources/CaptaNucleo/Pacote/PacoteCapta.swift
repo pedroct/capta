@@ -75,6 +75,31 @@ public enum PacoteCapta {
         }
     }
 
+    /// Copia o pacote `origem` para `destino`, substituindo um destino existente.
+    ///
+    /// A origem é conferida com ``ler(de:)`` (mesmos erros). A cópia vai para uma pasta temporária
+    /// irmã de `destino` e só então é colocada no lugar: `moveItem` se `destino` não existe,
+    /// `replaceItemAt` se existe. Em qualquer falha o `destino` anterior fica intacto e o
+    /// temporário é removido.
+    public static func copiar(de origem: URL, para destino: URL) throws {
+        _ = try ler(de: origem)
+
+        let gerenciador = FileManager.default
+        let temporario = destino.deletingLastPathComponent()
+            .appendingPathComponent(
+                ".\(destino.lastPathComponent).tmp-\(UUID().uuidString)",
+                isDirectory: true
+            )
+        defer { try? gerenciador.removeItem(at: temporario) }
+
+        try gerenciador.copyItem(at: origem, to: temporario)
+        if gerenciador.fileExists(atPath: destino.path) {
+            _ = try gerenciador.replaceItemAt(destino, withItemAt: temporario)
+        } else {
+            try gerenciador.moveItem(at: temporario, to: destino)
+        }
+    }
+
     /// Regrava só `documento.json` (e `miniatura.png`, se vier), cada um de forma atômica.
     ///
     /// Nunca toca `base.png`. Não lê o JSON antigo: um `documento.json` corrompido é simplesmente
