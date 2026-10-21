@@ -40,17 +40,16 @@ for alvo in CaptaNucleo CaptaSistema; do
 done
 
 python3 -I - "$raiz" "$saida" "$pisos" <<'PY'
-import json, math, os, re, sys
+import json, os, re, sys
 import xml.etree.ElementTree as ET
 
 raiz, saida, arq_pisos = sys.argv[1:4]
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.join(raiz, "ferramentas"))
+from pisos import erro, ler_pisos
+
 ALVOS = ["CaptaNucleo", "CaptaSistema"]
 LIMITE_AVISO = 98.0
-
-
-def erro(msg):
-    print(f"cobertura: {msg}", file=sys.stderr)
-    sys.exit(1)
 
 
 def alvo_do_arquivo(caminho):
@@ -67,28 +66,7 @@ def alvo_do_arquivo(caminho):
     return None
 
 
-pisos = {}
-with open(arq_pisos, encoding="utf-8") as f:
-    for n, linha in enumerate(f, 1):
-        linha = linha.strip()
-        if not linha or linha.startswith("#"):
-            continue
-        nome, sep, valor = linha.partition("=")
-        nome, valor = nome.strip(), valor.strip()
-        try:
-            if not sep:
-                raise ValueError
-            numero = float(valor)
-            if not math.isfinite(numero) or not 0 <= numero <= 100:
-                raise ValueError
-        except ValueError:
-            erro(f"valor de piso inválido em {arq_pisos}:{n}: '{linha}'")
-        if nome in pisos:
-            erro(f"piso duplicado para '{nome}' em {arq_pisos}:{n}")
-        pisos[nome] = numero
-for alvo in ALVOS:
-    if alvo not in pisos:
-        erro(f"piso ausente para o alvo {alvo} em {arq_pisos}")
+pisos = ler_pisos(arq_pisos, ALVOS)
 
 arquivos = {a: {} for a in ALVOS}
 for alvo in ALVOS:
