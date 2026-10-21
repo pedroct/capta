@@ -149,6 +149,17 @@ struct CapturaAbertaTests {
         #expect(try pasta.conteudo().isEmpty)
     }
 
+    @Test func avisoSoApareceQuandoORascunhoFalha() throws {
+        let aberta = try aberta(rascunho: .gravando)
+        #expect(aberta.aviso == nil)
+
+        aberta.rascunho = .gravado(URL(fileURLWithPath: "/rascunho.capta"))
+        #expect(aberta.aviso == nil)
+
+        aberta.rascunho = .falhou
+        #expect(aberta.aviso == .rascunhoNaoGuardado)
+    }
+
     @Test func podeSalvarCaptaSoDepoisDaGravacao() throws {
         let aberta = try aberta(rascunho: .gravando)
         #expect(!aberta.podeSalvarCapta)

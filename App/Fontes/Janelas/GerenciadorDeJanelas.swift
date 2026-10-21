@@ -52,11 +52,14 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
         aguardandoResultadoDoNovoTeste = false
         janelaDeAjuda?.close()
 
+        // A janela nasce depois da view; a referência fraca deixa o alerta achá-la depois.
+        let referencia = ReferenciaDeJanela()
         let visao = JanelaDeCapturaView(
             captura: captura,
-            mostrarAlerta: { [weak self] in self?.mostrarAlerta($0) }
+            mostrarAlerta: { [weak self] in self?.mostrarAlerta($0, em: referencia.janela) }
         )
         let janela = criarJanela(com: visao, titulo: captura.nome)
+        referencia.janela = janela
         let tela = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame.size
         let largura = min(captura.base.width.pontos(captura.escala), (tela?.width ?? 1280) * 0.8)
         let altura = min(captura.base.height.pontos(captura.escala), (tela?.height ?? 800) * 0.8)
@@ -66,12 +69,10 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
         exibir(janela)
     }
 
+    /// Alerta do fluxo (a captura falhou): em folha sobre a ajuda, se ela está aberta, porque
+    /// foi dali que veio o "Tentar de novo"; senão, alerta do app.
     func mostrarAlerta(_ mensagem: MensagemDeErro) {
-        let alerta = NSAlert()
-        alerta.messageText = mensagem.texto
-        alerta.addButton(withTitle: String(localized: "OK"))
-        NSApp.activate()
-        alerta.runModal()
+        mostrarAlerta(mensagem, em: janelaDeAjuda)
     }
 
     // MARK: NSWindowDelegate
@@ -85,6 +86,20 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
     }
 
     // MARK: Privado
+
+    /// Em folha sobre `janela` quando ela está na tela e livre; sem janela, alerta modal do app.
+    private func mostrarAlerta(_ mensagem: MensagemDeErro, em janela: NSWindow?) {
+        let alerta = NSAlert()
+        alerta.messageText = mensagem.texto
+        alerta.addButton(withTitle: String(localized: "OK"))
+        NSApp.activate()
+        if let janela, janela.isVisible, janela.attachedSheet == nil {
+            janela.makeKeyAndOrderFront(nil)
+            alerta.beginSheetModal(for: janela, completionHandler: nil)
+            return
+        }
+        alerta.runModal()
+    }
 
     private func criarJanela<V: View>(com visao: V, titulo: String) -> NSWindow {
         let controlador = NSHostingController(rootView: visao)
@@ -124,6 +139,12 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
             }
         }
     }
+}
+
+/// Guarda, sem reter, a janela de uma captura para a closure de alerta da sua view.
+@MainActor
+private final class ReferenciaDeJanela {
+    weak var janela: NSWindow?
 }
 
 extension Int {

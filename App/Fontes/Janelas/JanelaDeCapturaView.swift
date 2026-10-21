@@ -2,22 +2,6 @@ import CaptaNucleo
 import CaptaSistema
 import SwiftUI
 
-extension MensagemDeErro {
-    /// Texto do alerta, pelo String Catalog.
-    var texto: String {
-        switch self {
-        case .capturaFalhou:
-            String(localized: "Não foi possível capturar a tela.")
-        case .naoFoiPossivelCopiar:
-            String(localized: "Não foi possível copiar a imagem.")
-        case .naoFoiPossivelSalvar:
-            String(localized: "Não foi possível salvar o arquivo.")
-        case .rascunhoNaoGuardado:
-            String(localized: "A captura não foi guardada. Copiar e salvar continuam funcionando.")
-        }
-    }
-}
-
 /// Janela de uma captura: a imagem renderizada, a alternância de exibição e a barra de ações.
 struct JanelaDeCapturaView: View {
     let captura: CapturaAberta
@@ -35,6 +19,9 @@ struct JanelaDeCapturaView: View {
         }
         .background(Tema.superficieCanvas)
         .task { renderizarUmaVez() }
+        .onChange(of: captura.aviso) { _, aviso in
+            if let aviso { AccessibilityNotification.Announcement(aviso.texto).post() }
+        }
     }
 
     private var barra: some View {
@@ -48,6 +35,15 @@ struct JanelaDeCapturaView: View {
                 .disabled(!captura.podeSalvarCapta)
                 .accessibilityLabel(Text("Salvar como Capta…"))
             Spacer()
+            if let aviso = captura.aviso {
+                // Aviso discreto (spec §4.5): fica na barra, sem interromper o trabalho.
+                Label(aviso.texto, systemImage: "exclamationmark.triangle")
+                    .font(.callout)
+                    .foregroundStyle(Tema.textoSecundario)
+                    .lineLimit(2)
+                    .help(aviso.texto)
+                    .accessibilityLabel(Text(aviso.texto))
+            }
             if let confirmacao {
                 Text(confirmacao)
                     .foregroundStyle(Tema.textoSecundario)

@@ -110,6 +110,9 @@ final class FluxoDeCaptura {
     }
 
     /// Grava o rascunho em paralelo e atualiza a captura ao terminar.
+    ///
+    /// A falha não abre alerta: a janela mostra o aviso na barra a partir de
+    /// ``CapturaAberta/aviso``, e copiar e salvar continuam funcionando.
     private func gravarRascunho(
         _ imagem: ImagemCapturada,
         documento: Documento,
@@ -118,7 +121,6 @@ final class FluxoDeCaptura {
     ) {
         let gravador = gravadorDeRascunho
         let pasta = pastaDeRascunhos
-        let apresentador = apresentador
         gravacaoDoRascunho = Task {
             do {
                 let url = try await gravador(imagem, documento, pasta, nome)
@@ -126,7 +128,6 @@ final class FluxoDeCaptura {
             } catch {
                 RegistroDeCaptura.falha("gravarRascunho", error)
                 captura.rascunho = .falhou
-                apresentador.mostrarAlerta(.rascunhoNaoGuardado)
             }
         }
     }

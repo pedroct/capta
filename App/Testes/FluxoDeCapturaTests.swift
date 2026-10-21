@@ -226,7 +226,9 @@ struct FluxoDeCapturaTests {
         #expect(apresentador.alertas.isEmpty)
     }
 
-    @Test func falhaNoRascunhoAtualizaOEstadoEAvisa() async throws {
+    /// O aviso é discreto (spec §4.5): vira estado da captura, mostrado na barra da janela,
+    /// e não um alerta.
+    @Test func falhaNoRascunhoAtualizaOEstadoEAvisaNaJanelaSemAlerta() async throws {
         let temporarios = try DefaultsTemporarios()
         defer { temporarios.remover() }
         let apresentador = ApresentadorFalso()
@@ -243,7 +245,8 @@ struct FluxoDeCapturaTests {
         let aberta = try #require(apresentador.capturas.first)
         #expect(aberta.rascunho == .falhou)
         #expect(aberta.podeSalvarCapta)
-        #expect(apresentador.alertas == [.rascunhoNaoGuardado])
+        #expect(aberta.aviso == .rascunhoNaoGuardado)
+        #expect(apresentador.alertas.isEmpty)
     }
 
     @Test func gravadorPadraoGravaORascunhoNaPasta() async throws {

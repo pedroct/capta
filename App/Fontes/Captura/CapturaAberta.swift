@@ -25,6 +25,9 @@ final class CapturaAberta {
     /// Enquanto o rascunho grava, salvar como Capta fica indisponível.
     var podeSalvarCapta: Bool { rascunho != .gravando }
 
+    /// Aviso discreto que a janela mostra na barra (spec §4.5): só quando o rascunho falhou.
+    var aviso: MensagemDeErro? { rascunho == .falhou ? .rascunhoNaoGuardado : nil }
+
     private let renderizador: Renderizador
     private let painel: any PainelDeArquivos
     private let areaDeTransferencia: any AreaDeTransferencia
