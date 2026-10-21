@@ -34,6 +34,17 @@
         }
       }
     },
+    "Atalho indisponível" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atalho indisponível"
+          }
+        }
+      }
+    },
     "Captura de tela" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41,6 +52,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Captura de tela"
+          }
+        }
+      }
+    },
+    "Capturar tela inteira" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capturar tela inteira"
           }
         }
       }

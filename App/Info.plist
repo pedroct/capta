@@ -25,5 +25,30 @@
 	<!-- App só de barra de menus por ora; a política de ativação com Dock entra no Plano do editor. -->
 	<key>LSUIElement</key>
 	<true/>
+	<!-- Declara o tipo do pacote .capta; só a declaração, o app ainda não abre documentos. -->
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<!-- Identificador do tipo, usado no código e pelo sistema. -->
+			<key>UTTypeIdentifier</key>
+			<string>com.pedroct.capta.documento</string>
+			<!-- É um pacote (pasta que o Finder mostra como um arquivo único). -->
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>com.apple.package</string>
+			</array>
+			<!-- Nome do tipo mostrado ao usuário. -->
+			<key>UTTypeDescription</key>
+			<string>Captura do Capta</string>
+			<!-- Extensão de arquivo associada ao tipo. -->
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>capta</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>
