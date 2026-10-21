@@ -9,12 +9,17 @@ public struct ProvedorDeSimbolosSF: ProvedorDeSimbolos {
     public init() {}
 
     /// Renderiza o símbolo em `lado` x `lado` pixels, tingido com `cor` (sRGB).
-    /// Devolve `nil` para nome desconhecido ou `lado` inválido.
+    /// Devolve `nil` para nome desconhecido, símbolo sem tamanho ou `lado` inválido.
     public func imagem(simbolo: String, lado: Double, cor: CorRGBA) -> CGImage? {
         guard lado.isFinite, lado >= 1, lado <= 4096 else { return nil }
         let pixels = Int(lado.rounded())
         guard
             let original = NSImage(systemSymbolName: simbolo, accessibilityDescription: nil),
+            let simboloConfigurado = original.withSymbolConfiguration(
+                NSImage.SymbolConfiguration(pointSize: lado * 0.8, weight: .regular)
+            ),
+            simboloConfigurado.size.width > 0,
+            simboloConfigurado.size.height > 0,
             let espaco = CGColorSpace(name: CGColorSpace.sRGB),
             let contexto = CGContext(
                 data: nil,
@@ -27,10 +32,7 @@ public struct ProvedorDeSimbolosSF: ProvedorDeSimbolos {
             )
         else { return nil }
 
-        let configuracao = NSImage.SymbolConfiguration(pointSize: lado * 0.8, weight: .regular)
-        let simboloConfigurado = original.withSymbolConfiguration(configuracao) ?? original
         let tamanho = simboloConfigurado.size
-        guard tamanho.width > 0, tamanho.height > 0 else { return nil }
         // Ajusta o símbolo ao quadrado, centralizado e sem distorcer.
         let escala = min(lado / tamanho.width, lado / tamanho.height)
         let destino = CGRect(
@@ -50,9 +52,11 @@ public struct ProvedorDeSimbolosSF: ProvedorDeSimbolos {
         contexto.setBlendMode(.sourceIn)
         contexto.setFillColor(
             CGColor(
-                colorSpace: espaco,
-                components: [CGFloat(cor.r), CGFloat(cor.g), CGFloat(cor.b), CGFloat(cor.a)]
-            ) ?? CGColor(gray: 0, alpha: 1)
+                srgbRed: CGFloat(cor.r),
+                green: CGFloat(cor.g),
+                blue: CGFloat(cor.b),
+                alpha: CGFloat(cor.a)
+            )
         )
         contexto.fill(CGRect(x: 0, y: 0, width: lado, height: lado))
         return contexto.makeImage()
