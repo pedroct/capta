@@ -340,9 +340,9 @@ Sequência (spec §4.1): disparo sem captura nem seleção em andamento → perm
 - Create: `docs/verificacao-manual-overlay.md`
 - Modify: `ferramentas/cobertura.pisos` (linha `App=`, em commit próprio), `ferramentas/cobertura.exclusoes` (se a casca ganhar arquivo), este plano (status ao fim)
 
-- [ ] **Step 1: Escrever `docs/verificacao-manual-overlay.md`** com um item marcável por linha, no formato da lista da fatia 3: overlay cobre barra de menus e Dock; `Esc` em todos os estados (antes de arrastar, com seleção, com a lupa, no modo janela, na contagem); uma, duas e três telas, escalas mistas, tela acima ou à esquerda da principal; app em tela cheia e outro Space; região sem atraso sai **exatamente** o que foi visto (conferir por pixel no Preview, também numa tela de escala não inteira); a região não passa para outra tela; ajuste de bordas, mover e setas (1 px e `⇧` 10 px); dimensões em pixels corretas; lupa nos quatro cantos da tela e a 8× com grade; `H` oculta e lembra a ajuda; `Espaço` alterna; janela com parte coberta sai inteira, sem sombra, na escala certa; janela entre duas telas; `F` captura a tela sob o cursor; menu de aplicativo capturado por região com atraso de 3 s; contagem visível, fora da imagem, `Esc` cancela; cursor aparece só com atraso e o controle explica sem atraso; janela que fecha durante a contagem mostra alerta; desconectar um monitor com o overlay aberto cancela; `⌃⌥C` em conflito com outro app mostra "Atalho indisponível" e o menu funciona; `⌃⌥C` e `⌃⌥F` não se confundem; nenhuma permissão nova pedida; VoiceOver lê o rótulo e a contagem; *Reduzir transparência* e *Reduzir movimento*; o menu da barra não aparece na imagem congelada; tempo do atalho ao overlay (alvo < 500 ms, ler o log; medir com uma e com três telas, e conferir o uso de memória do Capta com três telas).
-- [ ] **Step 2: Rodar `make cobertura-app`**, anotar o valor medido de `App/Fontes` e ajustar `App=` (o piso é provisório; vale o menor entre CI e local), em commit próprio (`test(app): ajusta o piso de cobertura do app`).
-- [ ] **Step 3: Rodar `make verificar` e `make cobertura-app`** → Expected: PASS; commit da lista (`docs: adiciona a lista de verificação manual do overlay`).
+- [x] **Step 1: Escrever `docs/verificacao-manual-overlay.md`** com um item marcável por linha, no formato da lista da fatia 3: overlay cobre barra de menus e Dock; `Esc` em todos os estados (antes de arrastar, com seleção, com a lupa, no modo janela, na contagem); uma, duas e três telas, escalas mistas, tela acima ou à esquerda da principal; app em tela cheia e outro Space; região sem atraso sai **exatamente** o que foi visto (conferir por pixel no Preview, também numa tela de escala não inteira); a região não passa para outra tela; ajuste de bordas, mover e setas (1 px e `⇧` 10 px); dimensões em pixels corretas; lupa nos quatro cantos da tela e a 8× com grade; `H` oculta e lembra a ajuda; `Espaço` alterna; janela com parte coberta sai inteira, sem sombra, na escala certa; janela entre duas telas; `F` captura a tela sob o cursor; menu de aplicativo capturado por região com atraso de 3 s; contagem visível, fora da imagem, `Esc` cancela; cursor aparece só com atraso e o controle explica sem atraso; janela que fecha durante a contagem mostra alerta; desconectar um monitor com o overlay aberto cancela; `⌃⌥C` em conflito com outro app mostra "Atalho indisponível" e o menu funciona; `⌃⌥C` e `⌃⌥F` não se confundem; nenhuma permissão nova pedida; VoiceOver lê o rótulo e a contagem; *Reduzir transparência* e *Reduzir movimento*; o menu da barra não aparece na imagem congelada; tempo do atalho ao overlay (alvo < 500 ms, ler o log; medir com uma e com três telas, e conferir o uso de memória do Capta com três telas).
+- [x] **Step 2: Rodar `make cobertura-app`**, anotar o valor medido de `App/Fontes` e ajustar `App=` (o piso é provisório; vale o menor entre CI e local), em commit próprio (`test(app): ajusta o piso de cobertura do app`).
+- [x] **Step 3: Rodar `make verificar` e `make cobertura-app`** → Expected: PASS; commit da lista (`docs: adiciona a lista de verificação manual do overlay`).
 - [ ] **Step 4: 🔒 Pedir ao Pedro** para percorrer a lista (`make app && open build/Capta.app`, com duas telas para os itens de várias telas) e registrar as falhas como pendências no status deste plano.
 - [ ] **Step 5: 🔒 `git push`** só depois da confirmação do Pedro; conferir `gh run list --limit 1` → `success`; se o piso do app medido na CI for menor que o local, baixar `App=` ao valor da CI em commit próprio.
 
@@ -354,3 +354,33 @@ Sequência (spec §4.1): disparo sem captura nem seleção em andamento → perm
 - **Escolha do plano que a spec deixou ao construtor:** a prova de foco vem primeiro (T1), porque a spec a trata como bloqueante e o resto do overlay não vale se ela falhar; `DescricaoDeTela` e `SelecaoDeTela` sobem para o núcleo (T2) para a máquina de estados os usar; a seleção é guardada em pixels inteiros e a conversão arredonda ao pixel mais próximo (T2, T3), o que torna o retângulo mostrado idêntico ao capturado; `AtalhoGlobalCarbon` ganha um id por instância (T1), porque hoje o handler dispara todas as ações registradas.
 - **Consistência de tipos:** `DescricaoDeTela`, `SelecaoDeRegiao`, `Alca`, `Acerto`, `JanelaDeTela`, `ListaDeJanelas`, `Atraso`, `OpcoesDeCaptura`, `EstadoDoOverlay`, `EventoDoOverlay`, `ResultadoDoOverlay`, `SelecaoConfirmada`, `TelaCongelada`, `SeletorDeCaptura`, `ApresentadorDaContagem`, `OpcoesLembradas` mantêm a mesma assinatura entre as tarefas que os definem e as que os usam.
 - **Risco aberto:** a prova de foco (T1, passo 6) só o Pedro confirma, com tela real; as tarefas 2 a 9 não dependem dela e podem andar antes, mas a 10 em diante esperam o resultado.
+
+---
+
+## Status de execução (2026-10-21)
+
+- **Tarefas 1 a 13:** concluídas e revisadas. A Tarefa 14 está feita nos passos 1 a 3: lista em `docs/verificacao-manual-overlay.md` e piso do app subido para `App=89.0` (medido local 89,96 %, 1856/2063).
+- **Prova de foco da Tarefa 1:** passou na máquina do Pedro (build `15fe54d`, `⌃⌥C`). Log: "ao abrir: ativo=false chave=0", depois "app ficou ativo" e "300 ms depois: ativo=true chave=1"; o overlay fechou pelo atalho global do `Esc`.
+- **Pendente do Pedro:** a verificação em tela real (Tarefa 14, passo 4) e o `git push` (passo 5). Falhas da lista viram pendências aqui.
+
+**Rodadas de correção depois da Tarefa 1 concluída:**
+
+1. Inicializador designado do `NSPanel` em `JanelaDeOverlay` (o build quebrava) e `set -o pipefail` no Makefile, porque o GNU Make 3.81 ignora `.SHELLFLAGS` e `make verificar` saía 0 com o build quebrado.
+2. `Esc` como atalho global (Carbon) enquanto o overlay existe, ativação por `NSWorkspace.openApplication` e logs da categoria `overlay`.
+3. Invariante de liberação do `Esc` em toda saída, inclusive com `NSScreen.screens` vazio (monitores e registro não vazam), com costura testável e Tasks canceladas.
+
+**Desvios aceitos (rulings do controlador e do revisor da Tarefa 10):**
+
+- Arredondamento de pontos para pixels com `toNearestOrEven`.
+- `JanelaDaContagem` implementa `ApresentadorDaContagem` e o `GerenciadorDoOverlay` a expõe por composição; `aoMudarAjuda` leva o `H` lembrado até `OpcoesLembradas`.
+- `Esc` global é rede de segurança permanente do overlay.
+- `⌃⌥F` e a captura de tela inteira são ignorados durante overlay ou contagem (guarda compartilhada, spec §5); `JanelaDaContagem.aoCancelar` é `var`, ligado ao fluxo.
+- Desvios de aparência da Tarefa 10: dimensões sem posição; *Reduzir transparência* a 0,75, não opaca; dica de modo some com lupa ou seleção; lupa segue o cursor; 8× = 8 pt por pixel nativo; painéis podem cobrir a seleção no canto inferior esquerdo.
+
+**Para as fatias seguintes (5, 6 e 7):**
+
+- Conferir na lista manual o conteúdo das imagens de janela (Retina, 1x, entre duas telas, parcialmente fora da tela) e de região em tela secundária com origem negativa; se `conferindo` derrubar capturas de janela por 1 px, usar o tamanho informado pelo ScreenCaptureKit.
+- Corrigir a corrida do `Esc` no fim da contagem (flag `contagemCancelada`), o vão entre painéis do overlay e o redesenho com *Reduzir transparência*.
+- Antes de qualquer app gravar `.capta`, fechar o esquema v1 e decidir a numeração de etapas (pendência do Plano 1).
+- Os menores adiados e os desvios estão em "Pendências do Plano 3" de `docs/verificacao-manual-overlay.md`.
+- Piso do app: se a CI medir menos que o local, baixar `App=` ao valor da CI em commit próprio.
