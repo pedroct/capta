@@ -23,7 +23,7 @@ struct RenderizadorEstiloSemTracoTests {
     static let vermelhoPuro = CorRGBA(r: 1, g: 0, b: 0)
     static let azulPuro = CorRGBA(r: 0, g: 0, b: 1)
 
-    @Test func linhaESetaSemLarguraNaoDesenham() throws {
+    @Test func linhaSemLarguraNaoDesenha() throws {
         let estilo = Estilo(cor: Self.vermelhoPuro, largura: 0)
         let saida = try renderizar([
             Anotacao(
@@ -34,7 +34,7 @@ struct RenderizadorEstiloSemTracoTests {
         #expect(todosOsPixels(saida) == todosOsPixels(base))
     }
 
-    @Test func realceESemPreenchimentoUsaACorDoEstilo() throws {
+    @Test func realceSemPreenchimentoUsaACorDoEstilo() throws {
         let saida = try renderizar([
             Anotacao(
                 geometria: .realce(CGRect(x: 20, y: 20, width: 40, height: 40)),
