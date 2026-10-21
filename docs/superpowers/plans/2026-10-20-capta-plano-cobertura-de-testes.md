@@ -60,11 +60,11 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 - Produz: `make cobertura` (código 0 se todos os pisos forem atendidos); `build/cobertura/resumo.txt`, `build/cobertura/llvm-cov.json` (um JSON por alvo ou combinado, com caminhos relativos à raiz do repositório); `cobertura.sh` aceita `PISOS=<arquivo>` para sobrescrever o arquivo de pisos (usado só para conferir o gate).
 - Formato de `ferramentas/cobertura.pisos`: linhas `CaptaNucleo=96`, `CaptaSistema=96` (valores iniciais **abaixo** da linha de base, para o gate nascer verde; sobem na Tarefa 6).
 
-- [ ] **Passo 1: Escrever `cobertura.sh` com a falha esperada primeiro.** Comportamento: `cd Packages/CaptaNucleo && swift test --enable-code-coverage`; localizar `default.profdata` e os binários `CaptaNucleoTests.xctest/Contents/MacOS/CaptaNucleoTests` e `CaptaSistemaTests…` com `swift build --show-bin-path`; `xcrun llvm-cov report/export` por alvo com `-ignore-filename-regex='/Tests/|\.build/'`; agrupar arquivos em `CaptaNucleo` (caminho `Sources/CaptaNucleo/`) e `CaptaSistema` (`Sources/CaptaSistema/`); imprimir arquivo, linhas cobertas/total e % (mais regiões), e o total por alvo; sinalizar com `⚠` arquivos abaixo de 98 %.
-- [ ] **Passo 2: Rodar contra a linha de base.** `make cobertura` deve imprimir CaptaNucleo ≈ 96,5 % e CaptaSistema ≈ 96,0 % e sair com 0.
-- [ ] **Passo 3: Conferir as falhas da Revisão de foco.** (a) `PISOS=<arquivo com CaptaNucleo=100>` → sai com erro e a mensagem cita alvo, valor e piso; (b) apagar `default.profdata` antes de consolidar → erro "sem perfil de cobertura"; (c) arquivo de pisos sem `CaptaSistema` → erro; cada caso termina em código ≠ 0.
-- [ ] **Passo 4: `Makefile`.** Alvo `.PHONY` `cobertura` chamando o script; `verificar: lint build cobertura tokens entitlements` (mantém `make test` isolado e sem medição).
-- [ ] **Passo 5: `make verificar` passa; commit** `feat(ferramentas): mede cobertura de linhas e aplica piso por alvo`.
+- [x] **Passo 1: Escrever `cobertura.sh` com a falha esperada primeiro.** Comportamento: `cd Packages/CaptaNucleo && swift test --enable-code-coverage`; localizar `default.profdata` e os binários `CaptaNucleoTests.xctest/Contents/MacOS/CaptaNucleoTests` e `CaptaSistemaTests…` com `swift build --show-bin-path`; `xcrun llvm-cov report/export` por alvo com `-ignore-filename-regex='/Tests/|\.build/'`; agrupar arquivos em `CaptaNucleo` (caminho `Sources/CaptaNucleo/`) e `CaptaSistema` (`Sources/CaptaSistema/`); imprimir arquivo, linhas cobertas/total e % (mais regiões), e o total por alvo; sinalizar com `⚠` arquivos abaixo de 98 %.
+- [x] **Passo 2: Rodar contra a linha de base.** `make cobertura` deve imprimir CaptaNucleo ≈ 96,5 % e CaptaSistema ≈ 96,0 % e sair com 0.
+- [x] **Passo 3: Conferir as falhas da Revisão de foco.** (a) `PISOS=<arquivo com CaptaNucleo=100>` → sai com erro e a mensagem cita alvo, valor e piso; (b) apagar `default.profdata` antes de consolidar → erro "sem perfil de cobertura"; (c) arquivo de pisos sem `CaptaSistema` → erro; cada caso termina em código ≠ 0.
+- [x] **Passo 4: `Makefile`.** Alvo `.PHONY` `cobertura` chamando o script; `verificar: lint build cobertura tokens entitlements` (mantém `make test` isolado e sem medição).
+- [x] **Passo 5: `make verificar` passa; commit** `feat(ferramentas): mede cobertura de linhas e aplica piso por alvo`.
 
 ---
 
@@ -77,9 +77,9 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 **Interfaces:**
 - Consome: `Edicao` (a mover objetos), `Documento.validar()`, `ErroDocumento.valorForaDeFaixa`.
 
-- [ ] **Passo 1: Testes que falham de verdade ou cobrem:** em `EdicaoTests`, um teste por geometria ainda não coberta, `deslocarMoveTextoEPreservaConteudoEFonte`, `deslocarMoveCentroDaEtapaEPreservaDiametroEReinicio`, `deslocarMoveRetanguloDoDesfoquePreservandoTipoEIntensidade`: aplicar o deslocamento (use a edição que chama `deslocada`; confira o nome em `Edicao.swift`) e afirmar a geometria nova **e** que os demais campos ficam iguais. Em `ModeloTests`, `corForaDaFaixaEhRejeitadaPeloValidar` (componente 1,5 e NaN) esperando `.valorForaDeFaixa("cor")`.
-- [ ] **Passo 2: Rodar `make cobertura`; ver os trechos acima saírem da lista de perdidos. Completar com o que sobrar de `Edicao.swift` (cobertura 87 %) olhando o relatório (`llvm-cov show`); cada linha sobrando ganha um teste de comportamento.**
-- [ ] **Passo 3: `make verificar`; commit** `test(nucleo): cobre o deslocamento de texto, etapa e desfoque e a validação de cor`.
+- [x] **Passo 1: Testes que falham de verdade ou cobrem:** em `EdicaoTests`, um teste por geometria ainda não coberta, `deslocarMoveTextoEPreservaConteudoEFonte`, `deslocarMoveCentroDaEtapaEPreservaDiametroEReinicio`, `deslocarMoveRetanguloDoDesfoquePreservandoTipoEIntensidade`: aplicar o deslocamento (use a edição que chama `deslocada`; confira o nome em `Edicao.swift`) e afirmar a geometria nova **e** que os demais campos ficam iguais. Em `ModeloTests`, `corForaDaFaixaEhRejeitadaPeloValidar` (componente 1,5 e NaN) esperando `.valorForaDeFaixa("cor")`.
+- [x] **Passo 2: Rodar `make cobertura`; ver os trechos acima saírem da lista de perdidos. Completar com o que sobrar de `Edicao.swift` (cobertura 87 %) olhando o relatório (`llvm-cov show`); cada linha sobrando ganha um teste de comportamento.**
+- [x] **Passo 3: `make verificar`; commit** `test(nucleo): cobre o deslocamento de texto, etapa e desfoque e a validação de cor`.
 
 ---
 
@@ -91,10 +91,10 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 **Interfaces:**
 - Consome: `Renderizador`, `Documento`, helpers de `Apoio/Pixels.swift`, `retanguloUtil(_:)`, `cgCor(_:)` (acesso por `@testable import` — verificar que já é o padrão dos testes do núcleo; se não for, testar via renderizador).
 
-- [ ] **Passo 1: Testes:** `retanguloArredondadoTemCantosVaziosECentroPreenchido` (pixel do canto da base fica transparente/igual à base, centro com a cor), `etapaComTracoDesenhaBordaDeCorDiferenteDoFundo`, `recorteInvalidoLancaRecorteInvalido` (recorte sem área ou fora da imagem), `retanguloUtilDescartaSemAreaNaoFinitoEPadronizaNegativo`, e um teste por ramo de `DesenhoTexto` perdido (texto vazio, texto que não cabe, alinhamento — confirmar pelo relatório quais linhas faltam).
-- [ ] **Passo 2: Linhas `Renderizador.swift:126–127` (`break` de caso tratado em outro lugar):** se um teste de comportamento não alcançar, simplificar o `switch` (remover o caso redundante agrupando com `default` ou reorganizando) em vez de forçar teste; descrever no commit.
-- [ ] **Passo 3: `make cobertura`: `CaptaNucleo` ≥ 98 % de linhas.**
-- [ ] **Passo 4: `make verificar`; commit** `test(nucleo): cobre formas, recorte inválido, utilitários e texto do renderizador`.
+- [x] **Passo 1: Testes:** `retanguloArredondadoTemCantosVaziosECentroPreenchido` (pixel do canto da base fica transparente/igual à base, centro com a cor), `etapaComTracoDesenhaBordaDeCorDiferenteDoFundo`, `recorteInvalidoLancaRecorteInvalido` (recorte sem área ou fora da imagem), `retanguloUtilDescartaSemAreaNaoFinitoEPadronizaNegativo`, e um teste por ramo de `DesenhoTexto` perdido (texto vazio, texto que não cabe, alinhamento — confirmar pelo relatório quais linhas faltam).
+- [x] **Passo 2: Linhas `Renderizador.swift:126–127` (`break` de caso tratado em outro lugar):** se um teste de comportamento não alcançar, simplificar o `switch` (remover o caso redundante agrupando com `default` ou reorganizando) em vez de forçar teste; descrever no commit.
+- [x] **Passo 3: `make cobertura`: `CaptaNucleo` ≥ 98 % de linhas.**
+- [x] **Passo 4: `make verificar`; commit** `test(nucleo): cobre formas, recorte inválido, utilitários e texto do renderizador`.
 
 ---
 
@@ -103,9 +103,9 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 **Arquivos:**
 - Testar: `Tests/CaptaSistemaTests/ProvedorDeSimbolosSFTests.swift`
 
-- [ ] **Passo 1: Testes dos dois ramos perdidos.** Identificar no relatório as 2 linhas (candidatas: `lado` não finito/fora de `1...4096`, símbolo sem tamanho); testes: `ladoNaoFinitoOuForaDaFaixaDevolveNil` (NaN, 0, 0,5, 5000), `corTingeOSimboloComOAlfaPreservado` (pixel no centro do símbolo tem a cor pedida; pixel do canto transparente).
-- [ ] **Passo 2: `make cobertura`: `CaptaSistema` ≥ 98 %** (no máximo 1 linha perdida); se sobrar uma linha de falha de API do sistema que não se provoca, simplificar o `guard` ou deixar comentário.
-- [ ] **Passo 3: `make verificar`; commit** `test(sistema): cobre a validação de lado e a tinta do provedor de símbolos`.
+- [x] **Passo 1: Testes dos dois ramos perdidos.** Identificar no relatório as 2 linhas (candidatas: `lado` não finito/fora de `1...4096`, símbolo sem tamanho); testes: `ladoNaoFinitoOuForaDaFaixaDevolveNil` (NaN, 0, 0,5, 5000), `corTingeOSimboloComOAlfaPreservado` (pixel no centro do símbolo tem a cor pedida; pixel do canto transparente).
+- [x] **Passo 2: `make cobertura`: `CaptaSistema` ≥ 98 %** (no máximo 1 linha perdida); se sobrar uma linha de falha de API do sistema que não se provoca, simplificar o `guard` ou deixar comentário.
+- [x] **Passo 3: `make verificar`; commit** `test(sistema): cobre a validação de lado e a tinta do provedor de símbolos`.
 
 ---
 
@@ -117,9 +117,9 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 **Interfaces:**
 - Produz: `build/cobertura/sonar-cobertura.xml` no formato `<coverage version="1"><file path="Packages/CaptaNucleo/Sources/…"><lineToCover lineNumber="N" covered="true|false"/>…</file></coverage>`, só com arquivos de produção, caminhos relativos à raiz do repositório.
 
-- [ ] **Passo 1: Gerar o XML a partir do `llvm-cov export` (segmentos/linhas executáveis).**
-- [ ] **Passo 2: Conferir o XML:** (a) `xmllint --noout` passa; (b) todo `path` existe no repositório (loop de shell); (c) nenhum caminho contém `/Tests/` nem `.build`; (d) a contagem de `lineToCover` por arquivo bate com as linhas executáveis do relatório de texto (±0).
-- [ ] **Passo 3: `make verificar`; commit** `feat(ferramentas): gera relatório de cobertura no formato do SonarQube`.
+- [x] **Passo 1: Gerar o XML a partir do `llvm-cov export` (segmentos/linhas executáveis).**
+- [x] **Passo 2: Conferir o XML:** (a) `xmllint --noout` passa; (b) todo `path` existe no repositório (loop de shell); (c) nenhum caminho contém `/Tests/` nem `.build`; (d) a contagem de `lineToCover` por arquivo bate com as linhas executáveis do relatório de texto (±0).
+- [x] **Passo 3: `make verificar`; commit** `feat(ferramentas): gera relatório de cobertura no formato do SonarQube`.
 
 ---
 
@@ -128,9 +128,9 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 **Arquivos:**
 - Modificar: `ferramentas/cobertura.pisos`
 
-- [ ] **Passo 1:** `CaptaNucleo=98` e `CaptaSistema=98`. `make cobertura` passa.
-- [ ] **Passo 2:** subir temporariamente um piso para 100 e conferir que o gate falha com a mensagem certa; desfazer.
-- [ ] **Passo 3: commit** `chore: sobe o piso de cobertura do núcleo e do sistema para 98 %`.
+- [x] **Passo 1:** `CaptaNucleo=98` e `CaptaSistema=98`. `make cobertura` passa.
+- [x] **Passo 2:** subir temporariamente um piso para 100 e conferir que o gate falha com a mensagem certa; desfazer.
+- [x] **Passo 3: commit** `chore: sobe o piso de cobertura do núcleo e do sistema para 98 %`.
 
 ---
 
@@ -143,10 +143,10 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 **Interfaces:**
 - Produz: alvo XcodeGen `CaptaTests` (tipo `bundle.unit-test`, plataforma macOS, depende de `Capta`), `make cobertura-app` (gera o projeto, roda `xcodebuild test -scheme Capta -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO`, extrai com `xcrun xccov view --report --json`, imprime a linha de `App/Fontes` sem `CaptaApp.swift` e compara com o piso `App=` de `cobertura.pisos`).
 
-- [ ] **Passo 1: Teste que falha primeiro:** `TemaTests`: `fundoDoPainelUsaSuperficieOpacaComReduzirTransparencia` e `fundoDoPainelUsaMaterialPorPadrao` (comparar o `AnyShapeStyle` não é direto: testar por `Tema.fundoDoPainel(reduzirTransparencia:)` renderizado/descrito, ou extrair a decisão para uma função pura testável sem mudar o comportamento visível); mais um teste de que os nomes de cor de `Tema.Anotacao.*` existem no catálogo (`NSColor(named:)` não nulo).
-- [ ] **Passo 2: Configurar o alvo no `project.yml`**, sem assinatura, que roda sem `project.local.yml`. Medir. Escrever o valor medido, arredondado para baixo, em `App=` de `cobertura.pisos`. `CaptaApp.swift` fica fora da conta no script (filtro por nome).
-- [ ] **Passo 3: Se `xcodebuild test` não rodar com sandbox e teste hospedado** (bundle de testes injetado em app sandboxed e sem assinatura), aplicar o fallback do spec §7: medir só o pacote, deixar o app fora do gate e registrar a decisão e a causa no spec e em `docs/padroes-stack-swift.md`. Não é falha do plano, mas a decisão não pode ser silenciosa.
-- [ ] **Passo 4: `make verificar` e `make cobertura-app`; commit** `test(app): mede a cobertura de App/Fontes e cobre o Tema`.
+- [x] **Passo 1: Teste que falha primeiro:** `TemaTests`: `fundoDoPainelUsaSuperficieOpacaComReduzirTransparencia` e `fundoDoPainelUsaMaterialPorPadrao` (comparar o `AnyShapeStyle` não é direto: testar por `Tema.fundoDoPainel(reduzirTransparencia:)` renderizado/descrito, ou extrair a decisão para uma função pura testável sem mudar o comportamento visível); mais um teste de que os nomes de cor de `Tema.Anotacao.*` existem no catálogo (`NSColor(named:)` não nulo).
+- [x] **Passo 2: Configurar o alvo no `project.yml`**, sem assinatura, que roda sem `project.local.yml`. Medir. Escrever o valor medido, arredondado para baixo, em `App=` de `cobertura.pisos`. `CaptaApp.swift` fica fora da conta no script (filtro por nome).
+- [x] **Passo 3: Se `xcodebuild test` não rodar com sandbox e teste hospedado** (bundle de testes injetado em app sandboxed e sem assinatura), aplicar o fallback do spec §7: medir só o pacote, deixar o app fora do gate e registrar a decisão e a causa no spec e em `docs/padroes-stack-swift.md`. Não é falha do plano, mas a decisão não pode ser silenciosa.
+- [x] **Passo 4: `make verificar` e `make cobertura-app`; commit** `test(app): mede a cobertura de App/Fontes e cobre o Tema`.
 
 ---
 
@@ -155,9 +155,9 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 **Arquivos:**
 - Modificar: `.github/workflows/ci.yml`, `CLAUDE.md`, `docs/padroes-stack-swift.md`
 
-- [ ] **Passo 1: CI, job `verificar`:** trocar `make test` por `make cobertura`; passo seguinte (`if: always()`) que escreve `build/cobertura/resumo.txt` em `$GITHUB_STEP_SUMMARY` e envia `build/cobertura/` com `actions/upload-artifact` (versão fixa, acima de duas semanas de idade). Job `app`: acrescentar `make cobertura-app` (se o alvo existir; senão registrar o fallback).
-- [ ] **Passo 2: Docs:** `CLAUDE.md` (comandos: `make cobertura`, `make cobertura-app`; pisos em `ferramentas/cobertura.pisos`; subir piso em commit próprio) e `docs/padroes-stack-swift.md` (seção de qualidade: piso 98 % por alvo, medição por `llvm-cov`, XML do Sonar, divergência CI × local = vale o menor).
-- [ ] **Passo 3: `make verificar` local; commit** `ci: cobra o piso de cobertura e publica o relatório`.
+- [x] **Passo 1: CI, job `verificar`:** trocar `make test` por `make cobertura`; passo seguinte (`if: always()`) que escreve `build/cobertura/resumo.txt` em `$GITHUB_STEP_SUMMARY` e envia `build/cobertura/` com `actions/upload-artifact` (versão fixa, acima de duas semanas de idade). Job `app`: acrescentar `make cobertura-app` (se o alvo existir; senão registrar o fallback).
+- [x] **Passo 2: Docs:** `CLAUDE.md` (comandos: `make cobertura`, `make cobertura-app`; pisos em `ferramentas/cobertura.pisos`; subir piso em commit próprio) e `docs/padroes-stack-swift.md` (seção de qualidade: piso 98 % por alvo, medição por `llvm-cov`, XML do Sonar, divergência CI × local = vale o menor).
+- [x] **Passo 3: `make verificar` local; commit** `ci: cobra o piso de cobertura e publica o relatório`.
 - [ ] **Passo 4: 🔒 `git push` após confirmação do Pedro; conferir `gh run list --limit 1` → `success`.** Se o valor na CI divergir do local, usar o menor para o piso e registrar a divergência em comentário em `cobertura.pisos`.
 
 ---
@@ -168,3 +168,14 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 - **Chamadas do spec §9.1:** piso por alvo (T1); `make verificar` só mede o pacote e o app fica em `cobertura-app` e na CI (T7, T8); caminhos relativos (T5); piso do app pelo valor honesto (T7); CI × local (T8).
 - **Descoberta que muda o desenho:** o JSON do SwiftPM não inclui `CaptaSistema` e inclui arquivos de teste, por isso a T1 usa `llvm-cov` direto nos dois binários.
 - **Desvio de ordem:** os pisos nascem abaixo da linha de base (T1) e só chegam a 98 % na T6, depois dos testes; o gate nunca fica vermelho no meio do caminho.
+
+---
+
+## Status de execução (2026-10-20)
+
+Tarefas 1 a 8 concluídas e revisadas na branch `test/cobertura`; o Passo 4 da Tarefa 8 (`git push` e rodada da CI) segue aberto.
+
+- **Medido:** CaptaNucleo 99,6 % de linhas (709/712), CaptaSistema 100 % (52/52), App 100 % (11/11), contra pisos de 98 %, 98 % e o piso provisório do App.
+- **Evidência do gate (spec §8):** com `RenderizadorFormasTests.swift` fora da árvore, `make cobertura` saiu com código 2 e a mensagem `cobertura: FALHA: alvo CaptaNucleo com 91.85% de linhas, abaixo do piso de 98%` (total 654/712). Com o arquivo restaurado, a árvore voltou limpa e `make cobertura` voltou a passar (99,6 %).
+- **Desvios aceitos:** o gate usa o resumo do `llvm-cov` (soma por função), não o XML de linhas únicas; três linhas ficam sem cobertura (uma em `Renderizador.swift`, duas em `DesenhoTexto.swift`), todas ramos de falha de API do sistema que não se provocam em teste; o `cropping(to:)` inalcançável e o fallback da fonte de UI têm comentário no código, e o `?? base` da cópia com traços simbólicos segue sem comentário; refactors de código morto (`cgCor`, provedor de símbolos) em vez de testes forçados.
+- **Pendências, dependem do Pedro:** a CI ainda não rodou, o `push` aguarda a confirmação dele; o piso do App é provisório e deve ser reajustado ao valor medido no runner; `sonar-project.properties` inclui `App/Testes` e só o XML do pacote, decisão a tomar.
