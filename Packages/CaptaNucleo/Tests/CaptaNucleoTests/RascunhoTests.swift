@@ -162,3 +162,67 @@ private func itens(_ url: URL) throws -> [String] {
     #expect(lidoA.baseDados == (try CodificadorPNG.codificar(vermelha.imagem, escala: 2)))
     #expect(lidoB.baseDados == (try CodificadorPNG.codificar(azul.imagem, escala: 2)))
 }
+
+/// Escritor falso que lança `destinoJaExiste` nas primeiras `colisoes` chamadas e anota os destinos.
+private final class EscritorComColisoes: @unchecked Sendable {
+    private let trava = NSLock()
+    private var restantes: Int
+    private(set) var destinos: [URL] = []
+
+    init(colisoes: Int) { restantes = colisoes }
+
+    func escrever(_ destino: URL) throws {
+        trava.lock()
+        defer { trava.unlock() }
+        destinos.append(destino)
+        if restantes > 0 {
+            restantes -= 1
+            throw ErroPacote.destinoJaExiste
+        }
+    }
+}
+
+@Test func colisaoNoPassoFinalTentaOProximoSufixo() throws {
+    let pasta = try novaPastaTemporaria()
+    defer { remover(pasta) }
+    let escritor = EscritorComColisoes(colisoes: 2)
+    let c = captura()
+
+    let url = try Rascunho.gravar(
+        c,
+        documento: try Documento.novo(de: c),
+        em: pasta,
+        nome: "Captura",
+        tentativas: Rascunho.Tentativas(limite: 10) { _, _, _, destino in
+            try escritor.escrever(destino)
+        }
+    )
+
+    // Duas colisões: tenta "Captura", "Captura 2" e só então grava em "Captura 3".
+    #expect(
+        escritor.destinos.map(\.lastPathComponent) == [
+            "Captura.capta", "Captura 2.capta", "Captura 3.capta",
+        ]
+    )
+    #expect(url.lastPathComponent == "Captura 3.capta")
+}
+
+@Test func colisaoSemFimDesisteAposOLimiteDeTentativas() throws {
+    let pasta = try novaPastaTemporaria()
+    defer { remover(pasta) }
+    let escritor = EscritorComColisoes(colisoes: .max)
+    let c = captura()
+
+    #expect(throws: ErroPacote.destinoJaExiste) {
+        _ = try Rascunho.gravar(
+            c,
+            documento: try Documento.novo(de: c),
+            em: pasta,
+            nome: "Captura",
+            tentativas: Rascunho.Tentativas(limite: 3) { _, _, _, destino in
+                try escritor.escrever(destino)
+            }
+        )
+    }
+    #expect(escritor.destinos.count == 3)
+}

@@ -24,6 +24,50 @@ public enum Rascunho {
         em pasta: URL,
         nome: String
     ) throws -> URL {
+        try gravar(
+            captura,
+            documento: documento,
+            em: pasta,
+            nome: nome,
+            tentativas: Tentativas(limite: limitePadraoDeTentativas) {
+                documento,
+                baseDados,
+                miniaturaDados,
+                destino in
+                try PacoteCapta.gravar(
+                    documento,
+                    baseDados: baseDados,
+                    miniaturaDados: miniaturaDados,
+                    em: destino,
+                    substituir: false
+                )
+            }
+        )
+    }
+
+    /// Escreve um pacote em `destino` sem substituir; lança ``ErroPacote/destinoJaExiste`` se ele
+    /// já existir. Injetável para os testes simularem a colisão do passo final.
+    typealias Escritor = (Documento, Data, Data, URL) throws -> Void
+
+    /// Quantas vezes tentar um nome (`nome`, `nome 2`…) e como escrever em cada tentativa.
+    struct Tentativas {
+        let limite: Int
+        let escrever: Escritor
+
+        init(limite: Int, escrever: @escaping Escritor) {
+            self.limite = limite
+            self.escrever = escrever
+        }
+    }
+
+    /// ``gravar(_:documento:em:nome:)`` com o limite e o escritor injetáveis.
+    static func gravar(
+        _ captura: ImagemCapturada,
+        documento: Documento,
+        em pasta: URL,
+        nome: String,
+        tentativas: Tentativas
+    ) throws -> URL {
         try documento.validar()
         let baseDados = try CodificadorPNG.codificar(captura.imagem, escala: captura.escala)
         let miniatura = try Miniatura.gerar(de: captura.imagem)
@@ -32,17 +76,11 @@ public enum Rascunho {
         try FileManager.default.createDirectory(at: pasta, withIntermediateDirectories: true)
         // A checagem prévia é só um atalho: o passo final não substitui, e se alguém criar o
         // mesmo nome no meio do caminho tentamos o próximo sufixo.
-        for numero in 1...limiteDeTentativas {
+        for numero in 1...max(1, tentativas.limite) {
             let destino = url(em: pasta, nome: nome, numero: numero)
             if FileManager.default.fileExists(atPath: destino.path) { continue }
             do {
-                try PacoteCapta.gravar(
-                    documento,
-                    baseDados: baseDados,
-                    miniaturaDados: miniaturaDados,
-                    em: destino,
-                    substituir: false
-                )
+                try tentativas.escrever(documento, baseDados, miniaturaDados, destino)
                 return destino
             } catch ErroPacote.destinoJaExiste {
                 continue
@@ -51,7 +89,7 @@ public enum Rascunho {
         throw ErroPacote.destinoJaExiste
     }
 
-    private static let limiteDeTentativas = 1000
+    private static let limitePadraoDeTentativas = 1000
 
     private static func url(em pasta: URL, nome: String, numero: Int) -> URL {
         let sufixo = numero == 1 ? "" : " \(numero)"
