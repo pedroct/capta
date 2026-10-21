@@ -1,0 +1,3 @@
+# Piso de cobertura de linhas (%) por alvo do pacote. Só sobe; nunca desce.
+CaptaNucleo=96
+CaptaSistema=96

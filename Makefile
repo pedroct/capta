@@ -10,7 +10,7 @@ export CAPTA_LOCAL := $(if $(wildcard project.local.yml),true,false)
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: gerar format lint build test tokens entitlements verificar app
+.PHONY: gerar format lint build test tokens entitlements cobertura verificar app
 
 gerar:
 	xcodegen generate
@@ -34,7 +34,10 @@ tokens:
 entitlements:
 	./ferramentas/conferir_entitlements.sh
 
-verificar: lint build test tokens entitlements
+cobertura:
+	./ferramentas/cobertura.sh
+
+verificar: lint build cobertura tokens entitlements
 
 app: gerar
 	./ferramentas/empacotar.sh
