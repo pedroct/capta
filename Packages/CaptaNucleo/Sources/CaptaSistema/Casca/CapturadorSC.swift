@@ -3,7 +3,8 @@ import CoreGraphics
 import Foundation
 import ScreenCaptureKit
 
-/// Captura a tela inteira com o ScreenCaptureKit (imagem única, sem cursor).
+/// Captura a tela inteira com o ScreenCaptureKit (imagem única, sem cursor e sem as janelas do
+/// próprio Capta).
 ///
 /// Casca fina, fora do portão de cobertura: só chama a API do sistema. A escolha da tela,
 /// o tamanho em pixels e o mapeamento de erros ficam em `Captura/` e são testados.
@@ -24,12 +25,16 @@ public struct CapturadorSC: Capturador {
                 false,
                 onScreenWindowsOnly: true
             )
-            let meuApp = Bundle.main.bundleIdentifier
-            let proprias = conteudo.windows.filter {
-                meuApp != nil && $0.owningApplication?.bundleIdentifier == meuApp
-            }
+            // Exclui o próprio app, e não uma lista de janelas: uma janela do Capta aberta depois
+            // da consulta também fica fora. O PID sempre existe; o bundle id poderia faltar.
+            let meuProcesso = ProcessInfo.processInfo.processIdentifier
+            let proprio = conteudo.applications.filter { $0.processID == meuProcesso }
             let telas = conteudo.displays.map { tela in
-                let filtro = SCContentFilter(display: tela, excludingWindows: proprias)
+                let filtro = SCContentFilter(
+                    display: tela,
+                    excludingApplications: proprio,
+                    exceptingWindows: []
+                )
                 let descricao = DescricaoDeTela(
                     id: tela.displayID,
                     quadro: tela.frame,
