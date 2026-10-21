@@ -37,3 +37,19 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
         # DEVELOPMENT_TEAM fica fora do Git: vem de `project.local.yml` (no .gitignore)
+    scheme:
+      testTargets: [CaptaTests]
+      gatherCoverageData: true
+      coverageTargets: [Capta]
+  # Testes hospedados no Capta.app (o XcodeGen define TEST_HOST e BUNDLE_LOADER pela dependência).
+  # Rodam sem assinatura (`make cobertura-app`), fora do `make verificar` (spec de cobertura §9.1).
+  CaptaTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [App/Testes]
+    dependencies:
+      - target: Capta
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.pedroct.capta.testes
