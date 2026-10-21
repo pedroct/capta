@@ -1,7 +1,7 @@
 #!/bin/sh
 # Portão dos entitlements: sandbox ligado, sem rede e só chaves da lista permitida.
 # Adicionar uma chave nova exige decisão registrada em docs/ e atualização desta lista.
-set -eu
+set -eu -o pipefail
 
 raiz=$(cd "$(dirname "$0")/.." && pwd)
 arquivo="${1:-$raiz/App/Capta.entitlements}"

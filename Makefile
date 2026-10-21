@@ -9,6 +9,7 @@ export CAPTA_LOCAL := $(if $(wildcard project.local.yml),true,false)
 
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
+# O make 3.81 do macOS ignora .SHELLFLAGS: receitas com pipe fazem `set -o pipefail;` por conta própria.
 
 .PHONY: gerar format lint build test tokens entitlements cobertura cobertura-app verificar app
 
@@ -23,7 +24,7 @@ lint:
 	swiftlint lint --quiet
 
 build: gerar
-	xcodebuild -scheme Capta -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build | xcbeautify
+	set -o pipefail; xcodebuild -scheme Capta -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build | xcbeautify
 
 test:
 	cd Packages/CaptaNucleo && swift test

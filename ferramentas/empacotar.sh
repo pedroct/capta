@@ -1,7 +1,7 @@
 #!/bin/sh
 # Compila em Release, assina com Apple Development e copia o app para build/Capta.app.
 # O ID do time vem de project.local.yml (fora do Git); sem ele, falha com mensagem clara.
-set -eu
+set -eu -o pipefail
 
 raiz=$(cd "$(dirname "$0")/.." && pwd)
 cd "$raiz"

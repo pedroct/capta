@@ -4,7 +4,7 @@
 #  2. cores anotacao-* idênticas no catálogo, nos dois temas;
 #  3. superficie-canvas e borda-controle idênticas ao catálogo;
 #  4. nenhuma cor marca-* fora de AppIcon.appiconset.
-set -eu
+set -eu -o pipefail
 
 raiz=$(cd "$(dirname "$0")/.." && pwd)
 cd "$raiz"
