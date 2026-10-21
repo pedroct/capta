@@ -49,4 +49,20 @@ struct RenderizadorValidacaoTests {
             try Renderizador().renderizar(foraDosLimites, base: base)
         }
     }
+
+    @Test func recorteInvalidoLancaRecorteInvalido() {
+        let base = imagemSolida(lado, cor: .branco)
+        let invalidos = [
+            CGRect(x: 10, y: 10, width: 0, height: 20),
+            CGRect(x: 10, y: 10, width: 20, height: 0),
+            CGRect(x: 50, y: 50, width: -20, height: -20),
+            CGRect(x: -5, y: 0, width: 20, height: 20),
+            CGRect(x: 200, y: 200, width: 10, height: 10),
+        ]
+        for recorte in invalidos {
+            #expect(throws: ErroDocumento.recorteInvalido, "recorte \(recorte)") {
+                try Renderizador().renderizar(documento([], recorte: recorte), base: base)
+            }
+        }
+    }
 }

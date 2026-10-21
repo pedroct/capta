@@ -202,6 +202,41 @@ struct RenderizadorFormasTests {
         #expect(todosOsPixels(emOrdem2) != todosOsPixels(isolada))
     }
 
+    @Test func retanguloArredondadoTemCantosVaziosECentroPreenchido() throws {
+        let saida = try renderizar([
+            Anotacao(
+                geometria: .forma(
+                    .retanguloArredondado,
+                    CGRect(x: 10, y: 10, width: 80, height: 80)
+                ),
+                estilo: Estilo(cor: Self.vermelhoPuro, largura: 0, preenchimento: Self.vermelhoPuro)
+            )
+        ])
+        #expect(proximos(pixel(saida, x: 10, y: 10), 255, 255, 255))
+        #expect(proximos(pixel(saida, x: 89, y: 89), 255, 255, 255))
+        #expect(proximos(pixel(saida, x: 50, y: 50), 255, 0, 0))
+        #expect(proximos(pixel(saida, x: 50, y: 11), 255, 0, 0))
+        #expect(proximos(pixel(saida, x: 11, y: 50), 255, 0, 0))
+    }
+
+    @Test func etapaComTracoDesenhaBordaDeCorDiferenteDoFundo() throws {
+        let saida = try renderizar([
+            Anotacao(
+                geometria: .etapa(
+                    centro: CGPoint(x: 50, y: 50),
+                    diametro: 40,
+                    reiniciaSequencia: false
+                ),
+                estilo: Estilo(cor: Self.azulPuro, largura: 4, preenchimento: Self.verdePuro)
+            )
+        ])
+        // A borda de 4 px centrada no raio 20 cobre os raios de 18 a 22.
+        #expect(proximos(pixel(saida, x: 70, y: 50), 0, 0, 255))
+        #expect(proximos(pixel(saida, x: 50, y: 30), 0, 0, 255))
+        #expect(proximos(pixel(saida, x: 61, y: 61), 0, 255, 0))
+        #expect(proximos(pixel(saida, x: 75, y: 50), 255, 255, 255))
+    }
+
     @Test func baseComTamanhoDivergenteLancaErro() {
         let doc = documento([])
         let outra = imagemSolida(CGSize(width: 50, height: 50), cor: .branco)
