@@ -6,6 +6,7 @@ import Observation
 /// Uma captura aberta numa janela: a imagem em memória, o documento e o estado do rascunho.
 ///
 /// Copiar e salvar PNG funcionam desde o primeiro instante; salvar como Capta espera o rascunho.
+/// O trabalho pesado (renderizar, codificar, gravar) roda fora da *main actor*.
 @MainActor
 @Observable
 final class CapturaAberta {
@@ -53,9 +54,17 @@ final class CapturaAberta {
     }
 
     /// Põe a imagem renderizada, em PNG, na área de transferência.
-    func copiar() -> ResultadoDeAcao {
+    ///
+    /// Renderiza e codifica fora da *main actor*, como `salvarPNG`; só a escrita na área de
+    /// transferência, que é rápida, volta para ela.
+    func copiar() async -> ResultadoDeAcao {
+        let documento = documento
+        let base = imagemEnviavel
+        let renderizador = renderizador
         do {
-            let dados = try Exportador.png(documento, base: base, renderizador: renderizador)
+            let dados = try await Task.detached(priority: .userInitiated) {
+                try Exportador.png(documento, base: base.imagem, renderizador: renderizador)
+            }.value
             try areaDeTransferencia.copiarPNG(dados)
             return .concluido
         } catch {

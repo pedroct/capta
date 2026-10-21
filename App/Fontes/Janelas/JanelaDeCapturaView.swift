@@ -10,6 +10,8 @@ struct JanelaDeCapturaView: View {
     @State private var modo: ModoDeExibicao = .ajustar
     @State private var imagem: CGImage?
     @State private var confirmacao: String?
+    /// Apaga a confirmação depois de 2 s; cancelada se a janela fecha ou outra confirmação vem.
+    @State private var limpezaDaConfirmacao: Task<Void, Never>?
     @Environment(\.accessibilityReduceTransparency) private var reduzirTransparencia
 
     var body: some View {
@@ -19,6 +21,7 @@ struct JanelaDeCapturaView: View {
         }
         .background(Tema.superficieCanvas)
         .task { renderizarUmaVez() }
+        .onDisappear { limpezaDaConfirmacao?.cancel() }
         .onChange(of: captura.aviso) { _, aviso in
             if let aviso { AccessibilityNotification.Announcement(aviso.texto).post() }
         }
@@ -26,14 +29,18 @@ struct JanelaDeCapturaView: View {
 
     private var barra: some View {
         HStack(spacing: Tema.Espaco.e2) {
-            Button("Copiar") { copiar() }
+            Button("Copiar") { executar(confirmacao: copiado) { await captura.copiar() } }
                 .keyboardShortcut("c")
                 .accessibilityLabel(Text("Copiar"))
-            Button("Salvar como PNG…") { salvar { await captura.salvarPNG() } }
-                .accessibilityLabel(Text("Salvar como PNG…"))
-            Button("Salvar como Capta…") { salvar { await captura.salvarCapta() } }
-                .disabled(!captura.podeSalvarCapta)
-                .accessibilityLabel(Text("Salvar como Capta…"))
+            Button("Salvar como PNG…") {
+                executar(confirmacao: salvo) { await captura.salvarPNG() }
+            }
+            .accessibilityLabel(Text("Salvar como PNG…"))
+            Button("Salvar como Capta…") {
+                executar(confirmacao: salvo) { await captura.salvarCapta() }
+            }
+            .disabled(!captura.podeSalvarCapta)
+            .accessibilityLabel(Text("Salvar como Capta…"))
             Spacer()
             if let aviso = captura.aviso {
                 // Aviso discreto (spec §4.5): fica na barra, sem interromper o trabalho.
@@ -83,7 +90,11 @@ struct JanelaDeCapturaView: View {
         }
     }
 
+    private var copiado: String { String(localized: "Copiado") }
+    private var salvo: String { String(localized: "Salvo") }
+
     /// O renderizador roda uma vez por documento; até lá a base (igual, sem anotações) aparece.
+    /// Se falhar, a base continua na tela e a captura segue utilizável: só fica no registro.
     private func renderizarUmaVez() {
         guard imagem == nil else { return }
         let renderizador = Renderizador(provedorDeSimbolos: ProvedorDeSimbolosSF())
@@ -91,17 +102,15 @@ struct JanelaDeCapturaView: View {
             imagem = try renderizador.renderizar(captura.documento, base: captura.base)
         } catch {
             RegistroDeCaptura.falha("renderizar", error)
-            mostrarAlerta(.capturaFalhou)
         }
     }
 
-    private func copiar() {
-        tratar(captura.copiar(), confirmacao: String(localized: "Copiado"))
-    }
-
-    private func salvar(_ acao: @escaping @MainActor () async -> ResultadoDeAcao) {
+    private func executar(
+        confirmacao texto: String,
+        _ acao: @escaping @MainActor () async -> ResultadoDeAcao
+    ) {
         Task {
-            tratar(await acao(), confirmacao: String(localized: "Salvo"))
+            tratar(await acao(), confirmacao: texto)
         }
     }
 
@@ -110,8 +119,13 @@ struct JanelaDeCapturaView: View {
         case .concluido:
             confirmacao = texto
             AccessibilityNotification.Announcement(texto).post()
-            Task {
-                try? await Task.sleep(for: .seconds(2))
+            limpezaDaConfirmacao?.cancel()
+            limpezaDaConfirmacao = Task {
+                do {
+                    try await Task.sleep(for: .seconds(2))
+                } catch {
+                    return
+                }
                 if confirmacao == texto { confirmacao = nil }
             }
         case .cancelado:

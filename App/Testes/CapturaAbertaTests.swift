@@ -37,11 +37,11 @@ struct CapturaAbertaTests {
 
     // MARK: - Copiar
 
-    @Test func copiarGravaOPngRenderizadoNaAreaDeTransferencia() throws {
+    @Test func copiarGravaOPngRenderizadoNaAreaDeTransferencia() async throws {
         let area = AreaDeTransferenciaFalsa()
         let aberta = try aberta(area: area)
 
-        #expect(aberta.copiar() == .concluido)
+        #expect(await aberta.copiar() == .concluido)
 
         let dados = try #require(area.dados)
         #expect(dados == (try pngEsperado(de: aberta)))
@@ -51,10 +51,29 @@ struct CapturaAbertaTests {
         #expect(imagem.height == 6)
     }
 
-    @Test func copiarComFalhaDevolveFalhou() throws {
+    @Test func copiarComFalhaDevolveFalhou() async throws {
         let aberta = try aberta(area: AreaDeTransferenciaFalsa(falhar: true))
 
-        #expect(aberta.copiar() == .falhou(.naoFoiPossivelCopiar))
+        #expect(await aberta.copiar() == .falhou(.naoFoiPossivelCopiar))
+    }
+
+    @Test func copiarComFalhaNaRenderizacaoDevolveFalhouSemTocarAArea() async throws {
+        let area = AreaDeTransferenciaFalsa()
+        let captura = ImagemCapturada(imagem: try imagemDeTeste(), escala: 2)
+        // Documento de outro tamanho que a base: o renderizador recusa.
+        let aberta = CapturaAberta(
+            nome: Self.nome,
+            documento: Documento.novo(tamanhoBase: CGSize(width: 99, height: 99), escala: 2),
+            base: captura.imagem,
+            escala: captura.escala,
+            rascunho: .gravando,
+            renderizador: renderizador,
+            painel: PainelFalso(destino: nil),
+            areaDeTransferencia: area
+        )
+
+        #expect(await aberta.copiar() == .falhou(.naoFoiPossivelCopiar))
+        #expect(area.dados == nil)
     }
 
     // MARK: - Salvar PNG
