@@ -6,6 +6,8 @@ set -eu -o pipefail
 
 raiz=$(cd "$(dirname "$0")/.." && pwd)
 pisos="${PISOS:-$raiz/ferramentas/cobertura.pisos}"
+# Caminho relativo vale a partir de onde o script foi chamado, não do pacote (o script faz cd).
+case "$pisos" in /*) ;; *) pisos="$PWD/$pisos" ;; esac
 saida="$raiz/build/cobertura"
 pacote="$raiz/Packages/CaptaNucleo"
 
@@ -38,7 +40,7 @@ for alvo in CaptaNucleo CaptaSistema; do
 done
 
 python3 -I - "$raiz" "$saida" "$pisos" <<'PY'
-import json, os, re, sys
+import json, math, os, re, sys
 import xml.etree.ElementTree as ET
 
 raiz, saida, arq_pisos = sys.argv[1:4]
@@ -76,9 +78,14 @@ with open(arq_pisos, encoding="utf-8") as f:
         try:
             if not sep:
                 raise ValueError
-            pisos[nome] = float(valor)
+            numero = float(valor)
+            if not math.isfinite(numero) or not 0 <= numero <= 100:
+                raise ValueError
         except ValueError:
             erro(f"valor de piso inválido em {arq_pisos}:{n}: '{linha}'")
+        if nome in pisos:
+            erro(f"piso duplicado para '{nome}' em {arq_pisos}:{n}")
+        pisos[nome] = numero
 for alvo in ALVOS:
     if alvo not in pisos:
         erro(f"piso ausente para o alvo {alvo} em {arq_pisos}")
