@@ -30,9 +30,16 @@ if [ ! -s "$perfil" ]; then
 fi
 
 for alvo in CaptaNucleo CaptaSistema; do
+  # Xcode-beta gera um bundle por alvo de teste; o SwiftPM do Xcode 26 (CI) junta todos
+  # num único `CaptaNucleoPackageTests.xctest`. No segundo caso o mesmo binário serve aos
+  # dois alvos (o agrupamento é pelo caminho do arquivo) e o alvo passa a contar também
+  # os testes dos outros alvos.
   binario="$bin/${alvo}Tests.xctest/Contents/MacOS/${alvo}Tests"
   if [ ! -f "$binario" ]; then
-    echo "cobertura: binário de testes não encontrado: $binario" >&2
+    binario="$bin/CaptaNucleoPackageTests.xctest/Contents/MacOS/CaptaNucleoPackageTests"
+  fi
+  if [ ! -f "$binario" ]; then
+    echo "cobertura: binário de testes não encontrado para $alvo em $bin" >&2
     exit 1
   fi
   xcrun llvm-cov export -instr-profile="$perfil" "$binario" \
