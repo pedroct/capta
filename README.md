@@ -9,6 +9,8 @@ Em construção: esqueleto do repositório e do núcleo. O app já abre na barra
 
 ## Ferramentas
 
+- Xcode: o `Makefile` e `ferramentas/empacotar.sh` preferem `/Applications/Xcode-beta.app` a
+  `/Applications/Xcode.app`.
 - XcodeGen 2.46.0 (`brew install xcodegen`): gera `Capta.xcodeproj` com `make gerar`.
 - `make app` monta `build/Capta.app` assinado; exige `project.local.yml` (copie de
   `project.local.yml.example` e informe o `DEVELOPMENT_TEAM`).

@@ -1,5 +1,5 @@
 ifeq ($(origin DEVELOPER_DIR), undefined)
-  export DEVELOPER_DIR := $(firstword $(wildcard /Applications/Xcode.app/Contents/Developer /Applications/Xcode-beta.app/Contents/Developer))
+  export DEVELOPER_DIR := $(firstword $(wildcard /Applications/Xcode-beta.app/Contents/Developer /Applications/Xcode.app/Contents/Developer))
 endif
 
 FONTES := App Packages

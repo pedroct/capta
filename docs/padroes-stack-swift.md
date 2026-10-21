@@ -82,10 +82,11 @@ capta/
 
 | Alvo | Contém | Pode importar |
 | --- | --- | --- |
-| `CaptaNucleo` | Documento, anotações, comandos de desfazer/refazer, exportação, regras | Foundation, CoreGraphics, CoreImage, ImageIO, UniformTypeIdentifiers |
+| `CaptaNucleo` | Documento, anotações, comandos de desfazer/refazer, exportação, regras | Foundation, CoreGraphics, CoreText, CoreImage, ImageIO, UniformTypeIdentifiers |
 | `CaptaSistema` | Adaptadores atrás de protocolos do núcleo: captura (ScreenCaptureKit), OCR (Vision), atalho global, área de transferência | Frameworks do sistema, `CaptaNucleo` |
 | `Capta` (app) | Telas, overlay, menu bar, navegação, estado de apresentação | SwiftUI, AppKit, `CaptaNucleo`, `CaptaSistema` |
 
+CoreText é permitido no núcleo porque faz parte do desenho de texto sem AppKit.
 `CaptaNucleo` **nunca** importa SwiftUI, AppKit, ScreenCaptureKit nem Vision. Os protocolos que
 descrevem o que o sistema faz vivem no núcleo; as implementações, em `CaptaSistema`. Isso permite
 testar todo o comportamento com dublês, sem tela e sem permissão.
@@ -96,11 +97,11 @@ testar todo o comportamento com dublês, sem tela e sem permissão.
 
 | Ferramenta | Versão base | Função |
 | --- | --- | --- |
-| **Xcode** | 27 (beta no momento: `/Applications/Xcode-beta.app`) | Toolchain, SDK, assinatura |
+| **Xcode** | 27 (beta no momento: `/Applications/Xcode-beta.app`, preferido a `/Applications/Xcode.app`) | Toolchain, SDK, assinatura |
 | **Swift** | 6.4, modo de linguagem 6 | Compilador |
 | **SwiftPM** | tools 6.2 | Pacote do núcleo, `swift test` |
 | **XcodeGen** | a fixar | Gera o `.xcodeproj` — **A confirmar:** não está instalado; instalar com `brew install xcodegen` exige sua autorização |
-| **swift-format** | o do toolchain (`swift format`) | Formatador e lint de estilo |
+| **swift-format** | o do toolchain (`xcrun swift-format`) | Formatador e lint de estilo |
 | **SwiftLint** | 0.65.x (instalado) | Lint de regras de código |
 | **Swift Testing** | o do toolchain | `@Test`, `#expect` |
 | **xcbeautify** | instalado | Saída legível do `xcodebuild` |
@@ -239,7 +240,12 @@ let package = Package(
         .target(name: "CaptaSistema", dependencies: ["CaptaNucleo"], swiftSettings: rigor),
         .testTarget(
             name: "CaptaNucleoTests",
-            dependencies: ["CaptaNucleo", "CaptaSistema"],
+            dependencies: ["CaptaNucleo"],
+            swiftSettings: rigor
+        ),
+        .testTarget(
+            name: "CaptaSistemaTests",
+            dependencies: ["CaptaSistema", "CaptaNucleo"],
             swiftSettings: rigor
         ),
     ],
@@ -247,12 +253,18 @@ let package = Package(
 )
 ```
 
-### `project.yml` (XcodeGen) — esqueleto
+### `project.yml` (XcodeGen)
 
 ```yaml
 name: Capta
 options:
   deploymentTarget: { macOS: "14.0" }
+  developmentLanguage: pt-BR
+# Assinatura local: DEVELOPMENT_TEAM vem de project.local.yml (fora do Git; veja o .example).
+# O Makefile exporta CAPTA_LOCAL=true só quando o arquivo existe.
+include:
+  - path: project.local.yml
+    enable: ${CAPTA_LOCAL}
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -272,11 +284,15 @@ targets:
         product: CaptaNucleo
       - package: CaptaNucleo
         product: CaptaSistema
-    entitlements:
-      path: App/Capta.entitlements
     settings:
       base:
         INFOPLIST_FILE: App/Info.plist
+        # Arquivo à mão (com um comentário por chave); a chave `entitlements:` do XcodeGen o sobrescreveria.
+        CODE_SIGN_ENTITLEMENTS: App/Capta.entitlements
+        PRODUCT_NAME: Capta
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
         # DEVELOPMENT_TEAM fica fora do Git: vem de `project.local.yml` (no .gitignore)
 ```
@@ -345,21 +361,27 @@ disabled_rules:
 
 ```makefile
 ifeq ($(origin DEVELOPER_DIR), undefined)
-  export DEVELOPER_DIR := $(firstword $(wildcard /Applications/Xcode.app/Contents/Developer /Applications/Xcode-beta.app/Contents/Developer))
+  export DEVELOPER_DIR := $(firstword $(wildcard /Applications/Xcode-beta.app/Contents/Developer /Applications/Xcode.app/Contents/Developer))
 endif
 
 FONTES := App Packages
 
-.PHONY: gerar format lint build test tokens verificar app release
+# project.local.yml (assinatura) é opcional: o project.yml só o inclui se existir.
+export CAPTA_LOCAL := $(if $(wildcard project.local.yml),true,false)
+
+SHELL := /bin/bash
+.SHELLFLAGS := -eu -o pipefail -c
+
+.PHONY: gerar format lint build test tokens entitlements verificar app
 
 gerar:
 	xcodegen generate
 
 format:
-	swift format format --in-place --recursive $(FONTES)
+	xcrun swift-format format --in-place --recursive $(FONTES)
 
 lint:
-	swift format lint --strict --recursive $(FONTES)
+	xcrun swift-format lint --strict --recursive $(FONTES)
 	swiftlint lint --quiet
 
 build: gerar
@@ -371,26 +393,26 @@ test:
 tokens:
 	./ferramentas/conferir_tokens.sh
 
-verificar: lint build test tokens
+entitlements:
+	./ferramentas/conferir_entitlements.sh
+
+verificar: lint build test tokens entitlements
 
 app: gerar
 	./ferramentas/empacotar.sh
-
-release:
-	./ferramentas/release.sh
 ```
 
 | Alvo | O que faz |
 | --- | --- |
-| `make gerar` | Gera `Capta.xcodeproj` a partir do `project.yml` |
+| `make gerar` | Gera `Capta.xcodeproj` a partir do `project.yml` (o `Makefile` exporta `CAPTA_LOCAL`, que liga o `include` de `project.local.yml` só se o arquivo existir) |
 | `make format` | Corrige a formatação |
 | `make lint` | Confere formato e regras, sem alterar nada |
 | `make build` | Compila o app em modo estrito |
 | `make test` | Roda os testes do núcleo |
 | `make tokens` | Falha se houver cor crua na interface |
-| `make verificar` | Tudo acima, exceto `format` — é o que o CI roda |
+| `make entitlements` | Confere as chaves de entitlements do app (`ferramentas/conferir_entitlements.sh`) |
+| `make verificar` | `lint`, `build`, `test`, `tokens` e `entitlements` (sem `format`) — é o que o CI roda localmente |
 | `make app` | Monta o `.app` assinado para uso próprio |
-| `make release` | Calcula a versão, atualiza changelog, cria tag, monta o `.dmg` e abre a GitHub Release |
 
 ### `.gitignore`
 
@@ -442,16 +464,17 @@ project.local.yml
 ## 7. CI (GitHub Actions)
 
 Repositório público: minutos em runner macOS são gratuitos. **A confirmar:** se os runners
-`macos-*` já trazem Xcode 27; enquanto a imagem não tiver, o job fica restrito ao que compila no
-Xcode estável disponível e o `make verificar` local continua obrigatório.
+`macos-*` já trazem Xcode 27 (os jobs escolhem o Xcode mais novo instalado em `/Applications`).
 
 | Job | O que roda | Quando |
 | --- | --- | --- |
-| `verificar` | `make verificar` | PR + push na `main` |
-| `commits` | script `commit-msg` sobre os commits do PR | PR |
+| `verificar` | `make lint`, `make test`, `make tokens`, `make entitlements` | PR + push na `main` |
+| `app` | `brew install xcodegen xcbeautify` e `make gerar build` (compila o app, sem assinar) | PR + push na `main` |
+| `commits` | script `commit-msg` sobre os commits do PR ou do push | PR + push na `main` |
 
-Enquanto nenhum runner tiver Xcode 27, o CI roda **lint e `swift test` do núcleo** (basta Swift
-6.2+); o `make build` completo continua obrigatório localmente (hook `pre-push`).
+O `make verificar` completo roda localmente (hook `pre-push`); no CI ele é dividido nos jobs
+`verificar` e `app` para que a falha de um não esconda a do outro. Todo `actions/checkout` usa
+`persist-credentials: false`.
 
 Sem assinatura nem notarização no CI: não há segredo no repositório público. A compilação de
 verificação usa `CODE_SIGNING_ALLOWED=NO`; só `make app` assina, com o `DEVELOPMENT_TEAM` de

@@ -8,7 +8,7 @@ cd "$raiz"
 
 # Fora do make, usa o mesmo Xcode do Makefile.
 if [ -z "${DEVELOPER_DIR:-}" ]; then
-  for xcode in /Applications/Xcode.app /Applications/Xcode-beta.app; do
+  for xcode in /Applications/Xcode-beta.app /Applications/Xcode.app; do
     if [ -d "$xcode" ]; then
       DEVELOPER_DIR="$xcode/Contents/Developer"
       export DEVELOPER_DIR
