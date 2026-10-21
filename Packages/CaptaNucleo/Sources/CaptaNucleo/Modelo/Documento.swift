@@ -15,19 +15,31 @@ public struct Documento: Codable, Equatable, Sendable {
     public internal(set) var escala: Double
     public internal(set) var recorte: CGRect?
     public internal(set) var objetos: [Anotacao]
+    /// Próxima ordem de criação a atribuir; nunca diminui, mesmo ao remover anotações.
+    public internal(set) var proximaOrdem: Int
 
+    /// Com `proximaOrdem` nil (documento sem ordem de criação), cada anotação recebe como
+    /// `ordem` o seu índice na lista.
     public init(
         versaoEsquema: Int,
         tamanhoBase: CGSize,
         escala: Double,
         recorte: CGRect?,
-        objetos: [Anotacao]
+        objetos: [Anotacao],
+        proximaOrdem: Int? = nil
     ) {
         self.versaoEsquema = versaoEsquema
         self.tamanhoBase = tamanhoBase
         self.escala = escala
         self.recorte = recorte
         self.objetos = objetos
+        self.proximaOrdem = proximaOrdem ?? 0
+        if proximaOrdem == nil { numerarPelaLista() }
+    }
+
+    private mutating func numerarPelaLista() {
+        for indice in objetos.indices { objetos[indice].ordem = indice }
+        proximaOrdem = objetos.count
     }
 
     /// Documento vazio para uma imagem do tamanho dado.
@@ -42,7 +54,7 @@ public struct Documento: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case versaoEsquema, tamanhoBase, escala, recorte, objetos
+        case versaoEsquema, tamanhoBase, escala, recorte, objetos, proximaOrdem
     }
 
     /// Decodifica e valida; valores inválidos fazem a decodificação lançar ``ErroDocumento``.
@@ -53,6 +65,13 @@ public struct Documento: Codable, Equatable, Sendable {
         escala = try c.decode(Double.self, forKey: .escala)
         recorte = try c.decodeIfPresent(RetanguloJSON.self, forKey: .recorte)?.retangulo
         objetos = try c.decode([Anotacao].self, forKey: .objetos)
+        // Sem `proximaOrdem` é arquivo anterior à ordem de criação: vale a ordem da lista.
+        if let proxima = try c.decodeIfPresent(Int.self, forKey: .proximaOrdem) {
+            proximaOrdem = proxima
+        } else {
+            proximaOrdem = 0
+            numerarPelaLista()
+        }
         try validar()
     }
 
@@ -63,6 +82,7 @@ public struct Documento: Codable, Equatable, Sendable {
         try c.encode(escala, forKey: .escala)
         try c.encodeIfPresent(recorte.map(RetanguloJSON.init), forKey: .recorte)
         try c.encode(objetos, forKey: .objetos)
+        try c.encode(proximaOrdem, forKey: .proximaOrdem)
     }
 
     /// Confere finitude, faixas e consistência do documento.
@@ -85,9 +105,14 @@ public struct Documento: Codable, Equatable, Sendable {
             }
         }
         var vistos = Set<UUID>()
+        var ordens = Set<Int>()
         for objeto in objetos {
             guard vistos.insert(objeto.id).inserted else {
                 throw ErroDocumento.idDuplicado(objeto.id)
+            }
+            guard (0..<proximaOrdem).contains(objeto.ordem), ordens.insert(objeto.ordem).inserted
+            else {
+                throw ErroDocumento.valorForaDeFaixa("ordem")
             }
             try objeto.validar()
         }

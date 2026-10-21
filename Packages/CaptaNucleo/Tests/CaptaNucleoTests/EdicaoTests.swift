@@ -103,7 +103,9 @@ private func sessao(com objetos: [Anotacao]) throws -> SessaoEdicao {
     var novo = a
     novo.geometria = .realce(CGRect(x: 50, y: 50, width: 5, height: 5))
     try s.aplicar(.substituir(novo))
-    #expect(s.documento.objetos == [novo, b])
+    // A `ordem` é atribuída pelo documento, então a comparação é por id e geometria.
+    #expect(s.documento.objetos.map(\.id) == [novo.id, b.id])
+    #expect(s.documento.objetos.map(\.geometria) == [novo.geometria, b.geometria])
 }
 
 @Test func reordenarMudaAPosicaoNoArray() throws {

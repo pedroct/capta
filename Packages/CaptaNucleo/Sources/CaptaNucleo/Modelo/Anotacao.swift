@@ -10,6 +10,8 @@ public struct Anotacao: Codable, Equatable, Identifiable, Sendable {
     /// Rotação em radianos, em torno do centro do retângulo da geometria. Só vale para formas,
     /// texto, carimbo, realce e etapa; seta, linha e desfoque exigem zero.
     public var rotacao: Double
+    /// Posição na ordem de criação (base da numeração das etapas). Quem atribui é o documento.
+    public internal(set) var ordem: Int = 0
 
     public init(
         id: UUID = UUID(),
@@ -24,7 +26,7 @@ public struct Anotacao: Codable, Equatable, Identifiable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, geometria, estilo, rotacao
+        case id, geometria, estilo, rotacao, ordem
     }
 
     /// `rotacao` ausente (documentos anteriores ao campo) assume zero.
@@ -34,6 +36,7 @@ public struct Anotacao: Codable, Equatable, Identifiable, Sendable {
         geometria = try c.decode(Geometria.self, forKey: .geometria)
         estilo = try c.decode(Estilo.self, forKey: .estilo)
         rotacao = try c.decodeIfPresent(Double.self, forKey: .rotacao) ?? 0
+        ordem = try c.decodeIfPresent(Int.self, forKey: .ordem) ?? 0
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -42,5 +45,6 @@ public struct Anotacao: Codable, Equatable, Identifiable, Sendable {
         try c.encode(geometria, forKey: .geometria)
         try c.encode(estilo, forKey: .estilo)
         try c.encode(rotacao, forKey: .rotacao)
+        try c.encode(ordem, forKey: .ordem)
     }
 }

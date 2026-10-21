@@ -13,7 +13,7 @@ public enum Ordem: Equatable, Sendable {
 public enum Edicao: Sendable {
     case adicionar(Anotacao)
     case remover(Set<UUID>)
-    /// Troca a anotação de mesmo `id`, mantendo a posição na ordem das camadas.
+    /// Troca a anotação de mesmo `id`, mantendo a posição nas camadas e a ordem de criação.
     case substituir(Anotacao)
     case mover(Set<UUID>, deslocamento: CGVector)
     case reordenar(UUID, Ordem)
@@ -27,12 +27,18 @@ extension Documento {
     mutating func aplicarSemValidar(_ edicao: Edicao) throws {
         switch edicao {
         case .adicionar(let anotacao):
-            objetos.append(anotacao)
+            var nova = anotacao
+            nova.ordem = proximaOrdem
+            proximaOrdem += 1
+            objetos.append(nova)
         case .remover(let ids):
             try exigirExistentes(ids)
             objetos.removeAll { ids.contains($0.id) }
         case .substituir(let anotacao):
-            objetos[try indice(de: anotacao.id)] = anotacao
+            let posicao = try indice(de: anotacao.id)
+            var nova = anotacao
+            nova.ordem = objetos[posicao].ordem
+            objetos[posicao] = nova
         case .mover(let ids, let deslocamento):
             try exigirExistentes(ids)
             for posicao in objetos.indices where ids.contains(objetos[posicao].id) {
