@@ -27,9 +27,11 @@ extension Documento {
     mutating func aplicarSemValidar(_ edicao: Edicao) throws {
         switch edicao {
         case .adicionar(let anotacao):
+            let (seguinte, estourou) = proximaOrdem.addingReportingOverflow(1)
+            guard !estourou else { throw ErroDocumento.valorForaDeFaixa("ordem") }
             var nova = anotacao
             nova.ordem = proximaOrdem
-            proximaOrdem += 1
+            proximaOrdem = seguinte
             objetos.append(nova)
         case .remover(let ids):
             try exigirExistentes(ids)

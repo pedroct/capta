@@ -104,13 +104,18 @@ public struct Documento: Codable, Equatable, Sendable {
                 throw ErroDocumento.recorteInvalido
             }
         }
+        // `Int.max` é recusado para que `Edicao.adicionar` nunca estoure ao incrementar.
+        guard proximaOrdem >= 0, proximaOrdem < Int.max else {
+            throw ErroDocumento.valorForaDeFaixa("ordem")
+        }
         var vistos = Set<UUID>()
         var ordens = Set<Int>()
         for objeto in objetos {
             guard vistos.insert(objeto.id).inserted else {
                 throw ErroDocumento.idDuplicado(objeto.id)
             }
-            guard (0..<proximaOrdem).contains(objeto.ordem), ordens.insert(objeto.ordem).inserted
+            guard objeto.ordem >= 0, objeto.ordem < proximaOrdem,
+                ordens.insert(objeto.ordem).inserted
             else {
                 throw ErroDocumento.valorForaDeFaixa("ordem")
             }

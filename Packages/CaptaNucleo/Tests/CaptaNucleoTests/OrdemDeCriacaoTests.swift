@@ -132,4 +132,61 @@ struct OrdemDeCriacaoTests {
         doc.objetos[1].ordem = -1
         #expect(throws: ErroDocumento.valorForaDeFaixa("ordem")) { try doc.validar() }
     }
+
+    private func jsonDoDocumento(_ doc: Documento, proximaOrdem: Int) throws -> Data {
+        let dados = try JSONEncoder().encode(doc)
+        var json = try #require(try JSONSerialization.jsonObject(with: dados) as? [String: Any])
+        json["proximaOrdem"] = proximaOrdem
+        return try JSONSerialization.data(withJSONObject: json)
+    }
+
+    @Test func proximaOrdemNegativaLancaSemTravar() throws {
+        for objetos in [[], [realce(), realce()]] {
+            var doc = try sessao(com: objetos).documento
+            let json = try jsonDoDocumento(doc, proximaOrdem: -1)
+            #expect(throws: ErroDocumento.valorForaDeFaixa("ordem")) {
+                try JSONDecoder().decode(Documento.self, from: json)
+            }
+            doc.proximaOrdem = -1
+            #expect(throws: ErroDocumento.valorForaDeFaixa("ordem")) { try doc.validar() }
+        }
+    }
+
+    @Test func proximaOrdemNoLimiteDeIntNaoTravaOAdicionar() throws {
+        var doc = Documento.novo(tamanhoBase: CGSize(width: 100, height: 100), escala: 1)
+        doc.proximaOrdem = Int.max
+        #expect(throws: ErroDocumento.valorForaDeFaixa("ordem")) { try doc.validar() }
+        let json = try jsonDoDocumento(doc, proximaOrdem: Int.max)
+        #expect(throws: ErroDocumento.valorForaDeFaixa("ordem")) {
+            try JSONDecoder().decode(Documento.self, from: json)
+        }
+        var s = SessaoEdicao(documento: doc)
+        #expect(throws: ErroDocumento.valorForaDeFaixa("ordem")) {
+            try s.aplicar(.adicionar(realce()))
+        }
+    }
+
+    @Test func idaEVoltaMantemAsOrdensGravadas() throws {
+        let a = realce()
+        let b = realce()
+        var s = try sessao(com: [a, b])
+        try s.aplicar(.remover([b.id]))
+        try s.aplicar(.adicionar(realce()))
+        try s.aplicar(.reordenar(a.id, .paraFrente))
+        let doc = s.documento
+        // Ordens não sequenciais e diferentes dos índices da lista.
+        #expect(doc.objetos.map(\.ordem) == [2, 0])
+        #expect(doc.proximaOrdem == 3)
+
+        let dados = try JSONEncoder().encode(doc)
+        let json = try #require(try JSONSerialization.jsonObject(with: dados) as? [String: Any])
+        #expect(json["proximaOrdem"] as? Int == 3)
+        let objetos = try #require(json["objetos"] as? [[String: Any]])
+        #expect(objetos.map { $0["ordem"] as? Int } == [2, 0])
+
+        let volta = try JSONDecoder().decode(Documento.self, from: dados)
+        #expect(volta.objetos.map(\.ordem) == [2, 0])
+        #expect(volta.proximaOrdem == 3)
+        #expect(volta == doc)
+    }
 }
