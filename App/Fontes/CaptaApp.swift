@@ -19,7 +19,7 @@ struct CaptaApp: App {
     private let fluxo: FluxoDeCaptura
     private let atalho = AtalhoGlobalCarbon()
     private let atalhoDeCapturaLivre = AtalhoGlobalCarbon()
-    private let overlay = GerenciadorDoOverlay()
+    private let overlay = GerenciadorDoOverlay(atalhoDeEsc: AtalhoGlobalCarbon())
 
     init() {
         let estado = EstadoDoMenu()
