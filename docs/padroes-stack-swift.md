@@ -468,13 +468,21 @@ Repositório público: minutos em runner macOS são gratuitos. **A confirmar:** 
 
 | Job | O que roda | Quando |
 | --- | --- | --- |
-| `verificar` | `make lint`, `make test`, `make tokens`, `make entitlements` | PR + push na `main` |
-| `app` | `brew install xcodegen xcbeautify` e `make gerar build` (compila o app, sem assinar) | PR + push na `main` |
+| `verificar` | `make lint`, `make cobertura`, `make tokens`, `make entitlements` (relatório publicado como artefato `cobertura-pacote`) | PR + push na `main` |
+| `app` | `brew install xcodegen xcbeautify` `make gerar build` (compila o app, sem assinar) e `make cobertura-app` (artefato `cobertura-app`) | PR + push na `main` |
 | `commits` | script `commit-msg` sobre os commits do PR ou do push | PR + push na `main` |
 
 O `make verificar` completo roda localmente (hook `pre-push`); no CI ele é dividido nos jobs
 `verificar` e `app` para que a falha de um não esconda a do outro. Todo `actions/checkout` usa
 `persist-credentials: false`.
+
+### Cobertura de testes
+
+- **Piso por alvo**, em `ferramentas/cobertura.pisos`: 98 % de linhas em `CaptaNucleo` e `CaptaSistema`; o App tem piso próprio. O piso só sobe, e subir vai em commit próprio.
+- **Pacote:** `make cobertura` mede com `llvm-cov` direto nos binários de teste. O JSON do SwiftPM não traz `CaptaSistema` e inclui arquivos de teste, por isso não serve de base. O resumo (`resumo.txt`) e o XML genérico do Sonar (`sonar-cobertura.xml`) ficam em `build/cobertura/`.
+- **Contagem de linhas:** o resumo do `llvm-cov` usado no portão conta linhas por região; o XML traz linhas únicas por arquivo. Os totais diferem um pouco, e o portão vale o do resumo.
+- **App:** `make cobertura-app` roda o alvo `CaptaTests` com `xcodebuild test` e mede com `xccov` (`resumo-app.txt`, `sonar-cobertura-app.xml`). Fica fora do `make verificar` por ser lento. O host roda sem assinatura, portanto fora do sandbox.
+- **CI × local:** se os valores divergirem, vale o menor para o piso, com a divergência registrada em comentário no `cobertura.pisos`. O piso do App é provisório até ser medido no runner.
 
 Sem assinatura nem notarização no CI: não há segredo no repositório público. A compilação de
 verificação usa `CODE_SIGNING_ALLOWED=NO`; só `make app` assina, com o `DEVELOPMENT_TEAM` de

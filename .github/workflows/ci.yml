@@ -16,7 +16,7 @@ jobs:
   verificar:
     # A confirmar: assume que a imagem `macos-26` existe e traz Xcode >= 26.
     # O projeto usa Swift 6.4 (Xcode 27). Se o runner trouxer Swift mais antigo,
-    # `make test` pode falhar por versão de toolchain; nesse caso, registrar a causa
+    # `make cobertura` pode falhar por versão de toolchain; nesse caso, registrar a causa
     # em docs/padroes-stack-swift.md (seção 7) em vez de contornar no código.
     runs-on: macos-26
     timeout-minutes: 30
@@ -44,8 +44,25 @@ jobs:
       - name: Lint
         run: make lint
 
-      - name: Testes do núcleo
-        run: make test
+      - name: Cobertura do pacote (piso por alvo)
+        run: make cobertura
+
+      - name: Resumo da cobertura
+        if: always()
+        run: |
+          if [ -f build/cobertura/resumo.txt ]; then
+            cat build/cobertura/resumo.txt >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Sem relatório de cobertura." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Publicar o relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: cobertura-pacote
+          path: build/cobertura/
+          if-no-files-found: ignore
 
       - name: Conferir tokens do design system
         run: make tokens
@@ -77,6 +94,26 @@ jobs:
       - name: Gerar o projeto e compilar o app
         # O Makefile exporta CAPTA_LOCAL sozinho; sem project.local.yml, o include é desligado.
         run: make gerar build
+
+      - name: Cobertura do app (piso)
+        run: make cobertura-app
+
+      - name: Resumo da cobertura
+        if: always()
+        run: |
+          if [ -f build/cobertura/resumo-app.txt ]; then
+            cat build/cobertura/resumo-app.txt >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Sem relatório de cobertura." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Publicar o relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: cobertura-app
+          path: build/cobertura/
+          if-no-files-found: ignore
 
   sonar:
     # Sem segredo em PR de fork: nesse caso o job nem roda.

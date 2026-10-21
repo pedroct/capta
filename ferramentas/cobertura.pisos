@@ -2,4 +2,6 @@
 CaptaNucleo=98
 CaptaSistema=98
 # App/Fontes sem CaptaApp.swift, medido por `make cobertura-app` (fora do `make verificar`).
+# Provisório: reajustar ao valor medido no runner da CI (macos-26) quando a primeira view
+# com lógica entrar (spec §9.1); vale o menor entre CI e local.
 App=100
