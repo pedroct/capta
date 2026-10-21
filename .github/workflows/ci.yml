@@ -78,6 +78,38 @@ jobs:
         # O Makefile exporta CAPTA_LOCAL sozinho; sem project.local.yml, o include é desligado.
         run: make gerar build
 
+  sonar:
+    # Sem segredo em PR de fork: nesse caso o job nem roda.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Selecionar o Xcode mais novo instalado
+        run: |
+          set -eu
+          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -n 1)
+          echo "Xcode escolhido: $xcode"
+          echo "DEVELOPER_DIR=$xcode/Contents/Developer" >> "$GITHUB_ENV"
+
+      - name: Instalar SonarScanner
+        run: brew install sonar-scanner
+
+      - name: Gerar a cobertura
+        run: make cobertura
+
+      - name: Analisar no SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: sonar-scanner
+
   commits:
     runs-on: ubuntu-latest
     timeout-minutes: 10
