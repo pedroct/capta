@@ -6,3 +6,5 @@
 # O portão do app (cobertura_app.sh) não usa este arquivo.
 Packages/CaptaNucleo/Sources/CaptaSistema/Casca/CapturadorSC.swift | chama ScreenCaptureKit / CoreGraphics, exige tela e permissão reais; coberto pela lista manual
 Packages/CaptaNucleo/Sources/CaptaSistema/Casca/PermissaoCG.swift | chama ScreenCaptureKit / CoreGraphics, exige tela e permissão reais; coberto pela lista manual
+Packages/CaptaNucleo/Sources/CaptaSistema/Casca/PainelDeArquivosAppKit.swift | chama NSSavePanel, exige tela e interação do usuário; coberto pela lista manual
+Packages/CaptaNucleo/Sources/CaptaSistema/Casca/AtalhoGlobalCarbon.swift | chama RegisterEventHotKey / InstallEventHandler, exige o servidor de eventos do sistema; coberto pela lista manual
