@@ -6,6 +6,7 @@ import Foundation
 private func fonte(tamanho: CGFloat, negrito: Bool, italico: Bool) -> CTFont {
     let base =
         CTFontCreateUIFontForLanguage(.system, tamanho, nil)
+        // Só roda se a fonte de UI do sistema for nil, o que não dá para provocar em teste.
         ?? CTFontCreateWithName("Helvetica Neue" as CFString, tamanho, nil)
     var traços: CTFontSymbolicTraits = []
     if negrito { traços.insert(.traitBold) }

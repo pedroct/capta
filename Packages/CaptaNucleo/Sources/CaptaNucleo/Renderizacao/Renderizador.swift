@@ -83,6 +83,7 @@ public struct Renderizador: Sendable {
         guard let imagem = contexto.makeImage() else { throw ErroRenderizacao.falhaAoGerarImagem }
         guard let recorte = documento.recorte else { return imagem }
         // Coordenadas do recorte: pixels da base com origem no topo, as mesmas do `cropping(to:)`.
+        // Inalcançável por construção: `Documento.validar()` já exige recorte com área dentro da base; mantido como defesa.
         guard let recortada = imagem.cropping(to: recorte.standardized) else {
             throw ErroDocumento.recorteInvalido
         }
