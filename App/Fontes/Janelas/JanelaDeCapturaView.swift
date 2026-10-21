@@ -68,9 +68,10 @@ struct JanelaDeCapturaView: View {
     private var area: some View {
         GeometryReader { geometria in
             let exibida = imagem ?? captura.base
-            let pontos = CGSize(
-                width: Double(exibida.width) / captura.escala,
-                height: Double(exibida.height) / captura.escala
+            let pontos = Enquadramento.pontos(
+                larguraEmPixels: exibida.width,
+                alturaEmPixels: exibida.height,
+                escala: captura.escala
             )
             let escala = Enquadramento.escala(
                 imagem: pontos,

@@ -58,13 +58,16 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
         let janela = criarJanela(com: visao, titulo: captura.nome)
         referencia.janela = janela
         // Abre na tela do cursor, que é a tela capturada, e não na tela principal.
-        let cursor = NSEvent.mouseLocation
-        let tela =
-            NSScreen.screens.first { $0.frame.contains(cursor) } ?? NSScreen.main
-            ?? NSScreen.screens.first
-        let imagem = CGSize(
-            width: Double(captura.base.width) / captura.escala,
-            height: Double(captura.base.height) / captura.escala
+        let tela = Enquadramento.tela(
+            sob: NSEvent.mouseLocation,
+            entre: NSScreen.screens,
+            quadro: \.frame,
+            padrao: NSScreen.main ?? NSScreen.screens.first
+        )
+        let imagem = Enquadramento.pontos(
+            larguraEmPixels: captura.base.width,
+            alturaEmPixels: captura.base.height,
+            escala: captura.escala
         )
         janela.setContentSize(
             Enquadramento.tamanhoInicial(imagem: imagem, telaVisivel: tela?.visibleFrame.size)
@@ -104,7 +107,8 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
         alerta.messageText = mensagem.texto
         alerta.addButton(withTitle: String(localized: "OK"))
         NSApp.activate()
-        if let janela, janela.isVisible, janela.attachedSheet == nil {
+        let estado = janela.map { (visivel: $0.isVisible, comFolhaAberta: $0.attachedSheet != nil) }
+        if let janela, DestinoDoAlerta.para(estado) == .folha {
             janela.makeKeyAndOrderFront(nil)
             alerta.beginSheetModal(for: janela, completionHandler: nil)
             return
@@ -130,8 +134,12 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
     }
 
     private func aplicarPolitica() {
-        let total = janelasDeCaptura.count + (janelaDeAjuda == nil ? 0 : 1)
-        NSApp.setActivationPolicy(PoliticaDeAtivacao.para(janelasAbertas: total))
+        NSApp.setActivationPolicy(
+            PoliticaDeAtivacao.para(
+                janelasDeCaptura: janelasDeCaptura.count,
+                ajudaAberta: janelaDeAjuda != nil
+            )
+        )
     }
 
     /// Abre uma nova instância do app e encerra a atual.

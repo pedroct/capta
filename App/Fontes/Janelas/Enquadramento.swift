@@ -40,4 +40,29 @@ enum Enquadramento {
             y: min(area.maxY - tamanho.height, area.midY - tamanho.height / 2)
         )
     }
+    /// Tamanho em pontos de uma imagem de `larguraEmPixels` x `alturaEmPixels` capturada em `escala`.
+    static func pontos(larguraEmPixels: Int, alturaEmPixels: Int, escala: Double) -> CGSize {
+        CGSize(
+            width: Double(larguraEmPixels) / escala,
+            height: Double(alturaEmPixels) / escala
+        )
+    }
+
+    /// A tela sob o `cursor` (coordenadas do AppKit), ou `padrao` se nenhuma o contém.
+    ///
+    /// Segue a regra do `NSMouseInRect` sem inversão: a borda de cima e a da esquerda são da
+    /// tela; a de baixo e a da direita, da vizinha. É assim porque o cursor no pixel mais alto
+    /// tem y igual a `maxY`, o que o `CGRect.contains`, semiaberto em cima, deixaria de fora.
+    static func tela<Tela>(
+        sob cursor: CGPoint,
+        entre telas: [Tela],
+        quadro: (Tela) -> CGRect,
+        padrao: Tela?
+    ) -> Tela? {
+        telas.first { tela in
+            let area = quadro(tela)
+            return cursor.x >= area.minX && cursor.x < area.maxX
+                && cursor.y > area.minY && cursor.y <= area.maxY
+        } ?? padrao
+    }
 }

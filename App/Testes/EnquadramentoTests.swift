@@ -95,4 +95,68 @@ struct EnquadramentoTests {
         // Maior que a tela: encosta à esquerda e no topo, para a barra de título ficar visível.
         #expect(origem == CGPoint(x: -800, y: 700 - 900))
     }
+    // MARK: - Tamanho em pontos
+
+    @Test func pontosDividemOsPixelsPelaEscala() {
+        let pontos = Enquadramento.pontos(larguraEmPixels: 3024, alturaEmPixels: 1964, escala: 2)
+        #expect(pontos == CGSize(width: 1512, height: 982))
+    }
+
+    // MARK: - Tela do cursor
+
+    /// Principal à esquerda, segunda à direita e terceira em cima da principal.
+    static let principal = CGRect(x: 0, y: 0, width: 1440, height: 900)
+    static let direita = CGRect(x: 1440, y: 0, width: 1920, height: 1080)
+    static let acima = CGRect(x: 0, y: 900, width: 1440, height: 900)
+    static let telas = [principal, direita, acima]
+
+    private func tela(sob cursor: CGPoint, entre telas: [CGRect] = telas) -> CGRect? {
+        Enquadramento.tela(sob: cursor, entre: telas, quadro: { $0 }, padrao: telas.first)
+    }
+
+    @Test func telaDoCursorEscolheAQueContemOPonto() {
+        #expect(tela(sob: CGPoint(x: 100, y: 100)) == Self.principal)
+        #expect(tela(sob: CGPoint(x: 2000, y: 500)) == Self.direita)
+        #expect(tela(sob: CGPoint(x: 100, y: 1200)) == Self.acima)
+    }
+
+    @Test func linhaMaisAltaDaTelaPertenceAEla() {
+        // No AppKit o cursor no pixel mais alto tem y igual a maxY: a borda de cima é da tela.
+        let soPrincipal = [Self.direita, Self.principal]
+        #expect(tela(sob: CGPoint(x: 100, y: 900), entre: soPrincipal) == Self.principal)
+        // Com outra tela em cima, y = 900 continua sendo da de baixo, e não da de cima.
+        #expect(tela(sob: CGPoint(x: 100, y: 900)) == Self.principal)
+        #expect(tela(sob: CGPoint(x: 2000, y: 1080)) == Self.direita)
+    }
+
+    @Test func bordaDeBaixoEDaDireitaSaoDaTelaVizinha() {
+        // x = 1440 é a primeira coluna da tela da direita, não a última da principal.
+        #expect(tela(sob: CGPoint(x: 1440, y: 100)) == Self.direita)
+        // y = 0 fica abaixo da principal: sem tela que o contenha, vale a padrão.
+        #expect(
+            tela(sob: CGPoint(x: 100, y: 0), entre: [Self.direita, Self.principal]) == Self.direita
+        )
+    }
+
+    @Test func cursorForaDeTodasUsaAPadrao() {
+        #expect(tela(sob: CGPoint(x: -50, y: 100)) == Self.principal)
+        let semPadrao = Enquadramento.tela(
+            sob: CGPoint(x: -50, y: 100),
+            entre: Self.telas,
+            quadro: { $0 },
+            padrao: nil
+        )
+        #expect(semPadrao == nil)
+    }
+
+    @Test func semTelasDevolveAPadrao() {
+        let padrao = CGRect(x: 0, y: 0, width: 1, height: 1)
+        let escolhida = Enquadramento.tela(
+            sob: CGPoint(x: 0, y: 0),
+            entre: [CGRect](),
+            quadro: { $0 },
+            padrao: padrao
+        )
+        #expect(escolhida == padrao)
+    }
 }
