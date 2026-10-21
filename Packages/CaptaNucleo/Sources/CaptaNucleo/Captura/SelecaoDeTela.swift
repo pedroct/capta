@@ -35,6 +35,45 @@ public struct DescricaoDeTela: Equatable, Sendable {
     }
 }
 
+extension DescricaoDeTela {
+    /// Tamanho da tela em pixels nativos como `CGSize`, ou `nil` se `tamanhoEmPixels` for `nil`.
+    public var limitesEmPixels: CGSize? {
+        tamanhoEmPixels.map { CGSize(width: $0.largura, height: $0.altura) }
+    }
+
+    /// Ponto global em pontos para pixel local da tela (origem no canto superior esquerdo
+    /// da própria tela): `(ponto - quadro.origin) * escala`, sem arredondar.
+    public func pixelLocal(dePonto ponto: CGPoint) -> CGPoint {
+        CGPoint(x: (ponto.x - quadro.minX) * escala, y: (ponto.y - quadro.minY) * escala)
+    }
+
+    /// Retângulo global em pontos para pixels locais da tela. Cada lado vai ao pixel mais
+    /// próximo (meio pixel arredonda para o par) e a largura e a altura saem da diferença
+    /// dos lados já arredondados, então retângulos vizinhos não deixam fresta nem se sobrepõem.
+    public func pixels(dePontos retangulo: CGRect) -> CGRect {
+        let minimo = pixelLocal(dePonto: CGPoint(x: retangulo.minX, y: retangulo.minY))
+        let maximo = pixelLocal(dePonto: CGPoint(x: retangulo.maxX, y: retangulo.maxY))
+        let esquerda = minimo.x.rounded(.toNearestOrEven)
+        let topo = minimo.y.rounded(.toNearestOrEven)
+        return CGRect(
+            x: esquerda,
+            y: topo,
+            width: maximo.x.rounded(.toNearestOrEven) - esquerda,
+            height: maximo.y.rounded(.toNearestOrEven) - topo
+        )
+    }
+
+    /// Inverso de `pixels(dePontos:)`: pixels locais da tela para o quadro global em pontos.
+    public func quadroEmPontos(dePixels pixels: CGRect) -> CGRect {
+        CGRect(
+            x: quadro.minX + pixels.minX / escala,
+            y: quadro.minY + pixels.minY / escala,
+            width: pixels.width / escala,
+            height: pixels.height / escala
+        )
+    }
+}
+
 /// Escolha da tela a capturar a partir do ponto do cursor.
 public enum SelecaoDeTela {
     /// A primeira tela cujo quadro contém o ponto. A borda esquerda e a superior são

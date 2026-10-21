@@ -1,7 +1,7 @@
 import CoreGraphics
 import Testing
 
-@testable import CaptaSistema
+@testable import CaptaNucleo
 
 @Suite("Seleção da tela sob o cursor")
 struct SelecaoDeTelaTests {
