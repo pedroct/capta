@@ -49,11 +49,20 @@ public struct Documento: Codable, Equatable, Sendable {
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         versaoEsquema = try c.decode(Int.self, forKey: .versaoEsquema)
-        tamanhoBase = try c.decode(CGSize.self, forKey: .tamanhoBase)
+        tamanhoBase = try c.decode(TamanhoJSON.self, forKey: .tamanhoBase).tamanho
         escala = try c.decode(Double.self, forKey: .escala)
-        recorte = try c.decodeIfPresent(CGRect.self, forKey: .recorte)
+        recorte = try c.decodeIfPresent(RetanguloJSON.self, forKey: .recorte)?.retangulo
         objetos = try c.decode([Anotacao].self, forKey: .objetos)
         try validar()
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(versaoEsquema, forKey: .versaoEsquema)
+        try c.encode(TamanhoJSON(tamanhoBase), forKey: .tamanhoBase)
+        try c.encode(escala, forKey: .escala)
+        try c.encodeIfPresent(recorte.map(RetanguloJSON.init), forKey: .recorte)
+        try c.encode(objetos, forKey: .objetos)
     }
 
     /// Confere finitude, faixas e consistência do documento.
