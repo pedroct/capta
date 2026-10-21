@@ -4,14 +4,6 @@ import CaptaSistema
 import Observation
 import SwiftUI
 
-/// O que o menu precisa saber do registro do atalho global.
-@MainActor
-@Observable
-final class EstadoDoMenu {
-    var atalhoIndisponivel = false
-    var atalhoDeCapturaLivreIndisponivel = false
-}
-
 /// Única fiação do app: compõe os adaptadores do sistema e liga o atalho global.
 @main
 struct CaptaApp: App {
@@ -19,12 +11,15 @@ struct CaptaApp: App {
     private let fluxo: FluxoDeCaptura
     private let atalho = AtalhoGlobalCarbon()
     private let atalhoDeCapturaLivre = AtalhoGlobalCarbon()
-    private let overlay = GerenciadorDoOverlay(atalhoDeEsc: AtalhoGlobalCarbon())
 
     init() {
         let estado = EstadoDoMenu()
         let janelas = GerenciadorDeJanelas()
-        let overlay = overlay
+        let opcoes = OpcoesLembradas(defaults: .standard)
+        let overlay = GerenciadorDoOverlay(
+            atalhoDeEsc: AtalhoGlobalCarbon(),
+            aoMudarAjuda: opcoes.gravarAjuda
+        )
         let contagem = JanelaDaContagem(atalhoDeEsc: AtalhoGlobalCarbon())
         let fluxo = FluxoDeCaptura(
             capturador: CapturadorSC(),
@@ -32,7 +27,7 @@ struct CaptaApp: App {
             apresentador: janelas,
             seletor: overlay,
             contagem: contagem,
-            opcoes: OpcoesLembradas(defaults: .standard),
+            opcoes: opcoes,
             pastaDeRascunhos: Self.pastaDeRascunhos(),
             cursor: CapturadorSC.posicaoDoCursor,
             agora: { Date() },
@@ -51,11 +46,11 @@ struct CaptaApp: App {
                 Task { @MainActor in await fluxo.capturarTelaInteira() }
             }
         } catch {
-            estado.atalhoIndisponivel = true
+            estado.atalhoDeTelaInteiraIndisponivel = true
         }
         do {
             try atalhoDeCapturaLivre.registrar(.capturaLivre) {
-                Task { @MainActor in await Self.capturaLivreProvisoria(overlay) }
+                Task { @MainActor in await fluxo.capturarLivre(modo: .regiao) }
             }
         } catch {
             estado.atalhoDeCapturaLivreIndisponivel = true
@@ -66,12 +61,22 @@ struct CaptaApp: App {
 
     var body: some Scene {
         MenuBarExtra("Capta", image: "GlifoMenu") {
+            Button("Capturar região") {
+                Task { await fluxo.capturarLivre(modo: .regiao) }
+            }
+            .keyboardShortcut("c", modifiers: [.control, .option])
+            if estado.atalhoDeCapturaLivreIndisponivel {
+                Text("Atalho ⌃⌥C indisponível")
+            }
+            Button("Capturar janela") {
+                Task { await fluxo.capturarLivre(modo: .janela) }
+            }
             Button("Capturar tela inteira") {
                 Task { await fluxo.capturarTelaInteira() }
             }
             .keyboardShortcut("f", modifiers: [.control, .option])
-            if estado.atalhoIndisponivel || estado.atalhoDeCapturaLivreIndisponivel {
-                Text("Atalho indisponível")
+            if estado.atalhoDeTelaInteiraIndisponivel {
+                Text("Atalho ⌃⌥F indisponível")
             }
             Divider()
             Button("Sair do Capta") {
@@ -79,22 +84,6 @@ struct CaptaApp: App {
             }
             .keyboardShortcut("q")
         }
-    }
-
-    /// Provisório até a Tarefa 13 ligar o fluxo: congela, lista as janelas e abre o overlay,
-    /// sem capturar o que for escolhido.
-    @MainActor
-    private static func capturaLivreProvisoria(_ overlay: GerenciadorDoOverlay) async {
-        let capturador = CapturadorSC()
-        guard let telas = try? await capturador.congelarTelas() else { return }
-        let todas = (try? await capturador.listarJanelas()) ?? []
-        _ = await overlay.escolher(
-            telas: telas,
-            janelas: ListaDeJanelas.selecionaveis(todas, tamanhoMinimo: 40),
-            modo: .regiao,
-            opcoes: OpcoesDeCaptura(atraso: .nenhum, incluirCursor: false),
-            ajudaVisivel: true
-        )
     }
 
     /// `Application Support/<app>/Capturas` no contêiner; `Rascunho.gravar` cria o que faltar.

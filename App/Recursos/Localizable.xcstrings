@@ -100,13 +100,46 @@
         }
       }
     },
-    "Atalho indisponível" : {
+    "Atalho ⌃⌥C indisponível" : {
       "extractionState" : "manual",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Atalho indisponível"
+            "value" : "Atalho ⌃⌥C indisponível"
+          }
+        }
+      }
+    },
+    "Atalho ⌃⌥F indisponível" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atalho ⌃⌥F indisponível"
+          }
+        }
+      }
+    },
+    "Capturar região" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capturar região"
+          }
+        }
+      }
+    },
+    "Capturar janela" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capturar janela"
           }
         }
       }
