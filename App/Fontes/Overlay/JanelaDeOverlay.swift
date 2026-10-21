@@ -12,8 +12,7 @@ final class JanelaDeOverlay: NSPanel {
             contentRect: tela.frame,
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
-            defer: false,
-            screen: tela
+            defer: false
         )
         level = .screenSaver
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
