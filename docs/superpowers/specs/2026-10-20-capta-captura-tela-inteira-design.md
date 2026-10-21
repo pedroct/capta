@@ -53,7 +53,7 @@ As do MVP (§3 da spec de origem), mais:
 
 - `CaptaNucleo` continua sem ScreenCaptureKit, AppKit e SwiftUI. O capturador é um **protocolo no núcleo**; a implementação fica em `CaptaSistema`.
 - `make verificar` passa em todo commit; os pisos de cobertura de `ferramentas/cobertura.pisos` não caem. Subir piso vai em commit próprio.
-- A casca fina que chama o ScreenCaptureKit não é testável sem tela e permissão. A lógica ao redor (escolher a tela, converter escala, mapear erros) precisa ficar fora dela e ser testada. O que sobrar sem teste automático entra na lista de verificação manual (§7) e no registro de exclusões de cobertura descrito em [`2026-10-20-capta-cobertura-de-testes-design.md`](2026-10-20-capta-cobertura-de-testes-design.md).
+- A casca fina que chama o ScreenCaptureKit não é testável sem tela e permissão. A lógica ao redor (escolher a tela, converter escala, mapear erros) precisa ficar fora dela e ser testada. O que sobrar sem teste automático entra na lista de verificação manual (§7) e no registro de exclusões de cobertura, `ferramentas/cobertura.exclusoes` (só arquivos sob `CaptaSistema/Casca/`, com o motivo por arquivo).
 
 ## 4. Desenho
 

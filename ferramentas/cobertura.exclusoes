@@ -1,0 +1,6 @@
+# Arquivos fora da conta de cobertura do alvo CaptaSistema (make cobertura). Também saem do XML do Sonar.
+# Formato: uma linha por arquivo, `caminho relativo à raiz | motivo`; `#` comenta.
+# Regras: só arquivos sob Packages/CaptaNucleo/Sources/CaptaSistema/Casca/ podem entrar (casca fina
+# que chama API do sistema e não roda sem tela ou permissão); o motivo é obrigatório; arquivo
+# listado que não existe mais falha o portão. Lógica real fica fora da casca e é testada.
+# O portão do app (cobertura_app.sh) não usa este arquivo.

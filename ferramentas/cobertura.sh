@@ -2,17 +2,27 @@
 # Portão de cobertura: roda os testes do pacote com cobertura, resume por arquivo e por alvo
 # e falha se a cobertura de linhas de um alvo ficar abaixo do piso em cobertura.pisos.
 # PISOS=<arquivo> sobrescreve o arquivo de pisos (usado para conferir o próprio portão).
+# Arquivos da casca do sistema (Casca/) sem como rodar sem tela ou permissão saem da conta do alvo
+# e do XML do Sonar só se estiverem em cobertura.exclusoes, com o motivo por arquivo.
+# EXCLUSOES=<arquivo> sobrescreve o arquivo de exclusões, como PISOS faz com o de pisos.
 set -eu -o pipefail
 
 raiz=$(cd "$(dirname "$0")/.." && pwd)
 pisos="${PISOS:-$raiz/ferramentas/cobertura.pisos}"
 # Caminho relativo vale a partir de onde o script foi chamado, não do pacote (o script faz cd).
 case "$pisos" in /*) ;; *) pisos="$PWD/$pisos" ;; esac
+exclusoes="${EXCLUSOES:-$raiz/ferramentas/cobertura.exclusoes}"
+case "$exclusoes" in /*) ;; *) exclusoes="$PWD/$exclusoes" ;; esac
 saida="$raiz/build/cobertura"
 pacote="$raiz/Packages/CaptaNucleo"
 
 if [[ ! -f "$pisos" ]]; then
   echo "cobertura: arquivo de pisos não encontrado: $pisos" >&2
+  exit 1
+fi
+
+if [[ ! -e "$exclusoes" ]]; then
+  echo "cobertura: arquivo de exclusões não encontrado: $exclusoes" >&2
   exit 1
 fi
 
@@ -46,14 +56,14 @@ for alvo in CaptaNucleo CaptaSistema; do
     -ignore-filename-regex='/Tests/|\.build/' >"$saida/bruto-$alvo.json"
 done
 
-python3 -I - "$raiz" "$saida" "$pisos" <<'PY'
+python3 -I - "$raiz" "$saida" "$pisos" "$exclusoes" <<'PY'
 import json, os, re, sys
 import xml.etree.ElementTree as ET
 
-raiz, saida, arq_pisos = sys.argv[1:4]
+raiz, saida, arq_pisos, arq_exclusoes = sys.argv[1:5]
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(raiz, "ferramentas"))
-from pisos import erro, ler_pisos
+from pisos import erro, ler_exclusoes, ler_pisos
 
 ALVOS = ["CaptaNucleo", "CaptaSistema"]
 LIMITE_AVISO = 98.0
@@ -74,6 +84,7 @@ def alvo_do_arquivo(caminho):
 
 
 pisos = ler_pisos(arq_pisos, ALVOS)
+exclusoes = ler_exclusoes(arq_exclusoes, raiz)
 
 arquivos = {a: {} for a in ALVOS}
 for alvo in ALVOS:
@@ -90,6 +101,10 @@ for alvo in ALVOS:
             arq["filename"] = rel
             arquivos[alvo][rel] = arq
     os.remove(os.path.join(saida, f"bruto-{alvo}.json"))
+
+# Exclusões valem só para CaptaSistema (a casca do sistema); saem da conta e do XML do Sonar.
+for rel in exclusoes:
+    arquivos["CaptaSistema"].pop(rel, None)
 
 
 def pct(cob, tot):
@@ -163,6 +178,11 @@ for alvo in ALVOS:
             f"alvo {alvo} com {p:.2f}% de linhas, abaixo do piso de {pisos[alvo]:g}%"
         )
 
+if exclusoes:
+    linhas_txt.append("Fora da conta (cobertura.exclusoes):")
+    for rel, motivo in sorted(exclusoes.items()):
+        linhas_txt.append(f"  {rel} | {motivo}")
+    linhas_txt.append("")
 linhas_txt.append("⚠ = arquivo abaixo de 98% de linhas (só aviso; o portão usa o total por alvo)")
 texto = "\n".join(linhas_txt) + "\n"
 with open(os.path.join(saida, "resumo.txt"), "w", encoding="utf-8") as f:
