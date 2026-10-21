@@ -50,7 +50,7 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 
 ---
 
-### Tarefa 1: Medição e gate de cobertura do pacote
+### Task 1: Medição e gate de cobertura do pacote
 
 **Arquivos:**
 - Criar: `ferramentas/cobertura.sh`, `ferramentas/cobertura.pisos`
@@ -68,7 +68,7 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 
 ---
 
-### Tarefa 2: Testes de `Edicao` (`deslocada`) e `Documento`
+### Task 2: Testes de `Edicao` (`deslocada`) e `Documento`
 
 **Arquivos:**
 - Testar: `Tests/CaptaNucleoTests/EdicaoTests.swift`, `ModeloTests.swift`
@@ -83,7 +83,7 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 
 ---
 
-### Tarefa 3: Testes da renderização (`DesenhoFormas`, `Renderizador`, `Utilitarios`, `DesenhoTexto`)
+### Task 3: Testes da renderização (`DesenhoFormas`, `Renderizador`, `Utilitarios`, `DesenhoTexto`)
 
 **Arquivos:**
 - Testar: `Tests/CaptaNucleoTests/RenderizadorFormasTests.swift`, `RenderizadorValidacaoTests.swift`, `RenderizadorTextoTests.swift`, e um `UtilitariosTests.swift` novo.
@@ -98,7 +98,7 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 
 ---
 
-### Tarefa 4: Testes de `ProvedorDeSimbolosSF`
+### Task 4: Testes de `ProvedorDeSimbolosSF`
 
 **Arquivos:**
 - Testar: `Tests/CaptaSistemaTests/ProvedorDeSimbolosSFTests.swift`
@@ -109,7 +109,7 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 
 ---
 
-### Tarefa 5: Relatório para o SonarQube
+### Task 5: Relatório para o SonarQube
 
 **Arquivos:**
 - Modificar: `ferramentas/cobertura.sh` (ou criar `ferramentas/cobertura_sonar.sh` chamado por ele)
@@ -123,7 +123,7 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 
 ---
 
-### Tarefa 6: Subir os pisos para 98 %
+### Task 6: Subir os pisos para 98 %
 
 **Arquivos:**
 - Modificar: `ferramentas/cobertura.pisos`
@@ -134,7 +134,7 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 
 ---
 
-### Tarefa 7: Cobertura do app (`App/Fontes`)
+### Task 7: Cobertura do app (`App/Fontes`)
 
 **Arquivos:**
 - Modificar: `project.yml`, `Makefile`
@@ -150,7 +150,7 @@ Para 98 % de linhas, o núcleo aceita no máximo 14 perdidas (cortar pelo menos 
 
 ---
 
-### Tarefa 8: CI e documentação
+### Task 8: CI e documentação
 
 **Arquivos:**
 - Modificar: `.github/workflows/ci.yml`, `CLAUDE.md`, `docs/padroes-stack-swift.md`
