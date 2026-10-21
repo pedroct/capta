@@ -1,0 +1,143 @@
+# Verificação manual do overlay de região e janela
+
+Lista para o Pedro percorrer com tela e permissão reais, depois do Plano 3. Cada linha é uma ação seguida do resultado esperado. Marque `[x]` ao confirmar; o que falhar vira pendência no status do plano. Os itens de várias telas pedem duas telas (e, onde diz, três).
+
+## Preparar
+
+1. Na pasta do worktree da branch `worktree-plano-3-overlay`, rode `make app` (exige `project.local.yml`, a partir de `project.local.yml.example`).
+2. O `build/Capta.app` do worktree fica sob a pasta oculta `.claude`, então abra pelo terminal: `pkill -x Capta; open <caminho completo>/build/Capta.app`. Encerre antes qualquer instância antiga com `pkill -x Capta`.
+3. Para ver o log, deixe aberto em outro terminal: `/usr/bin/log stream --predicate 'subsystem == "com.pedroct.capta"'`. Use `/usr/bin/log`, porque `log` é um comando interno do zsh. As categorias são `captura` e `overlay`.
+4. Para repetir os testes de permissão do zero: `tccutil reset ScreenCapture com.pedroct.capta`.
+5. Atalhos: `⌃⌥C` abre o overlay de captura livre; `⌃⌥F` captura a tela inteira (sem overlay).
+
+## Overlay: cobertura e `Esc`
+
+- [ ] `⌃⌥C` com uma tela: o overlay cobre a tela toda, inclusive a barra de menus e o Dock, e a imagem por baixo está nítida e sem deslocamento (o que se vê é o que estava na tela).
+- [ ] `Esc` antes de arrastar: o overlay fecha, o cursor volta a ser seta e não sobra janela do overlay.
+- [ ] `Esc` com uma seleção feita: fecha sem capturar nem gravar rascunho.
+- [ ] `Esc` com a lupa ligada (`M`): fecha.
+- [ ] `Esc` no modo janela (`Espaço`): fecha.
+- [ ] `Esc` durante a contagem do atraso: cancela a captura, sem rascunho, e a janelinha da contagem some.
+- [ ] Depois de fechar o overlay (e depois da contagem), `Esc` volta a funcionar em outros apps (por exemplo, fechar um menu ou uma folha no Safari ou no Finder): o atalho global do `Esc` foi liberado. Repita depois de cancelar por clique, por `Enter` e por troca de app.
+- [ ] Com o overlay aberto, trocar de app (`⌘Tab`) ou mudar a resolução de um monitor cancela o overlay sem deixar nada na tela.
+- [ ] Desconecte um monitor com o overlay aberto (com duas telas): o overlay cancela e fecha em todas as telas; `Esc` continua funcionando em outros apps.
+- [ ] Clique de primeira: ao abrir o overlay a janela fica ativa e com o teclado (log `overlay`: "app ficou ativo", janela `chave=1`); o primeiro clique já começa a seleção, sem precisar clicar duas vezes para dar foco.
+
+## Telas, Spaces e tela cheia
+
+- [ ] Duas telas: o overlay cobre as duas; a mira acompanha o cursor nas duas direções, em todas as telas.
+- [ ] Três telas: idem, com a mira e a lupa corretas em cada uma.
+- [ ] Escalas mistas (Retina e 1x): a imagem congelada de cada tela está nítida 1:1 e a seleção mostra pixels corretos em ambas.
+- [ ] Uma tela acima ou à esquerda da principal (origem negativa): overlay, mira, seleção e a região capturada ficam na tela certa, sem deslocamento pela origem global.
+- [ ] A seleção fica presa à tela onde o arrasto começou: arrastar para fora dela para na borda, e a região nunca cruza para outra tela. Soltar o botão fora da tela encerra o arrasto.
+- [ ] Com um app em tela cheia (Safari, por exemplo), `⌃⌥C` abre o overlay por cima, com teclado funcionando e `Esc` fechando.
+- [ ] Com outro Space ativo, `⌃⌥C` abre o overlay no Space atual, nas telas certas.
+- [ ] O item do Capta na barra de menus, a janelinha da contagem e o overlay nunca aparecem nas imagens congeladas nem nas capturas ao vivo (região e janela, com e sem atraso). Anote se algum aparecer.
+
+## Seleção de região
+
+- [ ] Arraste uma região: ela fica ativa com o contorno, os pixels de fora escurecidos e o rótulo de dimensões em pixels (só largura × altura).
+- [ ] As dimensões mostradas batem com o PNG salvo, em pixels, em tela Retina e em tela 1x.
+- [ ] Arraste as bordas e os cantos: a seleção redimensiona; o cursor muda nas bordas.
+- [ ] Arraste por dentro: a seleção se move sem sair da tela.
+- [ ] Setas movem a seleção 1 px; `⇧` com setas move 10 px.
+- [ ] Clique fora da seleção começa outra.
+- [ ] Região sem atraso, `Enter` ou soltar para confirmar: o PNG sai com exatamente o que foi visto. Abra no Preview, ferramenta Mostrar Inspetor, e compare pixel a pixel com a tela (canto superior esquerdo, tamanho exato).
+- [ ] Repita o item anterior numa tela de escala não inteira (por exemplo, "Mais espaço" ou 1,5×): o retângulo mostrado e o capturado coincidem, sem 1 px de diferença.
+- [ ] Repita numa tela secundária com origem negativa (acima ou à esquerda da principal): a região capturada é exatamente a selecionada, não a deslocada pela origem.
+- [ ] Região de 1 px de largura ou altura, junto de uma borda da tela: captura sem erro ou o overlay a recusa de forma clara. Anote o comportamento.
+
+## Lupa, ajuda e modos
+
+- [ ] `M` liga e desliga a lupa; ela mostra a coordenada correta do pixel sob o cursor.
+- [ ] A lupa muda de lado nos quatro cantos da tela (superior esquerdo, superior direito, inferior esquerdo, inferior direito) e nunca sai da tela nem cobre o cursor.
+- [ ] A lupa a 8× mostra a grade de pixels (8 pt por pixel nativo, ou 16 px físicos em Retina) e o pixel central fica destacado.
+- [ ] A lupa segue o cursor, não o movimento por setas (desvio aceito da spec; anote se incomodar).
+- [ ] `H` oculta e mostra o painel de ajuda; a escolha é lembrada na próxima captura e depois de fechar e reabrir o Capta (`pkill -x Capta` e abra de novo).
+- [ ] `Espaço` alterna entre região e janela, nos dois sentidos, e a dica de modo junto ao cursor some quando há lupa ou seleção.
+- [ ] O painel de ajuda e a barra de opções não cobrem a seleção no canto inferior esquerdo, e a lupa não esconde o rótulo de dimensões quando o cursor está no canto da seleção. Anote qualquer sobreposição (desvio conhecido).
+- [ ] Clique no vão entre o painel de ajuda e a barra de opções: não deve começar uma seleção (menor conhecido da `PaineisDoOverlay`). Anote o resultado.
+
+## Modo janela
+
+- [ ] O realce segue a janela da frente sob o cursor; com janelas sobrepostas de apps diferentes, a mais à frente é a realçada.
+- [ ] Clique ou `Enter` captura a janela. Janela com parte coberta por outra sai inteira, sem a janela da frente por cima.
+- [ ] A imagem da janela não tem sombra e os cantos arredondados saem corretos. Abra o PNG e olhe o conteúdo, não só se a captura funcionou.
+- [ ] Janela numa tela Retina: o PNG tem a escala certa (largura em pixels igual à largura em pontos vezes 2) e o conteúdo está inteiro.
+- [ ] Janela numa tela 1x: escala 1, conteúdo inteiro.
+- [ ] Janela entre duas telas (metade em cada): sai inteira, com a escala da tela de maior interseção, sem faixa vazia nem erro. Se a captura falhar por tamanho inesperado, registre a escala e a posição.
+- [ ] Janela parcialmente fora da tela: sai inteira ou com o comportamento anotado (efeito de `ignoreGlobalClipSingleWindow`).
+- [ ] `F` captura a tela inteira da tela sob o cursor, logo ao abrir, sem mexer o mouse; com duas telas, a tela do cursor.
+- [ ] A lista de janelas não mostra nem captura janelas do próprio Capta, e a ordem da frente para trás está certa.
+
+## Atraso, contagem e cursor
+
+- [ ] Barra de opções: o atraso alterna entre os valores oferecidos (sem atraso, 3 s e os demais) e a escolha é lembrada na próxima captura.
+- [ ] Sem atraso, o controle **Incluir cursor** fica desabilitado e explica o motivo (o cursor só entra com atraso); com atraso, fica habilitado e mostra o valor lembrado.
+- [ ] Com atraso, a janelinha da contagem aparece no topo da tela certa (inclusive de uma janela numa tela secundária), conta de 1 em 1 s e não aparece na imagem final.
+- [ ] `Esc` durante a contagem cancela; o clique na contagem também cancela; em ambos não sobra rascunho em `Capturas`.
+- [ ] `Esc` apertado exatamente quando a contagem termina (condição de corrida conhecida): registre se a captura saiu ou foi cancelada; as duas respostas são aceitáveis, mas o app não pode travar nem deixar o `Esc` global preso.
+- [ ] Abra um menu de aplicativo, comece uma região por cima dele com atraso de 3 s e deixe o menu aberto: a imagem final mostra o menu aberto (o menu não fecha ao abrir o overlay se o atraso permitir reabri-lo; anote o fluxo que funcionou).
+- [ ] Com atraso e **Incluir cursor** ligado, região e janela mostram o cursor na imagem; desligado, não mostram. Sem atraso, nunca mostram.
+- [ ] Feche a janela capturada durante o atraso: aparece o alerta de janela não encontrada e não sobra rascunho.
+- [ ] Desconecte o monitor da região durante o atraso: aparece o alerta de tela não encontrada.
+- [ ] Minimize a janela, ou mande-a para outro Space, durante o atraso: observe e anote o que acontece (alerta, ou captura de uma janela fora da tela).
+- [ ] Revogue a permissão de gravação de tela nas Configurações durante o atraso: o fim da contagem leva à ajuda de permissão, e não a uma falha genérica.
+
+## Atalhos e menu
+
+- [ ] O menu da barra tem os três itens de captura, nesta ordem: **Capturar região**, **Capturar janela** e **Capturar tela inteira**, seguidos de **Sair do Capta**; os itens de região e tela inteira mostram `⌃⌥C` e `⌃⌥F`. **Capturar janela** abre o overlay já no modo janela (confira e anote).
+- [ ] `⌃⌥C` e `⌃⌥F` não se confundem: cada um dispara só a sua captura.
+- [ ] Com o overlay ou a contagem aberta, `⌃⌥C` e `⌃⌥F` (e os itens do menu) são ignorados e não abrem um segundo overlay nem uma segunda captura.
+- [ ] Com outro app já dono de `⌃⌥C`, abra o Capta: o menu mostra **Atalho ⌃⌥C indisponível** e o item de menu continua abrindo o overlay. (O aviso aparece entre os dois itens de captura, desvio cosmético conhecido.)
+- [ ] Com outro app dono de `⌃⌥F`, o aviso correspondente aparece e o item de menu continua capturando.
+- [ ] Nenhum pedido de permissão novo aparece em nenhum momento, em particular Acessibilidade ou Monitoramento de Entrada; só a Gravação de Tela, como antes.
+- [ ] Listar as janelas (`CGWindowListCopyWindowInfo`) não dispara nenhum alerta de permissão no macOS 27. Anote a versão do sistema.
+- [ ] `codesign -d --entitlements - build/Capta.app` continua mostrando só `com.apple.security.app-sandbox` e `com.apple.security.files.user-selected.read-write`.
+
+## Acessibilidade e aparência
+
+- [ ] Com o VoiceOver ligado, o overlay lê "Seleção de captura. Esc cancela." uma vez só, sem repetir.
+- [ ] Com o VoiceOver ligado, a contagem é lida a cada tick, sem ler duas vezes (rótulo e anúncio juntos podem duplicar a leitura: anote).
+- [ ] Reduzir transparência: a máscara escurece mais forte (0,75 de opacidade), mas não fica totalmente opaca, e a tela por baixo ainda é visível; os painéis ficam opacos. Anote o resultado visual. Mude a configuração com o overlay aberto: o desenho só atualiza na próxima abertura (menor conhecido).
+- [ ] Reduzir movimento: nada anima no overlay nem na contagem (não há animação alguma).
+- [ ] Claro e escuro: rótulos, painéis, barra de opções, lupa e contagem seguem o tema, sem cor estranha nem texto ilegível.
+- [ ] A barra de opções responde ao clique de primeira e o clique nela não inicia seleção.
+
+## Desempenho e memória
+
+- [ ] Dispare `⌃⌥C` algumas vezes com uma tela e leia no log `captura` a linha "do disparo ao overlay": meta de menos de 500 ms. Anote os valores.
+- [ ] Repita com três telas e anote os valores (congelar em paralelo).
+- [ ] A mira acompanha o mouse sem atraso visível numa tela 5K ou com várias telas; se houver lag, o desenho é em CPU e o passo seguinte é uma camada estática.
+- [ ] Memória do Capta com três telas, no Monitor de Atividade: anote o uso com o overlay aberto e depois de fechar. Depois de fechar, deve cair para perto do valor de antes (as imagens congeladas são liberadas).
+- [ ] Região sem atraso: leia no log a linha "da seleção à janela: N ms" e anote.
+
+## Janela de captura e resultado
+
+- [ ] A captura de região e a de janela abrem a janela de captura como a tela inteira abre: centralizada na tela certa, com copiar e salvar funcionando, e o rascunho gravado em `Capturas`.
+
+## Pendências do Plano 3
+
+Itens para o revisor final e para o Pedro decidirem. Os desvios da spec foram aceitos até o Pedro trocar.
+
+Desvios da spec (Tarefa 10):
+
+- [ ] (a) O rótulo de dimensões mostra só largura × altura, sem a posição.
+- [ ] (b) *Reduzir transparência* escurece a máscara para 0,75, e não a deixa opaca (opaca esconderia a tela); os painéis são sempre opacos.
+- [ ] (c) A dica de modo junto ao cursor some com a lupa ou com uma seleção.
+- [ ] (d) A lupa segue o cursor, e não o movimento por setas.
+- [ ] (e) A 8× significa 8 pt por pixel nativo (16 px físicos em Retina).
+- [ ] (f) Os painéis podem cobrir a seleção no canto inferior esquerdo e a lupa pode sobrepor o rótulo de dimensões.
+
+Menores adiados:
+
+- [ ] Vão entre o painel de ajuda e a barra do overlay (`PaineisDoOverlay`) deixa o clique começar uma seleção.
+- [ ] Os painéis são atualizados a cada evento em todas as telas (guardar por mudança); *Reduzir transparência* não redesenha ao mudar com o overlay aberto.
+- [ ] Uma `Task` já cancelada pisca o overlay (checar `Task.isCancelled` antes de abrir).
+- [ ] Tokens de `Tema` duplicados e a posse de `destaqueFundo` invertida (`Tema.Overlay.*`).
+- [ ] `Esc` apertado no instante em que a contagem termina ainda pode capturar (`cancelarContagem` cancela uma `Task` já terminada; corrigir com uma flag).
+- [ ] `JanelaDaContagem`: sem `deinit` que libere o `Esc`; `aoCancelar` com padrão silencioso; rótulo e anúncio podem duplicar a leitura do VoiceOver.
+- [ ] Captura de janela fora de toda tela dá `.telaNaoEncontrada` (poderia cair em `desktopIndependentWindow.pointPixelScale`); a conferência de tamanho da janela (quadro × escala) pode ser rígida demais, caso a lista acima mostre divergência de 1 px ou de escala.
+- [ ] Região fracionária aceita em `RecorteDeImagem`; conversão de seleção sem tamanho mínimo; teste do meio ponto não distingue `toNearestOrEven` de `floor`.
+- [ ] `AtalhoGlobalCarbon`: contador estático com `nonisolated(unsafe)` e trava; o aviso "Atalho indisponível" é o mesmo texto para os dois atalhos; o aviso de `⌃⌥C` fica entre os dois itens de captura; chaves do catálogo fora de ordem alfabética.
+- [ ] Testes: os de caminho feliz do overlay instalam monitores `NSEvent` reais; faltam testes de NaN e de limites fracionários da seleção; a fiação real do `CaptaApp` está fora da conta de cobertura.
