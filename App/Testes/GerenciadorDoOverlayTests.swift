@@ -4,101 +4,190 @@ import Testing
 
 @testable import Capta
 
-/// Dublê de `AtalhoGlobal`: guarda as combinações pedidas e conta as liberações.
-private final class AtalhoFalso: AtalhoGlobal, @unchecked Sendable {
-    var erro: ErroAtalho?
-    private(set) var combinacoes: [CombinacaoDeTeclas] = []
-    private(set) var liberacoes = 0
+@MainActor
+@Suite("Gerenciador do overlay", .serialized)
+struct GerenciadorDoOverlayTests: BancadaDoOverlay {
+    let centro = NotificationCenter()
 
-    func registrar(_ combinacao: CombinacaoDeTeclas, acao: @escaping @Sendable () -> Void) throws {
-        if let erro { throw erro }
-        combinacoes.append(combinacao)
+    // MARK: - Resultado
+
+    @Test func escolherRetornaOResultadoDaMaquinaEFechaAsJanelas() async throws {
+        let atalho = AtalhoFalso()
+        let g = gerenciador(atalho)
+        let tela = try Self.congelada(Self.telaA)
+        let tarefa = try await abrir(g, telas: [tela])
+        let janelas = g.janelasAbertas
+        let eventos: [EventoDoOverlay] = [
+            .mouseBaixo(CGPoint(x: 2, y: 3)),
+            .mouseArrastou(CGPoint(x: 12, y: 13)),
+            .mouseSolto(CGPoint(x: 12, y: 13)),
+            .tecla(.enter),
+        ]
+        for evento in eventos { g.aplicar(evento) }
+
+        let esperado = eventos.reduce(
+            EstadoDoOverlay.inicial(
+                modo: .regiao,
+                telas: [Self.telaA],
+                janelas: [],
+                opcoes: Self.opcoes,
+                ajudaVisivel: true
+            ).reduzindo(.cursorMoveu(CGPoint(x: 5, y: 5)))
+        ) { $0.reduzindo($1) }.resultado
+        let resultado = await tarefa.value
+        #expect(resultado == esperado)
+        #expect(
+            resultado
+                == .confirmado(
+                    .regiao(tela: Self.telaA, pixels: CGRect(x: 2, y: 3, width: 10, height: 10)),
+                    Self.opcoes
+                )
+        )
+        confereFechado(g, atalho, janelas: janelas)
     }
 
-    func liberar() { liberacoes += 1 }
-}
+    @Test func umaJanelaDeOverlayPorTela() async throws {
+        let atalho = AtalhoFalso()
+        let g = gerenciador(atalho)
+        let telas = [try Self.congelada(Self.telaA), try Self.congelada(Self.telaB)]
+        let tarefa = try await abrir(g, telas: telas)
+        let janelas = g.janelasAbertas
+        #expect(janelas.count == 2)
+        #expect(janelas.allSatisfy { $0 is JanelaDeOverlay })
+        let ids = janelas.compactMap { ($0.contentView as? VistaDoOverlay)?.tela.descricao.id }
+        #expect(ids == [1, 2])
+        #expect(
+            janelas.map(\.frame.size) == [
+                CGSize(width: 40, height: 30), CGSize(width: 20, height: 30),
+            ]
+        )
+        g.aplicar(.tecla(.esc))
+        _ = await tarefa.value
+        confereFechado(g, atalho, janelas: janelas)
+    }
 
-@MainActor
-@Suite("Gerenciador do overlay")
-struct GerenciadorDoOverlayTests {
-    private static func janelaFalsa() -> NSWindow {
-        NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 10, height: 10),
-            styleMask: .borderless,
-            backing: .buffered,
-            defer: true
+    @Test func todasAsVistasRecebemOMesmoEstado() async throws {
+        let atalho = AtalhoFalso()
+        let g = gerenciador(atalho)
+        let telas = [try Self.congelada(Self.telaA), try Self.congelada(Self.telaB)]
+        let tarefa = try await abrir(g, telas: telas)
+        let vistas = g.janelasAbertas.compactMap { $0.contentView as? VistaDoOverlay }
+        // Um evento que nasce numa vista chega à máquina e volta para todas.
+        vistas.last?.aoEvento?(.tecla(.m))
+        #expect(g.estado?.lupaLigada == true)
+        #expect(vistas.allSatisfy { $0.estado == g.estado })
+        g.aplicar(.tecla(.esc))
+        _ = await tarefa.value
+    }
+
+    @Test func cursorRealEntraNoEstadoAoAbrir() async throws {
+        let atalho = AtalhoFalso()
+        let cursor = CGPoint(x: 50, y: 10)
+        let g = gerenciador(atalho, cursor: cursor)
+        let telas = [try Self.congelada(Self.telaA), try Self.congelada(Self.telaB)]
+        let tarefa = try await abrir(g, telas: telas)
+        #expect(g.estado?.cursor == cursor)
+        // `F` pega a tela sob o cursor real, não a de (0, 0).
+        g.aplicar(.tecla(.f))
+        let resultado = await tarefa.value
+        #expect(
+            resultado
+                == .confirmado(
+                    .regiao(tela: Self.telaB, pixels: CGRect(x: 0, y: 0, width: 40, height: 60)),
+                    Self.opcoes
+                )
         )
     }
 
-    private func gerenciador(
-        _ atalho: AtalhoFalso,
-        janelas: @escaping @MainActor () -> [NSWindow]
-    ) -> GerenciadorDoOverlay {
-        GerenciadorDoOverlay(atalhoDeEsc: atalho, criarJanelas: janelas, ativar: { nil })
-    }
-
-    @Test func abrirRegistraOEscSemModificadores() {
+    @Test func modoJanelaRealcaAJanelaSobOCursorReal() async throws {
         let atalho = AtalhoFalso()
-        let g = gerenciador(atalho) { [Self.janelaFalsa()] }
-        let abriu = g.abrir(aoFechar: {})
-        #expect(abriu)
-        #expect(atalho.combinacoes == [CombinacaoDeTeclas(codigoDaTecla: 53, modificadores: [])])
-        #expect(g.aberto)
-        g.fechar()
+        let janela = JanelaDeTela(
+            id: 77,
+            quadro: CGRect(x: 0, y: 0, width: 20, height: 20),
+            camada: 0,
+            naTela: true
+        )
+        let g = gerenciador(atalho, cursor: CGPoint(x: 10, y: 10))
+        let tarefa = try await abrir(
+            g,
+            telas: [try Self.congelada(Self.telaA)],
+            janelas: [janela],
+            modo: .janela
+        )
+        #expect(g.estado?.janelaRealcada == janela)
+        g.aplicar(.tecla(.enter))
+        #expect(await tarefa.value == .confirmado(.janela(id: 77), Self.opcoes))
     }
 
-    @Test func fecharLiberaUmaVezEChamaOCallback() {
+    // MARK: - Teclado
+
+    @Test func teclaDoOverlayEConsumidaEAplicada() async throws {
         let atalho = AtalhoFalso()
-        let g = gerenciador(atalho) { [Self.janelaFalsa()] }
-        var fechou = 0
-        g.abrir(aoFechar: { fechou += 1 })
-        g.fechar()
-        #expect(atalho.liberacoes == 1)
-        #expect(fechou == 1)
-        #expect(!g.aberto)
+        let g = gerenciador(atalho)
+        let tarefa = try await abrir(g, telas: [try Self.congelada(Self.telaA)])
+        let m = try #require(Self.tecla(codigo: 46, caracteres: "m"))
+        #expect(g.tratar(tecla: m) == nil)
+        #expect(g.estado?.lupaLigada == true)
+        // Tecla que não é do overlay também é engolida (sem bipe).
+        let a = try #require(Self.tecla(codigo: 0, caracteres: "a"))
+        #expect(g.tratar(tecla: a) == nil)
+        // Com ⌘ passa adiante.
+        let q = try #require(Self.tecla(codigo: 12, caracteres: "q", modificadores: .command))
+        #expect(g.tratar(tecla: q) === q)
+        let esc = try #require(Self.tecla(codigo: 53, caracteres: "\u{1b}"))
+        #expect(g.tratar(tecla: esc) == nil)
+        #expect(await tarefa.value == .cancelado)
+        // Fechado, o monitor deixa tudo passar.
+        #expect(g.tratar(tecla: a) === a)
     }
 
-    @Test func fecharDuasVezesLiberaUmaVez() {
-        let atalho = AtalhoFalso()
-        let g = gerenciador(atalho) { [Self.janelaFalsa()] }
-        g.abrir(aoFechar: {})
-        g.fechar()
-        g.fechar()
-        #expect(atalho.liberacoes == 1)
+    // MARK: - Geometria das janelas
+
+    @Test func quadroDaJanelaNoEspacoDoAppKit() {
+        // Principal com 900 pontos de altura; o AppKit tem a origem embaixo.
+        #expect(
+            JanelaDeOverlay.quadroNoAppKit(
+                de: CGRect(x: 0, y: 0, width: 1440, height: 900),
+                alturaDaPrincipal: 900
+            ) == CGRect(x: 0, y: 0, width: 1440, height: 900)
+        )
+        // Tela acima da principal: y negativo no espaço global, acima de 900 no AppKit.
+        #expect(
+            JanelaDeOverlay.quadroNoAppKit(
+                de: CGRect(x: -200, y: -1080, width: 1920, height: 1080),
+                alturaDaPrincipal: 900
+            ) == CGRect(x: -200, y: 900, width: 1920, height: 1080)
+        )
+        // Tela abaixo e à direita.
+        #expect(
+            JanelaDeOverlay.quadroNoAppKit(
+                de: CGRect(x: 1440, y: 600, width: 800, height: 600),
+                alturaDaPrincipal: 900
+            ) == CGRect(x: 1440, y: -300, width: 800, height: 600)
+        )
     }
 
-    @Test func semTelasNaoDeixaEscRegistrado() {
-        let atalho = AtalhoFalso()
-        let g = gerenciador(atalho) { [] }
-        var fechou = false
-        let abriu = g.abrir(aoFechar: { fechou = true })
-        #expect(!abriu)
-        #expect(atalho.liberacoes == atalho.combinacoes.count)
-        #expect(!g.aberto)
-        #expect(!fechou)
-        // Um novo ciclo não duplica o registro.
-        g.fechar()
-        #expect(atalho.liberacoes == 1)
+    @Test func janelaDeOverlayNaoEmpurraOQuadro() {
+        let quadro = CGRect(x: 0, y: 0, width: 40, height: 30)
+        let janela = JanelaDeOverlay(quadro: quadro)
+        #expect(janela.canBecomeKey)
+        #expect(!janela.canBecomeMain)
+        #expect(janela.level == .screenSaver)
+        let acima = CGRect(x: 0, y: 5000, width: 40, height: 30)
+        #expect(janela.constrainFrameRect(acima, to: nil) == acima)
     }
 
-    @Test func falhaDeRegistroNaoCriaJanelas() {
-        let atalho = AtalhoFalso()
-        atalho.erro = .conflito
-        var criou = false
-        let g = gerenciador(atalho) {
-            criou = true
-            return [Self.janelaFalsa()]
-        }
-        var fechou = false
-        let abriu = g.abrir(aoFechar: { fechou = true })
-        #expect(!abriu)
-        #expect(!criou)
-        #expect(!g.aberto)
-        #expect(!fechou)
-        #expect(atalho.liberacoes == 0)
+    @Test func indiceDaTelaSobOCursor() {
+        let telas = [Self.telaA, Self.telaB]
+        #expect(GerenciadorDoOverlay.indiceDaTela(sob: CGPoint(x: 45, y: 5), em: telas) == 1)
+        #expect(GerenciadorDoOverlay.indiceDaTela(sob: CGPoint(x: 5, y: 5), em: telas) == 0)
+        // Fora de todas: a principal.
+        #expect(GerenciadorDoOverlay.indiceDaTela(sob: CGPoint(x: -99, y: 5), em: telas) == 0)
+        #expect(GerenciadorDoOverlay.indiceDaTela(sob: .zero, em: []) == nil)
     }
 
-    @Test func oEscGlobalUsaOCodigoDeTeclaDoEscape() {
-        #expect(GerenciadorDoOverlay.codigoDoEsc == 53)
+    @Test func gerenciadorEUmSeletorDeCaptura() {
+        let seletor: any SeletorDeCaptura = gerenciador(AtalhoFalso())
+        #expect(seletor is GerenciadorDoOverlay)
     }
 }

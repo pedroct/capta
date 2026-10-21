@@ -73,6 +73,25 @@ struct TemaTests {
         #expect(cor.opacity == 1)
     }
 
+    @Test func mascaraDoOverlayUsaAsOpacidadesDosTokens() {
+        #expect(Tema.Overlay.mascara(reduzirTransparencia: false).alphaComponent == 0.45)
+        #expect(Tema.Overlay.mascara(reduzirTransparencia: true).alphaComponent == 0.75)
+        #expect(Tema.Overlay.mira.alphaComponent == 0.7)
+    }
+
+    @Test(arguments: [
+        (NSAppearance.Name.aqua, CGFloat(0x1a) / 255), (.darkAqua, CGFloat(0x1f) / 255),
+    ])
+    func bordaDoOverlaySegueOToken(nome: NSAppearance.Name, alfa: CGFloat) throws {
+        let aparencia = try #require(NSAppearance(named: nome))
+        var resolvida: NSColor?
+        aparencia.performAsCurrentDrawingAppearance {
+            resolvida = Tema.Overlay.borda.usingColorSpace(.sRGB)
+        }
+        let cor = try #require(resolvida)
+        #expect(abs(cor.alphaComponent - alfa) < 0.5 / 255)
+    }
+
     private func ambiente(_ esquema: ColorScheme) -> EnvironmentValues {
         var ambiente = EnvironmentValues()
         ambiente.colorScheme = esquema

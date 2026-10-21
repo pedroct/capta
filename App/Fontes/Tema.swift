@@ -17,12 +17,7 @@ enum Tema {
     // O destaque real é a cor que a pessoa escolhe nos Ajustes do Sistema.
     static let destaque = Color.accentColor
     static let anelFoco = Color.accentColor
-    static let destaqueFundo = Color(
-        nsColor: NSColor(name: nil) { aparencia in
-            let escuro = aparencia.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-            return NSColor.controlAccentColor.withAlphaComponent(escuro ? 0.24 : 0.16)
-        }
-    )
+    static let destaqueFundo = Color(nsColor: Overlay.destaqueFundo)
     static let sobreDestaque = Color(
         nsColor: NSColor(name: nil) { aparencia in
             let escuro = aparencia.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
@@ -36,6 +31,44 @@ enum Tema {
     /// Com "Reduzir transparência" ligado, troca o vidro por uma superfície opaca.
     static func fundoDoPainel(reduzirTransparencia: Bool) -> AnyShapeStyle {
         reduzirTransparencia ? AnyShapeStyle(superficieJanela) : AnyShapeStyle(superficiePainel)
+    }
+
+    /// Overlay de seleção, desenhado em AppKit (por isso `NSColor`, que resolve claro e escuro
+    /// na hora de desenhar). Nada da marca: o destaque é o do sistema.
+    enum Overlay {
+        /// `opacidade-mascara` e `opacidade-mascara-reduzida`.
+        static let opacidadeDaMascara = 0.45
+        static let opacidadeDaMascaraReduzida = 0.75
+
+        /// `overlay-mascara`: com "Reduzir transparência", mais forte (sem esconder a imagem).
+        static func mascara(reduzirTransparencia: Bool) -> NSColor {
+            NSColor.black.withAlphaComponent(
+                reduzirTransparencia ? opacidadeDaMascaraReduzida : opacidadeDaMascara
+            )
+        }
+
+        /// `overlay-mira`: branco a 70 %.
+        static let mira = NSColor.white.withAlphaComponent(0.7)
+        /// Fundo da janela, por baixo da imagem congelada (só aparece se ela faltar).
+        static let fundoDaJanela = NSColor.black
+        /// `destaque`: contorno da seleção, da janela realçada e do pixel da lupa.
+        static let destaque = NSColor.controlAccentColor
+        /// `destaque-fundo`: clareamento da janela realçada.
+        static let destaqueFundo = NSColor(name: nil) { aparencia in
+            let escuro = aparencia.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            return NSColor.controlAccentColor.withAlphaComponent(escuro ? 0.24 : 0.16)
+        }
+        /// `superficie-janela`: rótulos, painel de ajuda e barra de opções (sempre opacos).
+        static let superficie = NSColor.windowBackgroundColor
+        static let texto = NSColor.labelColor
+        static let textoSecundario = NSColor.secondaryLabelColor
+        /// `borda`: contorno dos rótulos e painéis e grade da lupa.
+        static let borda = NSColor(name: nil) { aparencia in
+            let escuro = aparencia.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            return escuro
+                ? NSColor.white.withAlphaComponent(0x1f / 255.0)
+                : NSColor.black.withAlphaComponent(0x1a / 255.0)
+        }
     }
 
     /// Paleta de anotação: pertence à imagem, igual nos dois temas.

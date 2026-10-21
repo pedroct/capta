@@ -50,7 +50,7 @@ struct CaptaApp: App {
         let overlay = overlay
         do {
             try atalhoDeCapturaLivre.registrar(.capturaLivre) {
-                Task { @MainActor in overlay.abrir(aoFechar: {}) }
+                Task { @MainActor in await Self.capturaLivreProvisoria(overlay) }
             }
         } catch {
             estado.atalhoDeCapturaLivreIndisponivel = true
@@ -74,6 +74,22 @@ struct CaptaApp: App {
             }
             .keyboardShortcut("q")
         }
+    }
+
+    /// Provisório até a Tarefa 13 ligar o fluxo: congela, lista as janelas e abre o overlay,
+    /// sem capturar o que for escolhido.
+    @MainActor
+    private static func capturaLivreProvisoria(_ overlay: GerenciadorDoOverlay) async {
+        let capturador = CapturadorSC()
+        guard let telas = try? await capturador.congelarTelas() else { return }
+        let todas = (try? await capturador.listarJanelas()) ?? []
+        _ = await overlay.escolher(
+            telas: telas,
+            janelas: ListaDeJanelas.selecionaveis(todas, tamanhoMinimo: 40),
+            modo: .regiao,
+            opcoes: OpcoesDeCaptura(atraso: .nenhum, incluirCursor: false),
+            ajudaVisivel: true
+        )
     }
 
     /// `Application Support/<app>/Capturas` no contêiner; `Rascunho.gravar` cria o que faltar.

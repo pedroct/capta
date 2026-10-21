@@ -2,17 +2,30 @@ import AppKit
 import CaptaNucleo
 import os
 
-/// Abre e fecha o overlay: uma `JanelaDeOverlay` escura por tela.
-///
-/// Provisório (Tarefa 1): só prova que o teclado chega ao overlay.
+/// Escolha do que capturar sobre as telas congeladas. O fluxo depende só disto.
+protocol SeletorDeCaptura {
+    /// Mostra o overlay e devolve como ele terminou. Cancelar a tarefa cancela o overlay.
+    @MainActor
+    func escolher(
+        telas: [TelaCongelada],
+        janelas: [JanelaDeTela],
+        modo: ModoDoOverlay,
+        opcoes: OpcoesDeCaptura,
+        ajudaVisivel: Bool
+    ) async -> ResultadoDoOverlay
+}
+
+/// Overlay de captura: uma `JanelaDeOverlay` com a `VistaDoOverlay` de cada tela congelada,
+/// todas alimentando **um** `EstadoDoOverlay`, que decide tudo.
 ///
 /// Saída garantida: um app de barra de menus acionado por atalho global pode não ficar ativo
-/// (a ativação por `NSApp.activate()` é cooperativa e o Carbon não a entrega), e então o teclado
-/// continua no outro app e o monitor local nunca vê o `Esc`. Por isso, enquanto o overlay existe,
-/// o `Esc` é um atalho global do Carbon (sem modificadores, sem permissão de Acessibilidade).
-/// Se esse registro falhar, o overlay não abre.
+/// (a ativação por `NSApp.activate()` é cooperativa), e então o monitor local nunca vê o `Esc`.
+/// Por isso, enquanto o overlay existe, o `Esc` também é um atalho global do Carbon (sem
+/// modificadores, sem permissão de Acessibilidade). Se esse registro falhar, o overlay não abre.
 @MainActor
-final class GerenciadorDoOverlay {
+final class GerenciadorDoOverlay: SeletorDeCaptura {
+    typealias CriarJanela = @MainActor (TelaCongelada, VistaDoOverlay) -> NSWindow
+
     private static let log = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.pedroct.capta",
         category: "overlay"
@@ -21,91 +34,175 @@ final class GerenciadorDoOverlay {
     static let codigoDoEsc: UInt32 = 53
 
     private let atalhoDeEsc: any AtalhoGlobal
-    private let criarJanelas: @MainActor () -> [NSWindow]
+    private let criarJanela: CriarJanela
     private let ativar: @MainActor () -> Task<Void, Never>?
-    private var janelas: [NSWindow] = []
-    private var aoFechar: (@MainActor () -> Void)?
+    private let posicaoDoCursor: @MainActor () -> CGPoint
+    private let centro: NotificationCenter
+    private let appAtivo: @MainActor () -> Bool
+
+    private(set) var estado: EstadoDoOverlay?
+    private(set) var janelasAbertas: [NSWindow] = []
+    private var vistas: [VistaDoOverlay] = []
+    private var continuacao: CheckedContinuation<ResultadoDoOverlay, Never>?
+    /// Cada abertura tem um número; gatilhos atrasados de uma sessão velha são ignorados.
+    private var sessao: UInt64 = 0
     private var monitorDeTeclas: Any?
-    private var monitorDeCliques: Any?
-    private var observadorDeAtivacao: NSObjectProtocol?
+    private var observadores: [NSObjectProtocol] = []
     private var observadorDePerda: NSObjectProtocol?
     private var tarefaDeAtivacao: Task<Void, Never>?
     private var tarefaDeDiagnostico: Task<Void, Never>?
 
     /// Invariante: `aberto` liga no instante em que o Esc global é registrado e só desliga em
-    /// `fechar`, que sempre o libera. Logo nunca sobra Esc registrado sem um `fechar` que o solte,
-    /// qualquer que seja o estado de `janelas`.
+    /// `encerrar`, que sempre o libera, remove monitores e observadores, fecha as janelas e
+    /// retoma a continuação de `escolher` (uma vez). Nenhum outro caminho sai do overlay.
     private(set) var aberto = false
 
-    /// `criarJanelas` e `ativar` são costuras de teste; os padrões são os de produção.
+    /// Todos os parâmetros, menos `atalhoDeEsc`, são costuras de teste com o padrão de produção.
     init(
         atalhoDeEsc: any AtalhoGlobal,
-        criarJanelas: @escaping @MainActor () -> [NSWindow] = {
-            NSScreen.screens.map { JanelaDeOverlay(tela: $0) }
-        },
+        criarJanela: @escaping CriarJanela = GerenciadorDoOverlay.janelaDeOverlay,
         ativar: @escaping @MainActor () -> Task<Void, Never>? = {
             NSApp.activate()
             return GerenciadorDoOverlay.reativarPeloSistema()
-        }
+        },
+        posicaoDoCursor: @escaping @MainActor () -> CGPoint = {
+            // O mesmo espaço do núcleo (origem no topo), como `CapturadorSC.posicaoDoCursor`.
+            CGEvent(source: nil)?.location ?? CGPoint(x: CGFloat.nan, y: .nan)
+        },
+        centro: NotificationCenter = .default,
+        appAtivo: @escaping @MainActor () -> Bool = { NSApp.isActive }
     ) {
         self.atalhoDeEsc = atalhoDeEsc
-        self.criarJanelas = criarJanelas
+        self.criarJanela = criarJanela
         self.ativar = ativar
+        self.posicaoDoCursor = posicaoDoCursor
+        self.centro = centro
+        self.appAtivo = appAtivo
     }
 
-    /// Devolve `false` (sem abrir nada) se não houver como garantir a saída ou não houver telas.
-    @discardableResult
-    func abrir(aoFechar: @escaping @MainActor () -> Void) -> Bool {
-        guard !aberto else { return true }
+    func escolher(
+        telas: [TelaCongelada],
+        janelas: [JanelaDeTela],
+        modo: ModoDoOverlay,
+        opcoes: OpcoesDeCaptura,
+        ajudaVisivel: Bool
+    ) async -> ResultadoDoOverlay {
+        guard !aberto, continuacao == nil else {
+            Self.log.info("disparo ignorado: overlay já aberto")
+            return .cancelado
+        }
+        sessao &+= 1
+        let sessao = sessao
+        let inicial = EstadoDoOverlay.inicial(
+            modo: modo,
+            telas: telas.map(\.descricao),
+            janelas: janelas,
+            opcoes: opcoes,
+            ajudaVisivel: ajudaVisivel
+        )
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuacao in
+                self.continuacao = continuacao
+                abrir(telas, estado: inicial, sessao: sessao)
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in
+                self?.encerrar(.cancelado, motivo: "tarefa cancelada", sessao: sessao)
+            }
+        }
+    }
+
+    /// Ponto de entrada de todo evento (vistas, teclado, notificações e testes).
+    func aplicar(_ evento: EventoDoOverlay) { aplicar(evento, sessao: sessao) }
+
+    /// Monitor local de teclas: aplica as do overlay e engole o resto, menos as com `⌘`.
+    func tratar(tecla evento: NSEvent) -> NSEvent? {
+        let consumida = consumir(
+            codigo: evento.keyCode,
+            caracteres: evento.charactersIgnoringModifiers,
+            modificadores: evento.modifierFlags
+        )
+        return consumida ? nil : evento
+    }
+
+    /// Índice da tela sob `ponto` (a principal se o ponto não estiver em nenhuma).
+    static func indiceDaTela(sob ponto: CGPoint, em telas: [DescricaoDeTela]) -> Int? {
+        guard let tela = SelecaoDeTela.escolher(entre: telas, sob: ponto) else { return nil }
+        return telas.firstIndex(of: tela)
+    }
+
+    // MARK: - Abrir e encerrar
+
+    private func abrir(_ telas: [TelaCongelada], estado inicial: EstadoDoOverlay, sessao: UInt64) {
         do {
             try atalhoDeEsc.registrar(
                 CombinacaoDeTeclas(codigoDaTecla: Self.codigoDoEsc, modificadores: [])
             ) { [weak self] in
-                Task { @MainActor in self?.fechar(motivo: "atalho global") }
+                Task { @MainActor in self?.aplicar(.tecla(.esc), sessao: sessao) }
             }
         } catch {
             Self.log.error("overlay não abriu: registro do Esc global falhou")
-            return false
+            retomar(.cancelado)
+            return
         }
         aberto = true
-        janelas = criarJanelas()
-        guard !janelas.isEmpty else {
+        guard !telas.isEmpty else {
             Self.log.error("overlay não abriu: nenhuma tela")
-            fechar(motivo: "sem telas")
-            return false
+            encerrar(.cancelado, motivo: "sem telas", sessao: sessao)
+            return
         }
-        self.aoFechar = aoFechar
+        // O cursor do estado inicial é (0, 0): sem a posição real, o realce e o `F` errariam.
+        let estado = inicial.reduzindo(.cursorMoveu(posicaoDoCursor()))
+        self.estado = estado
+        vistas = telas.map { tela in
+            let vista = VistaDoOverlay(tela: tela)
+            vista.aoEvento = { [weak self] evento in self?.aplicar(evento, sessao: sessao) }
+            vista.mostrar(estado)
+            return vista
+        }
+        janelasAbertas = zip(telas, vistas).map { criarJanela($0, $1) }
 
         tarefaDeAtivacao = ativar()
-        for janela in janelas { janela.orderFrontRegardless() }
-        janelas.first(where: { $0.screen == NSScreen.main })?.makeKey()
-            ?? janelas.first?.makeKey()
+        for janela in janelasAbertas { janela.orderFrontRegardless() }
+        tornarChaveAJanelaDoCursor()
+        NSCursor.crosshair.set()
 
         monitorDeTeclas = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
             [weak self] evento in
-            guard evento.keyCode == UInt16(GerenciadorDoOverlay.codigoDoEsc) else { return evento }
-            MainActor.assumeIsolated { self?.fechar(motivo: "monitor local") }
-            return nil
-        }
-        monitorDeCliques = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { evento in
-            if let janela = evento.window as? JanelaDeOverlay, !janela.isKeyWindow {
-                MainActor.assumeIsolated { janela.makeKey() }
+            // O `NSEvent` não é `Sendable`: só os valores dele entram no isolamento principal.
+            let codigo = evento.keyCode
+            let caracteres = evento.charactersIgnoringModifiers
+            let modificadores = evento.modifierFlags
+            let consumida = MainActor.assumeIsolated {
+                self?.consumir(codigo: codigo, caracteres: caracteres, modificadores: modificadores)
+                    ?? false
             }
-            return evento
+            return consumida ? nil : evento
         }
-        armarObservadorDePerda()
+        observar(NSApplication.didChangeScreenParametersNotification) { gerenciador in
+            gerenciador.aplicar(.telasMudaram, sessao: sessao)
+        }
+        armarObservadorDePerda(sessao: sessao)
         registrarDiagnostico(momento: "ao abrir")
         tarefaDeDiagnostico = Task { @MainActor [weak self] in
             do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
             self?.registrarDiagnostico(momento: "300 ms depois")
         }
-        return true
     }
 
-    func fechar() { fechar(motivo: "chamada direta") }
+    private func aplicar(_ evento: EventoDoOverlay, sessao: UInt64) {
+        guard aberto, sessao == self.sessao, let atual = estado else { return }
+        let novo = atual.reduzindo(evento)
+        estado = novo
+        if let resultado = novo.resultado {
+            encerrar(resultado, motivo: Self.motivo(de: evento), sessao: sessao)
+            return
+        }
+        for vista in vistas { vista.mostrar(novo) }
+    }
 
-    private func fechar(motivo: String) {
-        guard aberto else { return }
+    private func encerrar(_ resultado: ResultadoDoOverlay, motivo: String, sessao: UInt64) {
+        guard aberto, sessao == self.sessao else { return }
         aberto = false
         Self.log.info("overlay fechou: \(motivo, privacy: .public)")
         atalhoDeEsc.liberar()
@@ -114,20 +211,97 @@ final class GerenciadorDoOverlay {
         tarefaDeAtivacao = nil
         tarefaDeDiagnostico = nil
         if let monitorDeTeclas { NSEvent.removeMonitor(monitorDeTeclas) }
-        if let monitorDeCliques { NSEvent.removeMonitor(monitorDeCliques) }
-        if let observadorDeAtivacao {
-            NotificationCenter.default.removeObserver(observadorDeAtivacao)
-        }
-        if let observadorDePerda { NotificationCenter.default.removeObserver(observadorDePerda) }
         monitorDeTeclas = nil
-        monitorDeCliques = nil
-        observadorDeAtivacao = nil
+        for observador in observadores { centro.removeObserver(observador) }
+        if let observadorDePerda { centro.removeObserver(observadorDePerda) }
+        observadores = []
         observadorDePerda = nil
-        for janela in janelas { janela.orderOut(nil) }
-        janelas = []
-        let retorno = aoFechar
-        aoFechar = nil
-        retorno?()
+        for janela in janelasAbertas { janela.orderOut(nil) }
+        janelasAbertas = []
+        // Solta as imagens congeladas.
+        vistas = []
+        estado = nil
+        NSCursor.arrow.set()
+        retomar(resultado)
+    }
+
+    private func retomar(_ resultado: ResultadoDoOverlay) {
+        let pendente = continuacao
+        continuacao = nil
+        pendente?.resume(returning: resultado)
+    }
+
+    private func consumir(
+        codigo: UInt16,
+        caracteres: String?,
+        modificadores: NSEvent.ModifierFlags
+    ) -> Bool {
+        guard aberto, !TeclaDoOverlay.deixaPassar(modificadores: modificadores) else {
+            return false
+        }
+        let tecla = TeclaDoOverlay.de(
+            codigo: codigo,
+            caracteres: caracteres,
+            modificadores: modificadores
+        )
+        if let tecla { aplicar(.tecla(tecla)) }
+        return true
+    }
+
+}
+
+// MARK: - Foco, ativação e apoio
+
+extension GerenciadorDoOverlay {
+
+    /// A janela da tela sob o cursor fica com o teclado (não a `NSScreen.main`).
+    private func tornarChaveAJanelaDoCursor() {
+        guard let estado,
+            let indice = Self.indiceDaTela(sob: estado.cursor, em: estado.telas),
+            janelasAbertas.indices.contains(indice)
+        else { return }
+        let janela = janelasAbertas[indice]
+        janela.makeKey()
+        janela.makeFirstResponder(vistas[indice])
+    }
+
+    /// Só passa a cancelar por perda de ativação depois que o app de fato ficou ativo; senão o
+    /// overlay se fecharia sozinho antes de a ativação chegar.
+    private func armarObservadorDePerda(sessao: UInt64) {
+        if appAtivo() {
+            observarPerda(sessao: sessao)
+            return
+        }
+        observar(NSApplication.didBecomeActiveNotification) { gerenciador in
+            guard gerenciador.aberto, gerenciador.observadorDePerda == nil else { return }
+            Self.log.info("app ficou ativo; armando cancelamento por perda de ativação")
+            gerenciador.tornarChaveAJanelaDoCursor()
+            gerenciador.observarPerda(sessao: sessao)
+        }
+    }
+
+    private func observarPerda(sessao: UInt64) {
+        observadorDePerda = centro.addObserver(
+            forName: NSApplication.didResignActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.aplicar(.perdeuAtivacao, sessao: sessao) }
+        }
+    }
+
+    private func observar(
+        _ nome: Notification.Name,
+        _ acao: @escaping @MainActor (GerenciadorDoOverlay) -> Void
+    ) {
+        let observador = centro.addObserver(forName: nome, object: nil, queue: .main) {
+            [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                acao(self)
+            }
+        }
+        observadores.append(observador)
     }
 
     /// Pede a ativação ao Launch Services, que reativa o app em execução (`NSApp.activate()` é
@@ -150,41 +324,33 @@ final class GerenciadorDoOverlay {
         }
     }
 
-    /// Só passa a fechar por perda de ativação depois que o app de fato ficou ativo; senão o
-    /// overlay se fecharia sozinho antes de a ativação chegar.
-    private func armarObservadorDePerda() {
-        if NSApp.isActive {
-            observarPerda()
-            return
-        }
-        observadorDeAtivacao = NotificationCenter.default.addObserver(
-            forName: NSApplication.didBecomeActiveNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self, self.aberto, self.observadorDePerda == nil else { return }
-                Self.log.info("app ficou ativo; armando fechamento por perda de ativação")
-                self.janelas.first?.makeKey()
-                self.observarPerda()
-            }
-        }
+    /// Janela de produção: sobre a tela, no espaço do AppKit.
+    private static func janelaDeOverlay(_ tela: TelaCongelada, _ vista: VistaDoOverlay) -> NSWindow
+    {
+        let alturaDaPrincipal = NSScreen.screens.first?.frame.height ?? tela.descricao.quadro.height
+        let janela = JanelaDeOverlay(
+            quadro: JanelaDeOverlay.quadroNoAppKit(
+                de: tela.descricao.quadro,
+                alturaDaPrincipal: alturaDaPrincipal
+            )
+        )
+        janela.contentView = vista
+        return janela
     }
 
-    private func observarPerda() {
-        observadorDePerda = NotificationCenter.default.addObserver(
-            forName: NSApplication.didResignActiveNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.fechar(motivo: "perda de ativação") }
+    private static func motivo(de evento: EventoDoOverlay) -> String {
+        switch evento {
+        case .tecla(.esc): "Esc"
+        case .telasMudaram: "telas mudaram"
+        case .perdeuAtivacao: "perda de ativação"
+        default: "confirmado"
         }
     }
 
     private func registrarDiagnostico(momento: String) {
-        let chaves = janelas.filter(\.isKeyWindow).count
+        let chaves = janelasAbertas.filter(\.isKeyWindow).count
         Self.log.info(
-            "\(momento, privacy: .public): ativo=\(NSApp.isActive) janelas=\(self.janelas.count) chave=\(chaves)"
+            "\(momento, privacy: .public): ativo=\(NSApp.isActive) janelas=\(self.janelasAbertas.count) chave=\(chaves)"
         )
     }
 }
