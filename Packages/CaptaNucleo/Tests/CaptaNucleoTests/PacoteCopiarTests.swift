@@ -94,7 +94,7 @@ struct PacoteCopiarTests {
         try gravarPacote(documento(largura: 99), em: destino)
         let antes = try PacoteCapta.ler(de: destino)
 
-        // Pasta do destino sem escrita: o temporário irmão não pode ser criado.
+        // Pasta do destino sem escrita: a cópia não pode entrar no lugar do destino.
         try FileManager.default.setAttributes(
             [.posixPermissions: 0o555],
             ofItemAtPath: pastaDestino.path

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Conteúdo de um pacote `.capta` lido do disco.
+/// Conteúdo de um pacote `.capta`, lido do disco ou a gravar.
 public struct ConteudoPacote: Sendable {
     public var documento: Documento
     public var baseDados: Data
@@ -29,12 +29,15 @@ public enum PacoteCapta {
         let versaoEsquema: Int
     }
 
+    /// Devolve a pasta onde montar a substituição de `destino`; lança se não houver.
+    typealias PastaDeSubstituicao = (URL) throws -> URL
+
     /// Grava um pacote novo em `destino`, sem renomear nem acrescentar extensão.
     ///
-    /// Valida as entradas, escreve tudo numa pasta temporária irmã e só então a coloca no lugar:
-    /// `moveItem` se `destino` não existe, `replaceItemAt` (substituição atômica) se existe.
-    /// Em qualquer falha a pasta temporária é removida e o `destino` anterior fica intacto.
-    /// Com `substituir == false`, um destino existente lança ``ErroPacote/destinoJaExiste``.
+    /// Valida as entradas, escreve tudo numa pasta temporária e só então a coloca no lugar
+    /// (ver `colocar(em:substituir:usando:montar:)`). Em qualquer falha o temporário é removido
+    /// e o `destino` anterior fica intacto. Com `substituir == false`, um destino existente
+    /// lança ``ErroPacote/destinoJaExiste``.
     public static func gravar(
         _ documento: Documento,
         baseDados: Data,
@@ -42,61 +45,119 @@ public enum PacoteCapta {
         em destino: URL,
         substituir: Bool = true
     ) throws {
-        guard !baseDados.isEmpty, !miniaturaDados.isEmpty else { throw ErroPacote.dadosVazios }
-        try documento.validar()
-        let json = try codificador().encode(documento)
+        try gravar(
+            ConteudoPacote(
+                documento: documento,
+                baseDados: baseDados,
+                miniaturaDados: miniaturaDados
+            ),
+            em: destino,
+            substituir: substituir,
+            pastaDeSubstituicao: pastaDeSubstituicaoDoSistema
+        )
+    }
 
-        let gerenciador = FileManager.default
-        let temporario = destino.deletingLastPathComponent()
-            .appendingPathComponent(
-                ".\(destino.lastPathComponent).tmp-\(UUID().uuidString)",
-                isDirectory: true
-            )
-        try gerenciador.createDirectory(at: temporario, withIntermediateDirectories: false)
-        // Após o move/replace o temporário não existe mais; `try?` só limpa o que sobrou de falha.
-        defer { try? gerenciador.removeItem(at: temporario) }
+    /// ``gravar(_:baseDados:miniaturaDados:em:substituir:)`` com a pasta de substituição
+    /// injetável, para os testes conferirem a limpeza e o recurso ao irmão. Na gravação a
+    /// miniatura é obrigatória: `nil` ou vazia lança ``ErroPacote/dadosVazios``.
+    static func gravar(
+        _ conteudo: ConteudoPacote,
+        em destino: URL,
+        substituir: Bool,
+        pastaDeSubstituicao: PastaDeSubstituicao
+    ) throws {
+        guard !conteudo.baseDados.isEmpty, let miniatura = conteudo.miniaturaDados,
+            !miniatura.isEmpty
+        else { throw ErroPacote.dadosVazios }
+        try conteudo.documento.validar()
+        let json = try codificador().encode(conteudo.documento)
 
-        try json.write(to: temporario.appendingPathComponent(nomeDocumento))
-        try baseDados.write(to: temporario.appendingPathComponent(nomeBase))
-        try miniaturaDados.write(to: temporario.appendingPathComponent(nomeMiniatura))
-
-        if substituir, gerenciador.fileExists(atPath: destino.path) {
-            _ = try gerenciador.replaceItemAt(destino, withItemAt: temporario)
-        } else {
-            do {
-                // `moveItem` falha se o destino existe, então nunca substitui em silêncio.
-                try gerenciador.moveItem(at: temporario, to: destino)
-            } catch {
-                if !substituir, gerenciador.fileExists(atPath: destino.path) {
-                    throw ErroPacote.destinoJaExiste
-                }
-                throw error
-            }
+        try colocar(em: destino, substituir: substituir, usando: pastaDeSubstituicao) { pacote in
+            try FileManager.default.createDirectory(at: pacote, withIntermediateDirectories: false)
+            try json.write(to: pacote.appendingPathComponent(nomeDocumento))
+            try conteudo.baseDados.write(to: pacote.appendingPathComponent(nomeBase))
+            try miniatura.write(to: pacote.appendingPathComponent(nomeMiniatura))
         }
     }
 
     /// Copia o pacote `origem` para `destino`, substituindo um destino existente.
     ///
-    /// A origem é conferida com ``ler(de:)`` (mesmos erros). A cópia vai para uma pasta temporária
-    /// irmã de `destino` e só então é colocada no lugar: `moveItem` se `destino` não existe,
-    /// `replaceItemAt` se existe. Em qualquer falha o `destino` anterior fica intacto e o
-    /// temporário é removido.
+    /// A origem é conferida com ``ler(de:)`` (mesmos erros). A cópia vai para uma pasta
+    /// temporária e só então é colocada no lugar (ver `colocar(em:substituir:usando:montar:)`).
+    /// Em qualquer falha o `destino` anterior fica intacto e o temporário é removido.
     public static func copiar(de origem: URL, para destino: URL) throws {
+        try copiar(de: origem, para: destino, pastaDeSubstituicao: pastaDeSubstituicaoDoSistema)
+    }
+
+    /// ``copiar(de:para:)`` com a pasta de substituição injetável, para os testes.
+    static func copiar(
+        de origem: URL,
+        para destino: URL,
+        pastaDeSubstituicao: PastaDeSubstituicao
+    ) throws {
         _ = try ler(de: origem)
+        try colocar(em: destino, substituir: true, usando: pastaDeSubstituicao) { pacote in
+            try FileManager.default.copyItem(at: origem, to: pacote)
+        }
+    }
 
+    /// Pasta de substituição que o sistema dá para `destino`, no mesmo volume e criada agora.
+    ///
+    /// É a pasta desenhada para `replaceItemAt`: no App Sandbox o painel de salvar libera só o
+    /// item escolhido, não a pasta que o contém, então um temporário ao lado do destino não
+    /// poderia ser criado. Lança se a pasta do destino não existe.
+    static func pastaDeSubstituicaoDoSistema(para destino: URL) throws -> URL {
+        try FileManager.default.url(
+            for: .itemReplacementDirectory,
+            in: .userDomainMask,
+            appropriateFor: destino,
+            create: true
+        )
+    }
+
+    /// Monta um pacote fora do lugar e o coloca em `destino`.
+    ///
+    /// O pacote é montado por `montar` dentro da pasta de substituição; se ela não vier, numa
+    /// pasta oculta irmã do destino (`.<nome>.tmp-<UUID>`). Depois entra no lugar com
+    /// `replaceItemAt` (substituição atômica) se `substituir` e `destino` existe, ou com
+    /// `moveItem`, que falha se o destino existe e então nunca substitui em silêncio. No fim,
+    /// com sucesso ou falha, a pasta de substituição inteira (ou o irmão) é removida.
+    private static func colocar(
+        em destino: URL,
+        substituir: Bool,
+        usando pastaDeSubstituicao: PastaDeSubstituicao,
+        montar: (URL) throws -> Void
+    ) throws {
         let gerenciador = FileManager.default
-        let temporario = destino.deletingLastPathComponent()
-            .appendingPathComponent(
-                ".\(destino.lastPathComponent).tmp-\(UUID().uuidString)",
-                isDirectory: true
-            )
-        defer { try? gerenciador.removeItem(at: temporario) }
-
-        try gerenciador.copyItem(at: origem, to: temporario)
-        if gerenciador.fileExists(atPath: destino.path) {
-            _ = try gerenciador.replaceItemAt(destino, withItemAt: temporario)
+        let pacote: URL
+        let raiz: URL
+        if let pasta = try? pastaDeSubstituicao(destino) {
+            pacote = pasta.appendingPathComponent(destino.lastPathComponent, isDirectory: true)
+            raiz = pasta
         } else {
-            try gerenciador.moveItem(at: temporario, to: destino)
+            pacote = destino.deletingLastPathComponent()
+                .appendingPathComponent(
+                    ".\(destino.lastPathComponent).tmp-\(UUID().uuidString)",
+                    isDirectory: true
+                )
+            raiz = pacote
+        }
+        // Após o move/replace o pacote não existe mais; `try?` remove a pasta de substituição
+        // (vazia) ou o que sobrou de uma falha.
+        defer { try? gerenciador.removeItem(at: raiz) }
+
+        try montar(pacote)
+        if substituir, gerenciador.fileExists(atPath: destino.path) {
+            _ = try gerenciador.replaceItemAt(destino, withItemAt: pacote)
+            return
+        }
+        do {
+            try gerenciador.moveItem(at: pacote, to: destino)
+        } catch {
+            if !substituir, gerenciador.fileExists(atPath: destino.path) {
+                throw ErroPacote.destinoJaExiste
+            }
+            throw error
         }
     }
 
