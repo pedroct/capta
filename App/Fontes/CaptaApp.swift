@@ -24,10 +24,15 @@ struct CaptaApp: App {
     init() {
         let estado = EstadoDoMenu()
         let janelas = GerenciadorDeJanelas()
+        let overlay = overlay
+        let contagem = JanelaDaContagem(atalhoDeEsc: AtalhoGlobalCarbon())
         let fluxo = FluxoDeCaptura(
             capturador: CapturadorSC(),
             permissao: PermissaoCG(),
             apresentador: janelas,
+            seletor: overlay,
+            contagem: contagem,
+            opcoes: OpcoesLembradas(defaults: .standard),
             pastaDeRascunhos: Self.pastaDeRascunhos(),
             cursor: CapturadorSC.posicaoDoCursor,
             agora: { Date() },
@@ -40,6 +45,7 @@ struct CaptaApp: App {
             guard let fluxo else { return }
             Task { await fluxo.capturarTelaInteira() }
         }
+        contagem.aoCancelar = { [weak fluxo] in fluxo?.cancelarContagem() }
         do {
             try atalho.registrar(.capturarTelaInteira) {
                 Task { @MainActor in await fluxo.capturarTelaInteira() }
@@ -47,7 +53,6 @@ struct CaptaApp: App {
         } catch {
             estado.atalhoIndisponivel = true
         }
-        let overlay = overlay
         do {
             try atalhoDeCapturaLivre.registrar(.capturaLivre) {
                 Task { @MainActor in await Self.capturaLivreProvisoria(overlay) }

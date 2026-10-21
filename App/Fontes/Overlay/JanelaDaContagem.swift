@@ -30,7 +30,9 @@ final class JanelaDaContagem: ApresentadorDaContagem {
     private let atalhoDeEsc: any AtalhoGlobal
     private let alturaDaPrincipal: @MainActor () -> CGFloat
     private let anunciar: @MainActor (String) -> Void
-    private let aoCancelar: @MainActor () -> Void
+    /// Chamado depois de fechar, quando o `Esc` ou o clique cancelam. Pode ser ligado depois de
+    /// criar a janela, porque quem cancela (o fluxo) é criado com ela.
+    var aoCancelar: @MainActor () -> Void
 
     private var painel: NSPanel?
     private var vista: VistaDaContagem?
@@ -49,7 +51,7 @@ final class JanelaDaContagem: ApresentadorDaContagem {
             NSScreen.screens.first?.frame.height ?? 0
         },
         anunciar: @escaping @MainActor (String) -> Void = JanelaDaContagem.anunciarNoVoiceOver,
-        aoCancelar: @escaping @MainActor () -> Void
+        aoCancelar: @escaping @MainActor () -> Void = {}
     ) {
         self.atalhoDeEsc = atalhoDeEsc
         self.alturaDaPrincipal = alturaDaPrincipal

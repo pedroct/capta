@@ -9,6 +9,7 @@ import Testing
 @MainActor
 struct FluxoDeCapturaTests {
     typealias Gravador = @Sendable (ImagemCapturada, Documento, URL, String) async throws -> URL
+    typealias Pausa = @Sendable (Duration) async throws -> Void
 
     static let cursor = CGPoint(x: 120, y: -40)
     static let instante = Date(timeIntervalSince1970: 1_800_000_000)
@@ -18,29 +19,39 @@ struct FluxoDeCapturaTests {
         pasta.appendingPathComponent("\(nome).capta", isDirectory: true)
     }
 
-    private func captura(escala: Double = 2) throws -> ImagemCapturada {
+    /// Pausa da contagem que não espera, mas respeita o cancelamento.
+    static let pausaInstantanea: Pausa = { _ in try Task.checkCancellation() }
+
+    func captura(escala: Double = 2) throws -> ImagemCapturada {
         ImagemCapturada(imagem: try imagemDeTeste(), escala: escala)
     }
 
-    private func fluxo(
+    func fluxo(
         capturador: CapturadorFalso,
         permissao: PermissaoFalsa = PermissaoFalsa(concedida: true),
         apresentador: ApresentadorFalso,
+        seletor: SeletorFalso = SeletorFalso(),
+        contagem: ContagemFalsa = ContagemFalsa(),
         defaults: UserDefaults,
         pasta: URL = URL(fileURLWithPath: "/rascunhos", isDirectory: true),
-        gravador: @escaping Gravador = FluxoDeCapturaTests.gravadorQueConclui
+        gravador: @escaping Gravador = FluxoDeCapturaTests.gravadorQueConclui,
+        pausa: @escaping Pausa = FluxoDeCapturaTests.pausaInstantanea
     ) -> FluxoDeCaptura {
         FluxoDeCaptura(
             capturador: capturador,
             permissao: permissao,
             apresentador: apresentador,
+            seletor: seletor,
+            contagem: contagem,
+            opcoes: OpcoesLembradas(defaults: defaults),
             pastaDeRascunhos: pasta,
             cursor: { Self.cursor },
             agora: { Self.instante },
             defaults: defaults,
             gravadorDeRascunho: gravador,
             painel: PainelFalso(destino: nil),
-            areaDeTransferencia: AreaDeTransferenciaFalsa()
+            areaDeTransferencia: AreaDeTransferenciaFalsa(),
+            pausa: pausa
         )
     }
 
@@ -262,6 +273,9 @@ struct FluxoDeCapturaTests {
             capturador: CapturadorFalso(.success(try captura())),
             permissao: PermissaoFalsa(concedida: true),
             apresentador: apresentador,
+            seletor: SeletorFalso(),
+            contagem: ContagemFalsa(),
+            opcoes: OpcoesLembradas(defaults: temporarios.defaults),
             pastaDeRascunhos: rascunhos,
             agora: { Self.instante },
             defaults: temporarios.defaults,

@@ -214,6 +214,76 @@ final class ApresentadorFalso: Apresentador {
     func mostrarAlerta(_ mensagem: MensagemDeErro) { alertas.append(mensagem) }
 }
 
+/// Pedido registrado de `SeletorDeCaptura.escolher`, sem as imagens congeladas.
+struct PedidoDeEscolha: Equatable {
+    let telas: [DescricaoDeTela]
+    let janelas: [JanelaDeTela]
+    let modo: ModoDoOverlay
+    let opcoes: OpcoesDeCaptura
+    let ajudaVisivel: Bool
+}
+
+/// Seletor que devolve um resultado fixo, opcionalmente preso num portão, e registra os pedidos.
+@MainActor
+final class SeletorFalso: SeletorDeCaptura {
+    var resultado: ResultadoDoOverlay
+    private let portao: Portao?
+    private(set) var pedidos: [PedidoDeEscolha] = []
+
+    init(_ resultado: ResultadoDoOverlay = .cancelado, portao: Portao? = nil) {
+        self.resultado = resultado
+        self.portao = portao
+    }
+
+    func escolher(
+        telas: [TelaCongelada],
+        janelas: [JanelaDeTela],
+        modo: ModoDoOverlay,
+        opcoes: OpcoesDeCaptura,
+        ajudaVisivel: Bool
+    ) async -> ResultadoDoOverlay {
+        pedidos.append(
+            PedidoDeEscolha(
+                telas: telas.map(\.descricao),
+                janelas: janelas,
+                modo: modo,
+                opcoes: opcoes,
+                ajudaVisivel: ajudaVisivel
+            )
+        )
+        await portao?.esperar()
+        return resultado
+    }
+}
+
+/// Contagem que só registra o que foi pedido e se a janelinha ficou aberta.
+@MainActor
+final class ContagemFalsa: ApresentadorDaContagem {
+    private(set) var mostradas: [(segundos: Int, tela: DescricaoDeTela)] = []
+    private(set) var atualizacoes: [Int] = []
+    private(set) var fechamentos = 0
+    private(set) var visivel = false
+
+    func mostrar(segundos: Int, naTela tela: DescricaoDeTela) {
+        mostradas.append((segundos, tela))
+        visivel = true
+    }
+
+    func atualizar(_ segundos: Int) { atualizacoes.append(segundos) }
+
+    func fechar() {
+        fechamentos += 1
+        visivel = false
+    }
+}
+
+/// Valores anotados de qualquer isolamento, na ordem em que chegaram.
+actor Anotacoes<Valor: Sendable> {
+    private(set) var valores: [Valor] = []
+
+    func anotar(_ valor: Valor) { valores.append(valor) }
+}
+
 /// Área de transferência que guarda o último PNG ou falha.
 final class AreaDeTransferenciaFalsa: AreaDeTransferencia {
     private let falhar: Bool
