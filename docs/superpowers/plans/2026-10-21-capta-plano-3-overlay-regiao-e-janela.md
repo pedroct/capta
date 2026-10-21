@@ -65,12 +65,12 @@ Spec §4.9: se o teclado não chegar ao overlay num app de barra de menus, o ove
 **Interfaces:**
 - Produces: `CombinacaoDeTeclas.capturaLivre` (`codigoDaTecla: 8`, `[.controle, .opcao]`); `JanelaDeOverlay: NSPanel` (sem borda, `canBecomeKey == true`, nível acima da barra de menus, em todos os Spaces e sobre apps em tela cheia); `@MainActor final class GerenciadorDoOverlay { func abrir(aoFechar: @escaping @MainActor () -> Void); func fechar() }` — uma `JanelaDeOverlay` escura por `NSScreen`; `Esc` fecha; perder a ativação do app fecha; clicar em qualquer janela do overlay devolve o foco. (A assinatura de `abrir` muda na Tarefa 10.)
 
-- [ ] **Step 1: Teste que falha** (`CombinacaoDeTeclasTests`): `capturaLivreEControleOpcaoC` → `codigoDaTecla == 8`, `modificadores == [.controle, .opcao]`; `capturaLivreDifereDaTelaInteira` → `capturaLivre != capturarTelaInteira`.
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL (símbolo não definido).
-- [ ] **Step 3: Implementar** `capturaLivre`. Em `AtalhoGlobalCarbon`, hoje cada instância ignora qual atalho disparou (o handler chama `executar()` para qualquer `kEventHotKeyPressed`): com duas instâncias, `⌃⌥C` rodaria as duas ações. Dar a cada instância um `id` próprio (contador estático protegido por trava) no `EventHotKeyID`, ler o `EventHotKeyID` do evento com `GetEventParameter` e só executar se o id for o da instância, devolvendo `eventNotHandledErr` nos outros.
-- [ ] **Step 4: Implementar a casca mínima** (`JanelaDeOverlay`, `GerenciadorDoOverlay`) e ligar em `CaptaApp`: uma segunda `AtalhoGlobalCarbon` para `.capturaLivre` que chama `GerenciadorDoOverlay.abrir`; falha de registro marca o aviso no menu (uma flag por atalho em `EstadoDoMenu`). Provisório: o overlay só mostra um painel escuro por tela. Ativar o app (`NSApp.activate`) ao abrir; observar a desativação (`NSApplication.didResignActiveNotification`) e fechar.
-- [ ] **Step 5: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(app): adiciona o atalho de captura livre e a casca do overlay`).
-- [ ] **Step 6: 🔒 Pedir ao Pedro** para rodar `make app && open build/Capta.app` e conferir: `⌃⌥C` cobre todas as telas, inclusive barra de menus e Dock; `Esc` fecha na hora (com o app inativo antes do atalho); clicar em outro app ou usar `⌘Tab` fecha o overlay; `⌃⌥F` ainda captura sem disparar o overlay, e `⌃⌥C` não dispara a captura da tela inteira; com um app em tela cheia e com outro Space, o overlay aparece e fecha. **Se o `Esc` falhar, parar e voltar ao Pedro: é bloqueante (spec §4.9).** Registrar o resultado no status do plano.
+- [x] **Step 1: Teste que falha** (`CombinacaoDeTeclasTests`): `capturaLivreEControleOpcaoC` → `codigoDaTecla == 8`, `modificadores == [.controle, .opcao]`; `capturaLivreDifereDaTelaInteira` → `capturaLivre != capturarTelaInteira`.
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL (símbolo não definido).
+- [x] **Step 3: Implementar** `capturaLivre`. Em `AtalhoGlobalCarbon`, hoje cada instância ignora qual atalho disparou (o handler chama `executar()` para qualquer `kEventHotKeyPressed`): com duas instâncias, `⌃⌥C` rodaria as duas ações. Dar a cada instância um `id` próprio (contador estático protegido por trava) no `EventHotKeyID`, ler o `EventHotKeyID` do evento com `GetEventParameter` e só executar se o id for o da instância, devolvendo `eventNotHandledErr` nos outros.
+- [x] **Step 4: Implementar a casca mínima** (`JanelaDeOverlay`, `GerenciadorDoOverlay`) e ligar em `CaptaApp`: uma segunda `AtalhoGlobalCarbon` para `.capturaLivre` que chama `GerenciadorDoOverlay.abrir`; falha de registro marca o aviso no menu (uma flag por atalho em `EstadoDoMenu`). Provisório: o overlay só mostra um painel escuro por tela. Ativar o app (`NSApp.activate`) ao abrir; observar a desativação (`NSApplication.didResignActiveNotification`) e fechar.
+- [x] **Step 5: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(app): adiciona o atalho de captura livre e a casca do overlay`).
+- [x] **Step 6: 🔒 Pedir ao Pedro** para rodar `make app && open build/Capta.app` e conferir: `⌃⌥C` cobre todas as telas, inclusive barra de menus e Dock; `Esc` fecha na hora (com o app inativo antes do atalho); clicar em outro app ou usar `⌘Tab` fecha o overlay; `⌃⌥F` ainda captura sem disparar o overlay, e `⌃⌥C` não dispara a captura da tela inteira; com um app em tela cheia e com outro Space, o overlay aparece e fecha. **Se o `Esc` falhar, parar e voltar ao Pedro: é bloqueante (spec §4.9).** Registrar o resultado no status do plano.
 
 ---
 
@@ -92,15 +92,15 @@ Spec §4.9: se o teclado não chegar ao overlay num app de barra de menus, o ove
   - `func quadroEmPontos(dePixels pixels: CGRect) -> CGRect` — inverso, no espaço global.
   - `var limitesEmPixels: CGSize?` — `tamanhoEmPixels` como `CGSize`.
 
-- [ ] **Step 1: Mover** os dois tipos e o teste existente; `make test` → Expected: PASS (refatoração sem mudança de comportamento).
-- [ ] **Step 2: Testes que falham** (`ConversaoDeTelaTests`), com `DescricaoDeTela(id: 1, quadro: CGRect(x: -1440, y: 0, width: 1440, height: 900), escala: 2, principal: false)`:
+- [x] **Step 1: Mover** os dois tipos e o teste existente; `make test` → Expected: PASS (refatoração sem mudança de comportamento).
+- [x] **Step 2: Testes que falham** (`ConversaoDeTelaTests`), com `DescricaoDeTela(id: 1, quadro: CGRect(x: -1440, y: 0, width: 1440, height: 900), escala: 2, principal: false)`:
   - `pixelLocalDePontoEmTelaComOrigemNegativa`: ponto `(-1439.5, 10.25)` → `(1, 20.5)`.
   - `quadroEmPontosEPixelsSaoInversosEmEscalasComunsDeTodoRetanguloInteiro`: para escalas `1`, `1.5`, `2`, `3` e todo retângulo de pixels inteiro com origem e lados de 0 a 20 (lados ≥ 1), `pixels(dePontos: quadroEmPontos(dePixels: r)) == r`.
   - `meioPontoArredondaParaOPixelMaisProximo`: escala 2, retângulo em pontos `(10.25, 10.25, 5, 5)` → pixels `(20, 20, 10, 10)` relativos à origem da tela.
   - `limitesEmPixelsDevolveNilParaQuadroInvalido`.
-- [ ] **Step 3: Rodar:** `make test` → Expected: FAIL.
-- [ ] **Step 4: Implementar** as extensões em `SelecaoDeTela.swift`.
-- [ ] **Step 5: Rodar:** `make verificar` → Expected: PASS. Commit (`refactor(nucleo): leva a descrição de tela para o núcleo e converte pontos e pixels`).
+- [x] **Step 3: Rodar:** `make test` → Expected: FAIL.
+- [x] **Step 4: Implementar** as extensões em `SelecaoDeTela.swift`.
+- [x] **Step 5: Rodar:** `make verificar` → Expected: PASS. Commit (`refactor(nucleo): leva a descrição de tela para o núcleo e converte pontos e pixels`).
 
 ### Task 3: Seleção de região
 
@@ -117,7 +117,7 @@ Spec §4.9: se o teclado não chegar ao overlay num app de barra de menus, o ove
   - `static func telaInteira(telaId: UInt32, limites: CGSize) -> SelecaoDeRegiao`
   - `func movida(dx: Int, dy: Int) -> SelecaoDeRegiao` (presa à tela) · `func redimensionada(alca: Alca, para ponto: CGPoint) -> SelecaoDeRegiao` (a borda oposta fica fixa; ao cruzar, inverte; lado mínimo 1; presa à tela) · `func acerto(em ponto: CGPoint, tolerancia: CGFloat) -> Acerto` (cantos antes de bordas, bordas antes de dentro).
 
-- [ ] **Step 1: Testes que falham** (tela `limites = 100×80`):
+- [x] **Step 1: Testes que falham** (tela `limites = 100×80`):
   - `arrastoEmQualquerDirecaoDaOMesmoRetangulo`: `de (10,10) ate (30,20)` e o inverso → `pixels == (10,10,20,10)`; `de (30,10) ate (10,20)` → `(10,10,20,10)`.
   - `arrastoComPontoFracionarioUsaFloor`: `de (10.9,10.9) ate (30.2,20.7)` → `(10,10,20,10)`.
   - `arrastoSaindoDaTelaFicaPresoNasBordas`: `de (90,70) ate (150,200)` → `(90,70,10,10)`; `de (-5,-5) ate (10,10)` → `(0,0,10,10)`.
@@ -128,9 +128,9 @@ Spec §4.9: se o teclado não chegar ao overlay num app de barra de menus, o ove
   - `redimensionarNuncaDaLadoMenorQueUm`: alça `.direita` para `x=10` → largura `1`.
   - `acertoPrefereCantoDepoisBordaDepoisDentro` (seleção `(10,10,20,20)`, tolerância 3): `(10,10)` → `.borda(.cantoSuperiorEsquerdo)`; `(10,20)` → `.borda(.esquerda)`; `(12,12)` → `.borda(.cantoSuperiorEsquerdo)`; `(20,20)` → `.dentro`; `(50,50)` → `.fora`.
   - `telaInteiraCobreTodaATela`: `pixels == (0,0,100,80)`.
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar** com aritmética inteira depois do `floor`; o redimensionar normaliza as duas pontas como o arrasto.
-- [ ] **Step 4: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona a seleção de região em pixels`).
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar** com aritmética inteira depois do `floor`; o redimensionar normaliza as duas pontas como o arrasto.
+- [x] **Step 4: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona a seleção de região em pixels`).
 
 ### Task 4: Janelas selecionáveis
 
@@ -145,15 +145,15 @@ Spec §4.9: se o teclado não chegar ao overlay num app de barra de menus, o ove
   - `static func sob(_ ponto: CGPoint, em janelas: [JanelaDeTela]) -> JanelaDeTela?` — a primeira da lista que contém o ponto (borda esquerda/superior inclusivas).
   - `static func tela(de janela: JanelaDeTela, entre telas: [DescricaoDeTela]) -> DescricaoDeTela?` — maior área de interseção com `quadro`; empate: a tela que contém o canto superior esquerdo; sem interseção: `nil`.
 
-- [ ] **Step 1: Testes que falham:**
+- [x] **Step 1: Testes que falham:**
   - `selecionaveisDescartaCamadaDeSistemaForaDaTelaEPequenas`: janelas com `camada` 0, 25 (Dock), 0 com `naTela: false`, 0 de `30×500` e `tamanhoMinimo: 40` → só a primeira fica.
   - `selecionaveisPreservaAOrdemDeEmpilhamento`.
   - `sobDevolveAJanelaMaisAFrenteEmSobreposicao`: duas janelas sobrepostas, a primeira da lista vence; ponto na parte só da segunda devolve a segunda.
   - `sobSemJanelaDevolveNil`; `sobNaBordaDireitaNaoContem` (borda direita/inferior exclusivas).
   - `telaDaJanelaEscolheAMaiorInterseccao`: janela com 70 % na tela B → B; `empateUsaACantoSuperiorEsquerdo`; `janelaForaDeTodasDevolveNil`; tela com origem negativa.
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar.**
-- [ ] **Step 4: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona a lista de janelas selecionáveis`).
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar.**
+- [x] **Step 4: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona a lista de janelas selecionáveis`).
 
 ### Task 5: Lupa, posicionamento e recorte da imagem congelada
 
@@ -167,13 +167,13 @@ Spec §4.9: se o teclado não chegar ao overlay num app de barra de menus, o ove
   - `enum Posicionamento { static func origem(junto ponto: CGPoint, tamanho: CGSize, dentro limites: CGRect, afastamento: CGFloat) -> CGPoint }` — canto inferior direito do ponto; troca para a esquerda e/ou para cima quando não couber; nunca sai de `limites`. Serve à lupa, ao texto das dimensões e à ajuda.
   - `enum RecorteDeImagem { static func recortar(_ imagem: CGImage, pixels: CGRect) -> CGImage? }` — `nil` se o retângulo for vazio ou sair da imagem; pixel `(0,0)` da saída é o pixel `(x,y)` da base.
 
-- [ ] **Step 1: Testes que falham:**
+- [x] **Step 1: Testes que falham:**
   - Lupa: `amostraNoMeioFicaCentrada` (centro `(50,50)`, lado 15, imagem 100×100 → `(43,43,15,15)`); `amostraNosQuatroCantosFicaDentro` (centro `(0,0)`, `(99,99)`, `(0,99)`, `(99,0)` → origem `(0,0)`/`(85,85)`/`(0,85)`/`(85,0)`); `imagemMenorQueOLadoDevolveAImagemInteira` (imagem 10×10, lado 15 → `(0,0,10,10)`).
   - Posicionamento: `preferePerToDoPontoAbaixoEADireita`; `trocaParaEsquerdaNaBordaDireita`; `trocaParaCimaNaBordaInferior`; `naoSaiDosLimitesComTamanhoMaiorQueOEspaco`.
   - Recorte (base 100×100 em xadrez de 2 px): `recorteTemOTamanhoPedidoEPixelCorrespondente` (`(10,10,30,20)` → 30×20 e pixel `(0,0)` igual ao `(10,10)` da base); `recorteForaOuVazioDevolveNil`; `recorteParcialmenteForaDevolveNil`.
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar** (`CGImage.cropping(to:)` no recorte).
-- [ ] **Step 4: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona lupa, posicionamento e recorte da imagem congelada`).
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar** (`CGImage.cropping(to:)` no recorte).
+- [x] **Step 4: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona lupa, posicionamento e recorte da imagem congelada`).
 
 ### Task 6: Contagem regressiva
 
@@ -184,10 +184,10 @@ Spec §4.9: se o teclado não chegar ao overlay num app de barra de menus, o ove
 **Interfaces:**
 - Produces: `enum Atraso: Int, CaseIterable, Sendable { case nenhum = 0, tres = 3, cinco = 5, dez = 10 }` · `struct ContagemRegressiva: Sendable { init(segundos: Int, pausa: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }); func executar(aCadaSegundo: @escaping @Sendable (Int) -> Void) async -> Bool }` — chama `aCadaSegundo(n)` com `n` de `segundos` até `1` e devolve `true` ao fim; devolve `false`, sem chamar mais nada, se a `Task` for cancelada.
 
-- [ ] **Step 1: Testes que falham** (pausa falsa que registra as durações): `contaDeNAUmEDevolveTrue` (`segundos: 3` → `[3,2,1]`, `true`, três pausas de 1 s); `cancelarNoMeioDevolveFalseESeParaDeChamar` (cancela a `Task` na segunda pausa → `false`, observador recebeu `[3,2]` no máximo); `zeroSegundosDevolveTrueSemChamar`.
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar.**
-- [ ] **Step 4: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona a contagem regressiva do atraso`).
+- [x] **Step 1: Testes que falham** (pausa falsa que registra as durações): `contaDeNAUmEDevolveTrue` (`segundos: 3` → `[3,2,1]`, `true`, três pausas de 1 s); `cancelarNoMeioDevolveFalseESeParaDeChamar` (cancela a `Task` na segunda pausa → `false`, observador recebeu `[3,2]` no máximo); `zeroSegundosDevolveTrueSemChamar`.
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar.**
+- [x] **Step 4: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona a contagem regressiva do atraso`).
 
 ### Task 7: Máquina de estados do overlay
 
@@ -206,15 +206,15 @@ Spec §4.9: se o teclado não chegar ao overlay num app de barra de menus, o ove
 
 Regras: no modo região, `mouseBaixo` dentro de uma seleção ativa em `.dentro` ou `.borda` inicia mover/redimensionar (`mouseArrastou` aplica, `mouseSolto` termina), fora começa nova seleção; o arrasto fica preso à tela onde começou; no modo janela, `cursorMoveu` atualiza `janelaRealcada` por `ListaDeJanelas.sob`, `mouseBaixo` sobre uma janela confirma na hora, `enter` confirma a realçada; `f` confirma `telaInteira` da tela sob o cursor (`SelecaoDeTela.escolher`) nos dois modos; `espaco` alterna o modo (descarta a seleção ao ir para janela; só se houver janelas); setas só movem uma seleção ativa (1 ou 10 px); `enter` sem seleção ou realce não faz nada; `esc`, `telasMudaram` e `perdeuAtivacao` produzem `.cancelado`; `opcoesMudaram` troca as opções (o `incluirCursor` fica guardado mesmo com `atraso == .nenhum`).
 
-- [ ] **Step 1: Testes que falham** (duas telas: A `(0,0,1000,800)` escala 2 principal, B `(1000,0,1000,800)` escala 1; janelas j1 `(100,100,300,300)` à frente de j2 `(50,50,400,400)`):
+- [x] **Step 1: Testes que falham** (duas telas: A `(0,0,1000,800)` escala 2 principal, B `(1000,0,1000,800)` escala 1; janelas j1 `(100,100,300,300)` à frente de j2 `(50,50,400,400)`):
   - Região: `arrastarEmATelaGeraSelecaoEmPixelsNativos` (A: arrasto `(10,10)`→`(60,40)` → `pixels == (20,20,100,60)`); `arrastoQueSaiDaTelaFicaPresoNaTelaDeOrigem` (começa em A, termina em B → seleção termina na borda de A); `arrastarPorDentroMove`; `arrastarBordaRedimensiona`; `clicarForaComecaNovaSelecao`; `setaMoveUmPixelEComShiftDez`; `setaSemSelecaoNaoFazNada`; `enterConfirmaARegiaoComAsOpcoes`; `enterSemSelecaoNaoConfirma`.
   - Janela: `cursorSobreJanelaRealcaAMaisAFrente`; `cliqueNaJanelaConfirmaNaHora`; `enterConfirmaARealcada`; `cursorForaDeJanelaLimpaORealce`.
   - Modo e teclas: `espacoAlternaERegiaoEJanela`; `espacoSemJanelasNaoMudaDeModo`; `inicialComModoJanelaESemJanelasCaiParaRegiao`; `fConfirmaATelaSobOCursor` (cursor em B → `.regiao(tela: B, pixels: (0,0,1000,800))`); `mLigaEDesligaALupa`; `hAlternaAAjuda`; `escCancela`.
   - Segurança (Review Focus 3): `telasMudaramCancela`; `perdeuAtivacaoCancela`; `eventosDepoisDoResultadoSaoIgnorados`.
   - Opções: `opcoesMudaramTrocaAsOpcoes`; `incluirCursorFicaGuardadoSemAtraso`.
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar** `reduzindo` como função pura sobre `self`, delegando a geometria às tarefas 2 a 4.
-- [ ] **Step 4: Rodar:** `make verificar` → Expected: PASS, cobertura ≥ 98 % em `CaptaNucleo`. Commit (`feat(nucleo): adiciona a máquina de estados do overlay`).
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar** `reduzindo` como função pura sobre `self`, delegando a geometria às tarefas 2 a 4.
+- [x] **Step 4: Rodar:** `make verificar` → Expected: PASS, cobertura ≥ 98 % em `CaptaNucleo`. Commit (`feat(nucleo): adiciona a máquina de estados do overlay`).
 
 ### Task 8: Contrato de captura ampliado
 
@@ -230,10 +230,10 @@ Regras: no modo região, `mouseBaixo` dentro de uma seleção ativa em `.dentro`
   - `extension ImagemCapturada { func conferindo(largura: Int, altura: Int) throws -> ImagemCapturada }` — `.tamanhoInesperado` se a imagem não tiver exatamente esse tamanho.
   - `func capturarTela(sobCursor:)` continua como está.
 
-- [ ] **Step 1: Testes que falham:** `conferindoAceitaOTamanhoExato`; `conferindoRecusaUmPixelADiferenca` (largura +1 e altura −1, cada uma) → `ErroCaptura.tamanhoInesperado`; `telaCongeladaGuardaDescricaoEImagem`.
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar** os tipos e estender o dublê de `App/Testes/DublesDeCaptura.swift` com resultados programáveis para os quatro métodos novos e registro das chamadas (tela, pixels, `incluirCursor`).
-- [ ] **Step 4: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(nucleo): amplia o contrato de captura para região, janela e telas congeladas`).
+- [x] **Step 1: Testes que falham:** `conferindoAceitaOTamanhoExato`; `conferindoRecusaUmPixelADiferenca` (largura +1 e altura −1, cada uma) → `ErroCaptura.tamanhoInesperado`; `telaCongeladaGuardaDescricaoEImagem`.
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar** os tipos e estender o dublê de `App/Testes/DublesDeCaptura.swift` com resultados programáveis para os quatro métodos novos e registro das chamadas (tela, pixels, `incluirCursor`).
+- [x] **Step 4: Rodar:** `make verificar` → Expected: PASS. Commit (`feat(nucleo): amplia o contrato de captura para região, janela e telas congeladas`).
 
 ---
 
@@ -254,9 +254,9 @@ Regras: no modo região, `mouseBaixo` dentro de uma seleção ativa em `.dentro`
   - `capturarJanela`: filtro `desktopIndependentWindow` da janela de `id` (senão `.janelaNaoEncontrada`), sem sombra (`ignoreShadowsSingleWindow`), `showsCursor = incluirCursor`, escala = a da tela de `ListaDeJanelas.tela(de:entre:)`, tamanho em pixels = quadro × escala arredondado.
   - Erros passam por `MapeadorDeErroDeCaptura.mapear`.
 
-- [ ] **Step 1: Teste que falha** (pura): um caso novo em `MapeadorDeErroDeCapturaTests` só se algum código de erro do ScreenCaptureKit passar a ter mapeamento novo; senão, nenhum teste novo (a casca vai para a lista manual).
-- [ ] **Step 2: Implementar** as quatro funções conferindo as assinaturas no SDK (`SCStreamConfiguration.sourceRect`, `ignoreShadowsSingleWindow`, `SCContentFilter(desktopIndependentWindow:)`).
-- [ ] **Step 3: Rodar:** `make verificar` → Expected: PASS (casca fora do portão). Commit (`feat(sistema): captura telas congeladas, janelas e região ou janela ao vivo`).
+- [x] **Step 1: Teste que falha** (pura): um caso novo em `MapeadorDeErroDeCapturaTests` só se algum código de erro do ScreenCaptureKit passar a ter mapeamento novo; senão, nenhum teste novo (a casca vai para a lista manual).
+- [x] **Step 2: Implementar** as quatro funções conferindo as assinaturas no SDK (`SCStreamConfiguration.sourceRect`, `ignoreShadowsSingleWindow`, `SCContentFilter(desktopIndependentWindow:)`).
+- [x] **Step 3: Rodar:** `make verificar` → Expected: PASS (casca fora do portão). Commit (`feat(sistema): captura telas congeladas, janelas e região ou janela ao vivo`).
 
 ---
 
@@ -276,10 +276,10 @@ Regras: no modo região, `mouseBaixo` dentro de uma seleção ativa em `.dentro`
   - `@MainActor final class GerenciadorDoOverlay: SeletorDeCaptura` — abre uma `JanelaDeOverlay` por tela com a `VistaDoOverlay` correspondente; mantém **um** `EstadoDoOverlay` e a ele aplica os eventos de todas as vistas; fecha todas as janelas ao receber `resultado`; observa `NSApplication.didChangeScreenParametersNotification` (`telasMudaram`) e a desativação do app (`perdeuAtivacao`).
   - `VistaDoOverlay: NSView` — desenha só a partir do estado: imagem congelada da tela escurecida e a seleção sem escurecer; mira nas duas direções em todas as telas; dimensões `largura × altura` (pixels) junto à seleção, posicionadas por `Posicionamento`; contorno e clareamento da janela realçada; alças da seleção; lupa 8× com grade e coordenadas do pixel, lida da imagem congelada e posicionada por `Lupa`/`Posicionamento`; painel de ajuda no canto inferior esquerdo (teclas da spec §4.2, ocultável); barra curta com atraso e *incluir cursor* (o cursor desabilitado, mostrando o valor guardado, quando `atraso == .nenhum`, com a explicação em pt-BR). Converte mouse, teclado e mudanças das opções em `EventoDoOverlay`. Cursor do mouse vira mira. *Reduzir transparência* deixa o escurecimento e os painéis opacos; *Reduzir movimento* sem animação; rótulo de acessibilidade "Seleção de captura. Esc cancela."
 
-- [ ] **Step 1: Testes que falham** (`GerenciadorDoOverlayTests`, no host de testes do app, com telas e janelas falsas): `escolherRetornaOResultadoDaMaquinaEFechaAsJanelas` (injeta eventos por um ponto de entrada interno e confere que `escolher` retorna e que nenhuma janela de overlay sobra aberta); `escCancelaEFecha`; `telasMudaremCancela`; `perderAAtivacaoCancela`; `umaJanelaDeOverlayPorTela`.
-- [ ] **Step 2: Rodar:** `make cobertura-app` → Expected: FAIL.
-- [ ] **Step 3: Implementar** as três peças. Textos só pelo String Catalog; cores só por `Tema.*` (acrescentar tokens ao `docs/design-system/tokens.json` e a `Tema` só se faltar algum, com `make tokens` verde).
-- [ ] **Step 4: Rodar:** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): adiciona o overlay de região e janela`).
+- [x] **Step 1: Testes que falham** (`GerenciadorDoOverlayTests`, no host de testes do app, com telas e janelas falsas): `escolherRetornaOResultadoDaMaquinaEFechaAsJanelas` (injeta eventos por um ponto de entrada interno e confere que `escolher` retorna e que nenhuma janela de overlay sobra aberta); `escCancelaEFecha`; `telasMudaremCancela`; `perderAAtivacaoCancela`; `umaJanelaDeOverlayPorTela`.
+- [x] **Step 2: Rodar:** `make cobertura-app` → Expected: FAIL.
+- [x] **Step 3: Implementar** as três peças. Textos só pelo String Catalog; cores só por `Tema.*` (acrescentar tokens ao `docs/design-system/tokens.json` e a `Tema` só se faltar algum, com `make tokens` verde).
+- [x] **Step 4: Rodar:** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): adiciona o overlay de região e janela`).
 
 ### Task 11: Opções lembradas e janelinha da contagem
 
@@ -291,10 +291,10 @@ Regras: no modo região, `mouseBaixo` dentro de uma seleção ativa em `.dentro`
 **Interfaces:**
 - Produces: `struct OpcoesLembradas { init(defaults: UserDefaults); var opcoes: OpcoesDeCaptura { get nonmutating set }; var ajudaVisivel: Bool { get nonmutating set } }` — chaves `atraso`, `incluirCursor`, `ajudaVisivel` em `UserDefaults`; padrões `.nenhum`, `false`, `true`; valor inválido de atraso volta ao padrão. `protocol ApresentadorDaContagem { @MainActor func mostrar(segundos: Int, naTela tela: DescricaoDeTela); @MainActor func atualizar(_ segundos: Int); @MainActor func fechar() }`; `GerenciadorDoOverlay` também o implementa (ou uma classe própria `JanelaDaContagem`): janelinha pequena no topo da tela da seleção, com o número e "Esc cancela", anunciada pelo VoiceOver, sem animação com *Reduzir movimento*; `Esc` ou clique nela cancelam (callback `aoCancelar`).
 
-- [ ] **Step 1: Testes que falham:** `padroesSemNadaGravado`; `gravaELeAtrasoECursorEntreInstancias`; `atrasoInvalidoVoltaAoPadrao`; `incluirCursorFicaGuardadoComAtrasoNenhum`; `ajudaVisivelPadraoVerdadeiroELembraAEscolha`.
-- [ ] **Step 2: Rodar:** `make cobertura-app` → Expected: FAIL.
-- [ ] **Step 3: Implementar.**
-- [ ] **Step 4: Rodar:** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): lembra atraso, cursor e ajuda e adiciona a contagem regressiva`).
+- [x] **Step 1: Testes que falham:** `padroesSemNadaGravado`; `gravaELeAtrasoECursorEntreInstancias`; `atrasoInvalidoVoltaAoPadrao`; `incluirCursorFicaGuardadoComAtrasoNenhum`; `ajudaVisivelPadraoVerdadeiroELembraAEscolha`.
+- [x] **Step 2: Rodar:** `make cobertura-app` → Expected: FAIL.
+- [x] **Step 3: Implementar.**
+- [x] **Step 4: Rodar:** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): lembra atraso, cursor e ajuda e adiciona a contagem regressiva`).
 
 ### Task 12: Fluxo da captura livre
 
@@ -307,7 +307,7 @@ Regras: no modo região, `mouseBaixo` dentro de uma seleção ativa em `.dentro`
 
 Sequência (spec §4.1): disparo sem captura nem seleção em andamento → permissão (mesmo tratamento) → `congelarTelas()` → `listarJanelas()` (se falhar: janelas `[]`, `modo` cai para região, sem erro) → `seletor.escolher(...)`; `.cancelado` termina sem rascunho; `.confirmado(seleção, opções)` grava as opções em `OpcoesLembradas`; **sem atraso**: região = `RecorteDeImagem` da tela congelada nos pixels da seleção (escala da tela), janela = `capturarJanela(id:incluirCursor: false)`; **com atraso**: o seletor já fechou, `contagem.mostrar`, `ContagemRegressiva`, e ao fim `capturarRegiao(em:pixels:incluirCursor:)` ou `capturarJanela(id:incluirCursor:)` ao vivo; cancelar a contagem termina sem rascunho. Erros: `.semPermissao` → ajuda de permissão; qualquer outro → alerta `capturaFalhou`.
 
-- [ ] **Step 1: Testes que falham** (`FluxoDeCapturaTests`, com capturador, seletor, contagem e pausa falsos):
+- [x] **Step 1: Testes que falham** (`FluxoDeCapturaTests`, com capturador, seletor, contagem e pausa falsos):
   - `semPermissaoMostraAjudaENaoAbreOOverlay`; `disparoDuranteSelecaoEhIgnorado` e `disparoDuranteContagemEhIgnorado`.
   - `canceladoNaoCapturaNemGravaRascunho`.
   - `regiaoSemAtrasoRecortaACongeladaEAbreAJanela` (documento com o tamanho do recorte e a escala da tela; nenhuma chamada a `capturarRegiao`); `janelaSemAtrasoCapturaAJanelaSemCursor`.
@@ -316,9 +316,9 @@ Sequência (spec §4.1): disparo sem captura nem seleção em andamento → perm
   - Review Focus 5: `listaDeJanelasIndisponivelAbreSoNoModoRegiao` (o seletor recebe `modo == .regiao` e `janelas == []`, sem alerta).
   - `falhaAoCongelarMostraAlertaENaoAbreOOverlay`.
   - `opcoesEscolhidasFicamLembradas`; `capturarTelaInteiraContinuaIgual` (regressão da fatia 3).
-- [ ] **Step 2: Rodar:** `make cobertura-app` → Expected: FAIL.
-- [ ] **Step 3: Implementar** `capturarLivre` e extrair o fim compartilhado; o registro de duração ("do disparo à janela") também cobre o caminho livre, medido do disparo até a abertura do overlay e da seleção até a janela, em duas linhas distintas.
-- [ ] **Step 4: Rodar:** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): adiciona o fluxo de captura livre com atraso`).
+- [x] **Step 2: Rodar:** `make cobertura-app` → Expected: FAIL.
+- [x] **Step 3: Implementar** `capturarLivre` e extrair o fim compartilhado; o registro de duração ("do disparo à janela") também cobre o caminho livre, medido do disparo até a abertura do overlay e da seleção até a janela, em duas linhas distintas.
+- [x] **Step 4: Rodar:** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): adiciona o fluxo de captura livre com atraso`).
 
 ### Task 13: Menu, atalhos e fiação
 
@@ -329,10 +329,10 @@ Sequência (spec §4.1): disparo sem captura nem seleção em andamento → perm
 - Consumes: `FluxoDeCaptura.capturarLivre(modo:)` (T12); `CombinacaoDeTeclas.capturaLivre` (T1).
 - Produces: menu com *Capturar região* (`⌃⌥C`, `modo: .regiao`), *Capturar janela* (`modo: .janela`), *Capturar tela inteira* (`⌃⌥F`, como hoje) e *Sair do Capta*; `⌃⌥C` chama `capturarLivre(modo: .regiao)`; `EstadoDoMenu` ganha uma flag por atalho e o menu mostra "Atalho indisponível" ao lado do item cujo registro falhou; `janelas.tentarDeNovo` segue refazendo a captura da tela inteira. O `GerenciadorDoOverlay` é injetado em `FluxoDeCaptura` como `seletor` e `contagem`.
 
-- [ ] **Step 1: Teste que falha** (`CaptaTests`, onde já houver teste da fiação; senão, só a flag): `estadoDoMenuMarcaCadaAtalhoIndisponivelSeparadamente`.
-- [ ] **Step 2: Rodar:** `make cobertura-app` → Expected: FAIL.
-- [ ] **Step 3: Implementar** a fiação.
-- [ ] **Step 4: Rodar:** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): liga o menu e o atalho da captura livre`).
+- [x] **Step 1: Teste que falha** (`CaptaTests`, onde já houver teste da fiação; senão, só a flag): `estadoDoMenuMarcaCadaAtalhoIndisponivelSeparadamente`.
+- [x] **Step 2: Rodar:** `make cobertura-app` → Expected: FAIL.
+- [x] **Step 3: Implementar** a fiação.
+- [x] **Step 4: Rodar:** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): liga o menu e o atalho da captura livre`).
 
 ### Task 14: Verificação manual e fechamento
 
