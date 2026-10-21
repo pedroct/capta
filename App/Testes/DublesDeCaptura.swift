@@ -97,21 +97,86 @@ actor Portao {
     }
 }
 
-/// Capturador que devolve um resultado fixo, opcionalmente preso num portão.
+/// Chamada registrada de `capturarRegiao`.
+struct ChamadaDeRegiao: Equatable {
+    let tela: DescricaoDeTela
+    let pixels: CGRect
+    let incluirCursor: Bool
+}
+
+/// Chamada registrada de `capturarJanela`.
+struct ChamadaDeJanela: Equatable {
+    let id: UInt32
+    let incluirCursor: Bool
+}
+
+/// Capturador que devolve resultados fixos, opcionalmente preso num portão, e registra as chamadas.
+/// Os métodos novos falham com `.falhou` até receberem um resultado programado.
 actor CapturadorFalso: Capturador {
     private let resultado: Result<ImagemCapturada, ErroCaptura>
     private let portao: Portao?
     private(set) var pontos: [CGPoint] = []
+
+    var resultadoDeCongelar: Result<[TelaCongelada], ErroCaptura> = .failure(.falhou)
+    var resultadoDeJanelas: Result<[JanelaDeTela], ErroCaptura> = .failure(.falhou)
+    var resultadoDeRegiao: Result<ImagemCapturada, ErroCaptura> = .failure(.falhou)
+    var resultadoDeJanela: Result<ImagemCapturada, ErroCaptura> = .failure(.falhou)
+    private(set) var congelamentos = 0
+    private(set) var listagensDeJanelas = 0
+    private(set) var chamadasDeRegiao: [ChamadaDeRegiao] = []
+    private(set) var chamadasDeJanela: [ChamadaDeJanela] = []
 
     init(_ resultado: Result<ImagemCapturada, ErroCaptura>, portao: Portao? = nil) {
         self.resultado = resultado
         self.portao = portao
     }
 
+    func programar(
+        congelar: Result<[TelaCongelada], ErroCaptura>? = nil,
+        janelas: Result<[JanelaDeTela], ErroCaptura>? = nil,
+        regiao: Result<ImagemCapturada, ErroCaptura>? = nil,
+        janela: Result<ImagemCapturada, ErroCaptura>? = nil
+    ) {
+        if let congelar { resultadoDeCongelar = congelar }
+        if let janelas { resultadoDeJanelas = janelas }
+        if let regiao { resultadoDeRegiao = regiao }
+        if let janela { resultadoDeJanela = janela }
+    }
+
     func capturarTela(sobCursor ponto: CGPoint) async throws -> ImagemCapturada {
         pontos.append(ponto)
         await portao?.esperar()
         return try resultado.get()
+    }
+
+    func congelarTelas() async throws -> [TelaCongelada] {
+        congelamentos += 1
+        await portao?.esperar()
+        return try resultadoDeCongelar.get()
+    }
+
+    func listarJanelas() async throws -> [JanelaDeTela] {
+        listagensDeJanelas += 1
+        await portao?.esperar()
+        return try resultadoDeJanelas.get()
+    }
+
+    func capturarRegiao(
+        em tela: DescricaoDeTela,
+        pixels: CGRect,
+        incluirCursor: Bool
+    ) async throws -> ImagemCapturada {
+        chamadasDeRegiao.append(
+            ChamadaDeRegiao(tela: tela, pixels: pixels, incluirCursor: incluirCursor)
+        )
+        await portao?.esperar()
+        return try resultadoDeRegiao.get()
+    }
+
+    func capturarJanela(id: UInt32, incluirCursor: Bool) async throws -> ImagemCapturada {
+        chamadasDeJanela.append(ChamadaDeJanela(id: id, incluirCursor: incluirCursor))
+        await portao?.esperar()
+        return try resultadoDeJanela.get()
     }
 }
 

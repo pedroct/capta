@@ -63,4 +63,25 @@ public struct CapturadorSC: Capturador {
             throw MapeadorDeErroDeCaptura.mapear(error)
         }
     }
+
+    // Preenchidos na próxima etapa; até lá falham de forma explícita.
+    public func congelarTelas() async throws -> [TelaCongelada] {
+        throw ErroCaptura.falhou
+    }
+
+    public func listarJanelas() async throws -> [JanelaDeTela] {
+        throw ErroCaptura.falhou
+    }
+
+    public func capturarRegiao(
+        em tela: DescricaoDeTela,
+        pixels: CGRect,
+        incluirCursor: Bool
+    ) async throws -> ImagemCapturada {
+        throw ErroCaptura.falhou
+    }
+
+    public func capturarJanela(id: UInt32, incluirCursor: Bool) async throws -> ImagemCapturada {
+        throw ErroCaptura.falhou
+    }
 }
