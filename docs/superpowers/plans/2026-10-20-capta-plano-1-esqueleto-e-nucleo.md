@@ -77,9 +77,9 @@ capta/
 **Interfaces:**
 - Produces: `public enum Esquema { public static let versaoAtual: Int }` (valor `1`); alvos `make lint`, `make test`, `make verificar` (nesta tarefa: `lint` + `test`).
 
-- [ ] **Step 1: 🔒 Clonar** `https://github.com/pedroct/capta.git` em `/Volumes/DOCK/Projetos/pessoal/capta` (confirmar o caminho com o Pedro), configurar `user.name`/`user.email` locais, `git branch -M main`.
-- [ ] **Step 2: Criar `LICENSE` (MIT, "Copyright (c) 2026 Pedro Teixeira"), `README.md` (o que é, status, `make verificar`), `.gitignore`, `.swift-format`, `.swiftlint.yml` e `Tests/.swiftlint.yml` exatamente como nas seções 6 do padrão; copiar os três documentos para `docs/`.** Na tabela de toolchain do padrão, trocar "commitlint" por "script `ferramentas/hooks/commit-msg`" (validação por expressão regular, sem Node).
-- [ ] **Step 3: Escrever o teste que falha** em `EsquemaTests.swift`:
+- [x] **Step 1: 🔒 Clonar** `https://github.com/pedroct/capta.git` em `/Volumes/DOCK/Projetos/pessoal/capta` (confirmar o caminho com o Pedro), configurar `user.name`/`user.email` locais, `git branch -M main`.
+- [x] **Step 2: Criar `LICENSE` (MIT, "Copyright (c) 2026 Pedro Teixeira"), `README.md` (o que é, status, `make verificar`), `.gitignore`, `.swift-format`, `.swiftlint.yml` e `Tests/.swiftlint.yml` exatamente como nas seções 6 do padrão; copiar os três documentos para `docs/`.** Na tabela de toolchain do padrão, trocar "commitlint" por "script `ferramentas/hooks/commit-msg`" (validação por expressão regular, sem Node).
+- [x] **Step 3: Escrever o teste que falha** em `EsquemaTests.swift`:
 
 ```swift
 import Testing
@@ -90,12 +90,12 @@ import Testing
 }
 ```
 
-- [ ] **Step 4: Rodar e ver falhar:** `make test` → Expected: erro de compilação "cannot find 'Esquema' in scope".
-- [ ] **Step 5: Criar `Package.swift` (modelo da seção 6), `Esquema.swift` e `CaptaSistema/Vazio.swift`** (um `enum` vazio documentado, só para o alvo compilar).
-- [ ] **Step 6: Criar o `Makefile`** com `format`, `lint`, `test`, `verificar` (`lint test`) e o `DEVELOPER_DIR` automático da seção 6; **os ganchos**: `pre-commit` roda `make lint`; `commit-msg` rejeita mensagem fora de `^(feat|fix|refactor|test|docs|chore|perf|ci|build|revert)(\([a-z0-9-]+\))?!?: .+`; `pre-push` roda `make verificar`; ativar com `git config core.hooksPath ferramentas/hooks`.
-- [ ] **Step 7: Verificar:** `make verificar` → Expected: lint sem violações e `1 test passed`. Teste do gancho: `echo "lixo" | ferramentas/hooks/commit-msg /dev/stdin` → Expected: código de saída ≠ 0; com `feat(nucleo): adiciona esquema` → 0.
-- [ ] **Step 8: Commit** (`chore: inicia repositório com portão de qualidade`), incluindo todos os arquivos acima.
-- [ ] **Step 9: 🔒 `git push -u origin main`** após confirmação do Pedro.
+- [x] **Step 4: Rodar e ver falhar:** `make test` → Expected: erro de compilação "cannot find 'Esquema' in scope".
+- [x] **Step 5: Criar `Package.swift` (modelo da seção 6), `Esquema.swift` e `CaptaSistema/Vazio.swift`** (um `enum` vazio documentado, só para o alvo compilar).
+- [x] **Step 6: Criar o `Makefile`** com `format`, `lint`, `test`, `verificar` (`lint test`) e o `DEVELOPER_DIR` automático da seção 6; **os ganchos**: `pre-commit` roda `make lint`; `commit-msg` rejeita mensagem fora de `^(feat|fix|refactor|test|docs|chore|perf|ci|build|revert)(\([a-z0-9-]+\))?!?: .+`; `pre-push` roda `make verificar`; ativar com `git config core.hooksPath ferramentas/hooks`.
+- [x] **Step 7: Verificar:** `make verificar` → Expected: lint sem violações e `1 test passed`. Teste do gancho: `echo "lixo" | ferramentas/hooks/commit-msg /dev/stdin` → Expected: código de saída ≠ 0; com `feat(nucleo): adiciona esquema` → 0.
+- [x] **Step 8: Commit** (`chore: inicia repositório com portão de qualidade`), incluindo todos os arquivos acima.
+- [x] **Step 9: 🔒 `git push -u origin main`** após confirmação do Pedro.
 
 ---
 
@@ -113,19 +113,19 @@ import Testing
   - `enum Anotacao { static let vermelho, laranja, amarelo, verde, azul, roxo, preto, branco, realce: Color }` lendo as cores `Anotacao*` do catálogo.
   - `enum Espaco { static let e1 = 4.0, e2 = 8.0, e3 = 12.0, e4 = 16.0, e6 = 24.0, e8 = 32.0 }` e `enum Raio { static let controle = 6.0, cartao = 10.0, painel = 14.0, janela = 16.0 }`.
 
-- [ ] **Step 1: 🔒 Instalar o XcodeGen** (`brew install xcodegen`) após confirmação do Pedro; anotar a versão no `README.md`.
-- [ ] **Step 2: Escrever os testes dos portões (falham antes do código):**
+- [x] **Step 1: 🔒 Instalar o XcodeGen** (`brew install xcodegen`) após confirmação do Pedro; anotar a versão no `README.md`.
+- [x] **Step 2: Escrever os testes dos portões (falham antes do código):**
   - `conferir_entitlements.sh`: lê `App/Capta.entitlements` com `plutil` e **falha** se `com.apple.security.app-sandbox` ≠ `true`, ou se existir `com.apple.security.network.client`, ou se houver chave fora da lista permitida (`app-sandbox`, `files.user-selected.read-write`).
   - `conferir_tokens.sh` (usa `python3 -I`): **falha** (1) se algum `.swift` em `App/Fontes` (exceto `Tema.swift`) contiver `Color.red`/`Color(red:`/`.foregroundColor(.`/`Color(hex`/`.secondary` ou literal `#`-hex; (2) se alguma cor `anotacao-*` de `docs/design-system/tokens.json` não existir em `Assets.xcassets` como `Anotacao<Nome>.colorset` com o **mesmo hexadecimal** (e alfa) nos dois temas; (3) se `superficie-canvas` ou `borda-controle` divergirem do catálogo; (4) se o `Info.plist` ou o código mencionar alguma cor `marca-*` fora de `Assets.xcassets/AppIcon.appiconset`. Passa se tudo conferir.
   - Teste do script: criar `App/Fontes/Tmp.swift` com `let c = Color.red` → Expected: saída ≠ 0; apagar; alterar um hexadecimal em `AnotacaoVermelho.colorset` → Expected: saída ≠ 0 apontando o token; restaurar e rodar → Expected: 0.
   - `gerar_icone.swift`: gera os PNGs do `AppIcon.appiconset` (16 a 1024 px, @1x/@2x) e o glifo do menu a partir de `docs/design-system/assets/Marca/*.svg`. **A confirmar:** se `NSImage` desenhar o SVG; caso contrário, usar `rsvg-convert` (🔒 instalar `librsvg` só com autorização). Teste: rodar o script e conferir que `AppIcon.appiconset/Contents.json` lista os 10 tamanhos e que o PNG de 1024 px tem 1024×1024 (`sips -g pixelWidth`).
-- [ ] **Step 3: Criar `App/Capta.entitlements`** (sandbox `true`; `files.user-selected.read-write` `true`; um comentário XML por chave com o motivo) e `App/Info.plist` (chaves da seção 6 do padrão; `LSUIElement` = `true` por ora — a política de ativação com Dock entra no Plano do editor).
-- [ ] **Step 4: Criar `project.yml`** a partir do esqueleto do padrão; `project.local.yml.example` com `DEVELOPMENT_TEAM: SEU_TIME_AQUI` (o `project.local.yml` real já está no `.gitignore`); `CaptaApp.swift` com `@main struct CaptaApp: App` e `MenuBarExtra` usando o glifo monocromático do Capta como imagem-modelo (fallback: símbolo do sistema `camera.viewfinder` se o glifo ainda não existir) + botão "Sair do Capta" (texto do String Catalog); `Tema.swift` com todos os tokens listados em Interfaces; catálogo de cores gerado a partir de `docs/design-system/tokens.json` (hexadecimais exatos, claro e escuro) e `AppIcon` gerado por `gerar_icone.swift`. Nenhuma cor `marca-*` aparece em `Tema.swift`.
-- [ ] **Step 5: Makefile:** `gerar` roda `xcodegen generate`; `build` roda `xcodebuild -scheme Capta -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build | xcbeautify`; `verificar: lint build test tokens entitlements`.
-- [ ] **Step 6: Verificar:** `make gerar && make verificar` → Expected: compila em modo estrito sem avisos; os dois scripts saem com 0.
-- [ ] **Step 7: Criar `ferramentas/empacotar.sh`:** compila em Release lendo `DEVELOPMENT_TEAM` de `project.local.yml`, assina com Apple Development e copia para `build/Capta.app`; falha com mensagem clara se `project.local.yml` não existir.
+- [x] **Step 3: Criar `App/Capta.entitlements`** (sandbox `true`; `files.user-selected.read-write` `true`; um comentário XML por chave com o motivo) e `App/Info.plist` (chaves da seção 6 do padrão; `LSUIElement` = `true` por ora — a política de ativação com Dock entra no Plano do editor).
+- [x] **Step 4: Criar `project.yml`** a partir do esqueleto do padrão; `project.local.yml.example` com `DEVELOPMENT_TEAM: SEU_TIME_AQUI` (o `project.local.yml` real já está no `.gitignore`); `CaptaApp.swift` com `@main struct CaptaApp: App` e `MenuBarExtra` usando o glifo monocromático do Capta como imagem-modelo (fallback: símbolo do sistema `camera.viewfinder` se o glifo ainda não existir) + botão "Sair do Capta" (texto do String Catalog); `Tema.swift` com todos os tokens listados em Interfaces; catálogo de cores gerado a partir de `docs/design-system/tokens.json` (hexadecimais exatos, claro e escuro) e `AppIcon` gerado por `gerar_icone.swift`. Nenhuma cor `marca-*` aparece em `Tema.swift`.
+- [x] **Step 5: Makefile:** `gerar` roda `xcodegen generate`; `build` roda `xcodebuild -scheme Capta -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build | xcbeautify`; `verificar: lint build test tokens entitlements`.
+- [x] **Step 6: Verificar:** `make gerar && make verificar` → Expected: compila em modo estrito sem avisos; os dois scripts saem com 0.
+- [x] **Step 7: Criar `ferramentas/empacotar.sh`:** compila em Release lendo `DEVELOPMENT_TEAM` de `project.local.yml`, assina com Apple Development e copia para `build/Capta.app`; falha com mensagem clara se `project.local.yml` não existir.
 - [ ] **Step 8: Verificação manual (🔒 pedir ao Pedro para criar `project.local.yml`):** `make app && open build/Capta.app` → Expected: ícone na barra de menus; clicar mostra "Sair do Capta"; `codesign -d --entitlements - build/Capta.app` mostra `app-sandbox` verdadeiro.
-- [ ] **Step 9: Commit** (`feat(app): cria app de barra de menus sob sandbox`).
+- [x] **Step 9: Commit** (`feat(app): cria app de barra de menus sob sandbox`).
 
 ---
 
@@ -138,9 +138,9 @@ import Testing
 - Consumes: `make lint`, `make test` (e `ferramentas/hooks/commit-msg` para validar mensagens).
 - Produces: workflow `CI` com jobs `verificar` e `commits`.
 
-- [ ] **Step 1: Criar o workflow** que dispara em `pull_request` e `push` na `main`: job `verificar` em runner macOS com Xcode ≥ 26 (`macos-26`; **A confirmar** a disponibilidade da imagem — se não existir, usar o mais novo e registrar), instala SwiftLint por Homebrew e roda `make lint` e `make test`; job `commits` roda o script `commit-msg` sobre cada mensagem do intervalo do PR. Sem segredos.
-- [ ] **Step 2: 🔒 Verificar:** abrir um PR de teste (ou `git push`) após confirmação → Expected: `gh run list --limit 1` mostra `completed success`. Se falhar por versão de Swift, registrar a causa em `docs/padroes-stack-swift.md` (seção 7) em vez de contornar.
-- [ ] **Step 3: Commit** (`ci: adiciona verificação no GitHub Actions`).
+- [x] **Step 1: Criar o workflow** que dispara em `pull_request` e `push` na `main`: job `verificar` em runner macOS com Xcode ≥ 26 (`macos-26`; **A confirmar** a disponibilidade da imagem — se não existir, usar o mais novo e registrar), instala SwiftLint por Homebrew e roda `make lint` e `make test`; job `commits` roda o script `commit-msg` sobre cada mensagem do intervalo do PR. Sem segredos.
+- [x] **Step 2: 🔒 Verificar:** abrir um PR de teste (ou `git push`) após confirmação → Expected: `gh run list --limit 1` mostra `completed success`. Se falhar por versão de Swift, registrar a causa em `docs/padroes-stack-swift.md` (seção 7) em vez de contornar.
+- [x] **Step 3: Commit** (`ci: adiciona verificação no GitHub Actions`).
 
 ---
 
@@ -160,7 +160,7 @@ import Testing
   - `struct Documento { versaoEsquema: Int; tamanhoBase: CGSize; escala: Double; recorte: CGRect?; objetos: [Anotacao]; static func novo(tamanhoBase: CGSize, escala: Double) -> Documento; func validar() throws }` — a **ordem do array é a ordem das camadas** (último = por cima). `init(from:)` chama `validar()`.
   - `enum ErroDocumento: Error, Equatable { valorNaoFinito, valorForaDeFaixa(String), tamanhoInvalido, recorteInvalido, objetoInexistente(UUID) }`.
 
-- [ ] **Step 1: Escrever os testes que falham** em `ModeloTests.swift` (nomes e asserções):
+- [x] **Step 1: Escrever os testes que falham** em `ModeloTests.swift` (nomes e asserções):
   - `coresPadraoConferemComOsTokensDeAnotacao`: `CorRGBA.vermelho`, `.amarelo`, `.preto`, `.branco` em 0–255 são `(255,59,48)`, `(255,204,0)`, `(28,28,30)`, `(255,255,255)`, com `a == 1`.
   - `documentoNovoComecaVazio`: `Documento.novo(tamanhoBase: .init(width: 200, height: 100), escala: 2)` tem `versaoEsquema == Esquema.versaoAtual`, `objetos.isEmpty`, `recorte == nil`.
   - `ciclaJSONParaCadaGeometria` (parametrizado com um exemplo de cada um dos 8 casos): `decode(encode(x)) == x`.
@@ -168,10 +168,10 @@ import Testing
   - `rejeitaOpacidadeForaDeFaixa`: opacidade `1.5` e `-0.1` → `valorForaDeFaixa("opacidade")`.
   - `rejeitaTamanhoBaseNaoPositivo`: largura `0` e `-5` → `tamanhoInvalido`; `escala == 0` também.
   - `decodificacaoValidaDocumento`: JSON com `"opacidade": 7` ou número `1e999` → `JSONDecoder().decode` **lança** (qualquer erro).
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL (tipos inexistentes).
-- [ ] **Step 3: Implementar os tipos acima**, um arquivo por responsabilidade; `validar()` percorre `tamanhoBase`, `escala`, `recorte` (se existir deve ter largura/altura > 0 e estar contido em `tamanhoBase`) e cada anotação (`isFinite` em todos os números, `opacidade` e componentes de cor em 0…1, `largura ≥ 0`).
-- [ ] **Step 4: Rodar:** `make verificar` → Expected: PASS, lint limpo.
-- [ ] **Step 5: Commit** (`feat(nucleo): adiciona modelo do documento e validação`).
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL (tipos inexistentes).
+- [x] **Step 3: Implementar os tipos acima**, um arquivo por responsabilidade; `validar()` percorre `tamanhoBase`, `escala`, `recorte` (se existir deve ter largura/altura > 0 e estar contido em `tamanhoBase`) e cada anotação (`isFinite` em todos os números, `opacidade` e componentes de cor em 0…1, `largura ≥ 0`).
+- [x] **Step 4: Rodar:** `make verificar` → Expected: PASS, lint limpo.
+- [x] **Step 5: Commit** (`feat(nucleo): adiciona modelo do documento e validação`).
 
 ---
 
@@ -188,17 +188,17 @@ import Testing
   - `struct SessaoEdicao: Sendable { private(set) var documento: Documento; init(documento: Documento); mutating func aplicar(_ edicao: Edicao) throws; @discardableResult mutating func desfazer() -> Bool; @discardableResult mutating func refazer() -> Bool; var podeDesfazer: Bool; var podeRefazer: Bool }` — histórico por *snapshot* de `Documento` (o documento não contém a imagem base), ilimitado na sessão; `aplicar` limpa o refazer; edição inválida **não altera** o documento nem o histórico.
   - `extension Documento { func numeroDaEtapa(_ id: UUID) -> Int? }` — numera as etapas na ordem das camadas; uma etapa com `reiniciaSequencia == true` volta a `1`.
 
-- [ ] **Step 1: Escrever os testes que falham:**
+- [x] **Step 1: Escrever os testes que falham:**
   - `adicionarMoverRemoverAplicamNaOrdem` e `desfazerRefazerRestauraCadaPasso` (3 edições, 3 `desfazer()`, 3 `refazer()` → documentos iguais aos instantes anteriores).
   - `aplicarDepoisDeDesfazerLimpaORefazer`: `podeRefazer == false`.
   - `edicaoInvalidaNaoMudaNada`: `remover([UUID()])` e `reordenar(UUID(), .paraFrente)` lançam `objetoInexistente`; `documento` e `podeDesfazer` inalterados.
   - `reordenarMudaAPosicaoNoArray` para cada caso de `Ordem`, incluindo bordas (já no topo + `paraFrente` é no-op sem erro).
   - `recorteForaDosLimitesELancado`: `definirRecorte(CGRect(x: -5, y: 0, width: 10, height: 10))`, `…width: 0…` e o retângulo com altura negativa → `recorteInvalido`; `definirRecorte(nil)` remove o recorte; recorte válido é desfeito por `desfazer()`.
   - Etapas (`EtapasTests`): sem etapas, `numeroDaEtapa(UUID()) == nil`; três etapas → `1,2,3`; **excluir a 2ª** → a antiga 3ª vira `2`; `desfazer()` restaura `3`; `definirReinicioDeEtapa` na 3ª de quatro → `1,2,1,2`.
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar** `Edicao`, `SessaoEdicao` e `numeroDaEtapa` como acima; toda edição termina com `documento.validar()` e só então entra no histórico.
-- [ ] **Step 4: Rodar:** `make verificar` → Expected: PASS.
-- [ ] **Step 5: Commit** (`feat(nucleo): adiciona edição com desfazer e refazer e numeração de etapas`).
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar** `Edicao`, `SessaoEdicao` e `numeroDaEtapa` como acima; toda edição termina com `documento.validar()` e só então entra no histórico.
+- [x] **Step 4: Rodar:** `make verificar` → Expected: PASS.
+- [x] **Step 5: Commit** (`feat(nucleo): adiciona edição com desfazer e refazer e numeração de etapas`).
 
 ---
 
@@ -215,7 +215,7 @@ import Testing
   - `struct Renderizador: Sendable { init(provedorDeSimbolos: ProvedorDeSimbolos? = nil); func renderizar(_ documento: Documento, base: CGImage) throws -> CGImage }` — saída sRGB, 8 bits, `premultipliedLast`, com o tamanho **em pixels** da base (ou do recorte, quando existir; recorte e desfoque entram na Tarefa 7). Falha com `ErroDocumento.tamanhoInvalido` se `base` não casar com `documento.tamanhoBase`.
   - Apoio de teste (`Pixels.swift`): `func imagemSolida(_ tamanho: CGSize, cor: CorRGBA) -> CGImage` e `func pixel(_ imagem: CGImage, x: Int, y: Int) -> (r: UInt8, g: UInt8, b: UInt8, a: UInt8)` (origem no canto superior esquerdo).
 
-- [ ] **Step 1: Escrever os testes que falham** (base branca 100×100, tolerância ±2 por canal):
+- [x] **Step 1: Escrever os testes que falham** (base branca 100×100, tolerância ±2 por canal):
   - `semObjetosDevolveABaseIgual`: todos os pixels amostrados iguais à base.
   - `formaRetanguloPreenchidoPintaSoDentro`: retângulo (10,10,40,40) vermelho opaco → pixel (20,20) vermelho, pixel (60,60) branco.
   - `camadaPosteriorFicaPorCima`: vermelho e depois azul sobrepostos → pixel na interseção é azul.
@@ -224,10 +224,10 @@ import Testing
   - `etapaDesenhaCirculoENumero`: círculo (centro (50,50), diâmetro 40) com preenchimento verde → centro do círculo é verde ou texto do número (verificar que **existem** pixels brancos e verdes no círculo) e pixel fora (5,5) branco; a etapa de ordem 2 mostra "2" (comparar contra a mesma etapa isolada: imagens diferentes).
   - `baseComTamanhoDivergenteLancaErro`.
   - **Texto (`RenderizadorTextoTests`, Review Focus 1):** `textoVazioNaoDesenhaNada`; `textoLongoFicaDentroDoRetangulo` (500 caracteres em retângulo 80×20: nenhum pixel alterado fora do retângulo); `emojiRTLENaoQuebram` (`"😀"`, `"مرحبا"`, `"שלום"`: `renderizar` não lança, e há ao menos um pixel alterado dentro do retângulo); `negritoEItalicoMudamOResultado` (imagens diferentes).
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar `Renderizador.renderizar`:** contexto `CGContext` sRGB do tamanho da base; desenha a base; inverte o eixo Y uma vez (documento usa origem no topo); percorre `documento.objetos` em ordem; cada tipo vive em `DesenhoFormas.swift` (formas, linha, seta, realce, etapa) ou `DesenhoTexto.swift` (texto com CoreText, recortado ao retângulo do objeto); texto vazio é *no-op*; `desfoque` e `carimbo` ficam como `fatalError`-livre *no-op* nesta tarefa (entram na Tarefa 7).
-- [ ] **Step 4: Rodar:** `make verificar` → Expected: PASS.
-- [ ] **Step 5: Commit** (`feat(nucleo): adiciona renderizador de formas, texto e etapas`).
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar `Renderizador.renderizar`:** contexto `CGContext` sRGB do tamanho da base; desenha a base; inverte o eixo Y uma vez (documento usa origem no topo); percorre `documento.objetos` em ordem; cada tipo vive em `DesenhoFormas.swift` (formas, linha, seta, realce, etapa) ou `DesenhoTexto.swift` (texto com CoreText, recortado ao retângulo do objeto); texto vazio é *no-op*; `desfoque` e `carimbo` ficam como `fatalError`-livre *no-op* nesta tarefa (entram na Tarefa 7).
+- [x] **Step 4: Rodar:** `make verificar` → Expected: PASS.
+- [x] **Step 5: Commit** (`feat(nucleo): adiciona renderizador de formas, texto e etapas`).
 
 ---
 
@@ -242,7 +242,7 @@ import Testing
 - Consumes: `Renderizador`, `ProvedorDeSimbolos` (Tarefa 6); `TipoDesfoque` (Tarefa 4).
 - Produces: `struct ProvedorDeSimbolosSF: ProvedorDeSimbolos` em `CaptaSistema` (usa símbolos do sistema; devolve `nil` para símbolo desconhecido); comportamento do `Renderizador`: **desfoque** afeta só o que está **abaixo** dele na ordem das camadas, na região recortada aos limites da imagem; **recorte** é aplicado por último e define o tamanho da saída.
 
-- [ ] **Step 1: Escrever os testes que falham** (base 100×100 em xadrez preto/branco de 2 px para medir variação):
+- [x] **Step 1: Escrever os testes que falham** (base 100×100 em xadrez preto/branco de 2 px para medir variação):
   - `recorteDefineOTamanhoDaSaida`: recorte (10,10,30,20) → imagem 30×20, e o pixel (0,0) da saída é o pixel (10,10) da base.
   - `anotacaoForaDoRecorteNaoApareceNaSaida`: forma vermelha totalmente fora do recorte → nenhum pixel vermelho na saída.
   - `borrarReduzALocalmenteAVariacao`: região (20,20,40,40) → variação (desvio-padrão da luminância) dentro menor que a base; pixel (5,5), fora da região, **idêntico** à base.
@@ -251,10 +251,10 @@ import Testing
   - **Review Focus 2:** `desfoqueParcialmenteForaDaImagemBorraSoOTrechoInterno`; `desfoqueTotalmenteForaOuComTamanhoZeroNaoMudaNada` (sem lançar); `desfoqueComIntensidadeZeroNaoMudaNada`.
   - `carimboUsaOProvedor`: provedor falso devolvendo uma imagem sólida 10×10 → pixels do retângulo do carimbo coloridos; provedor `nil` e provedor que devolve `nil` → nada desenhado, sem erro.
   - `provedorDoSistemaDevolveImagemParaSimboloConhecido` (em `CaptaSistema`): `ProvedorDeSimbolosSF().imagem(simbolo: "star.fill", lado: 24, cor: .preto) != nil` e `imagem(simbolo: "nao.existe.xyz", …) == nil`.
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar** `Desfoque.swift` com CoreImage (`CIGaussianBlur` para `borrar`, `CIPixellate` para `pixelizar`) aplicado à **cópia do compósito até aquele ponto**, recortada a `região ∩ limites da imagem`; `ProvedorDeSimbolosSF` renderiza o símbolo no tamanho e cor pedidos; recorte por `CGImage.cropping(to:)` no final (coordenadas do recorte já estão em pixels da base).
-- [ ] **Step 4: Rodar:** `make verificar` → Expected: PASS.
-- [ ] **Step 5: Commit** (`feat(nucleo): adiciona recorte, desfoque e carimbo ao renderizador`).
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar** `Desfoque.swift` com CoreImage (`CIGaussianBlur` para `borrar`, `CIPixellate` para `pixelizar`) aplicado à **cópia do compósito até aquele ponto**, recortada a `região ∩ limites da imagem`; `ProvedorDeSimbolosSF` renderiza o símbolo no tamanho e cor pedidos; recorte por `CGImage.cropping(to:)` no final (coordenadas do recorte já estão em pixels da base).
+- [x] **Step 4: Rodar:** `make verificar` → Expected: PASS.
+- [x] **Step 5: Commit** (`feat(nucleo): adiciona recorte, desfoque e carimbo ao renderizador`).
 
 ---
 
@@ -272,17 +272,17 @@ import Testing
   - `enum PacoteCapta { static let extensao: String /* "capta" */; static func gravar(_ documento: Documento, baseDados: Data, miniaturaDados: Data, em destino: URL) throws; static func atualizar(_ documento: Documento, miniaturaDados: Data?, em destino: URL) throws; static func ler(de origem: URL) throws -> ConteudoPacote }`.
   - Estrutura em disco: pasta `<nome>.capta/` com `documento.json`, `base.png`, `miniatura.png`. `gravar` cria o pacote em pasta temporária irmã e **move atomicamente** para o destino; `atualizar` regrava **apenas** `documento.json` (e a miniatura, se vier) de forma atômica e **nunca toca `base.png`**.
 
-- [ ] **Step 1: Escrever os testes que falham** (pasta temporária por teste):
+- [x] **Step 1: Escrever os testes que falham** (pasta temporária por teste):
   - `gravarELerFazemIdaEVolta`: documento com um objeto de cada tipo → `ler` devolve documento igual, `baseDados` e `miniaturaDados` idênticos.
   - `pacoteTemAsTresPartesEExtensao`: nomes dos itens exatamente `documento.json`, `base.png`, `miniatura.png`; destino termina em `.capta`.
   - `atualizarNaoTocaABase`: bytes de `base.png` iguais e **data de modificação inalterada** depois de `atualizar`; `documento.json` reflete a mudança.
   - **Review Focus 3:** `jsonTruncadoLancaJsonInvalido` (cortar o arquivo ao meio); `semBasePngLancaArquivoAusente("base.png")`; `versaoEsquema99LancaVersaoMaisNova(99)` (editar o JSON gravado); `gravarComBaseVaziaLancaDadosVaziosENaoCriaNada`; `gravarSobreUmPacoteExistenteQueFalhaMantemOAntigo` (segunda gravação com `baseDados` vazio → o pacote anterior continua legível e igual); `atualizarComJsonCorrompidoNoDiscoNaoApagaABase`.
   - `lerPastaQueNaoExisteLancaArquivoAusente`.
-- [ ] **Step 2: Rodar:** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar** com `JSONEncoder` (`.sortedKeys`, `.prettyPrinted`) e `FileManager`; `ler` decodifica primeiro só `{ versaoEsquema }` para aplicar o portão de versão (`> Esquema.versaoAtual` → `versaoMaisNova`) **antes** de decodificar o documento completo. A primeira migração real será escrita junto com a primeira mudança de esquema (hoje só existe a versão 1).
-- [ ] **Step 4: Rodar:** `make verificar` → Expected: PASS, cobertura dos tipos de erro acima.
-- [ ] **Step 5: Commit** (`feat(nucleo): adiciona arquivo .capta com gravação atômica`).
-- [ ] **Step 6: 🔒 `git push`** após confirmação; conferir `gh run list --limit 1` → `success`.
+- [x] **Step 2: Rodar:** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar** com `JSONEncoder` (`.sortedKeys`, `.prettyPrinted`) e `FileManager`; `ler` decodifica primeiro só `{ versaoEsquema }` para aplicar o portão de versão (`> Esquema.versaoAtual` → `versaoMaisNova`) **antes** de decodificar o documento completo. A primeira migração real será escrita junto com a primeira mudança de esquema (hoje só existe a versão 1).
+- [x] **Step 4: Rodar:** `make verificar` → Expected: PASS, cobertura dos tipos de erro acima.
+- [x] **Step 5: Commit** (`feat(nucleo): adiciona arquivo .capta com gravação atômica`).
+- [x] **Step 6: 🔒 `git push`** após confirmação; conferir `gh run list --limit 1` → `success`.
 
 ---
 
@@ -291,3 +291,14 @@ import Testing
 - **Cobertura da spec (fatias 1–2):** repositório, CI, projeto gerado, `project.local.yml.example`, `make verificar` sem time de assinatura, sandbox e entitlements (T1–T3); objetos, comandos reversíveis (como *edições* com histórico por *snapshot*, mais simples que comandos com inverso e equivalente para o usuário), renderizador único com desfoque/recorte/carimbo, `.capta` com gravação atômica e portão de versão (T4–T8). **Fora deste plano, de propósito:** captura, overlay, editor, biblioteca, exportação, preferências (Planos 2–4).
 - **Consistência de tipos:** `Documento`, `Anotacao`, `Geometria`, `Estilo`, `CorRGBA`, `Edicao`, `SessaoEdicao`, `Renderizador`, `ProvedorDeSimbolos`, `PacoteCapta`, `ErroDocumento`, `ErroPacote` usados com a mesma assinatura em todas as tarefas.
 - **Desvio da spec, para o Pedro saber:** a spec fala em "comandos reversíveis"; o plano usa edições puras + histórico por *snapshot*. Comportamento visível igual (desfazer/refazer ilimitado), código menor e sem risco de inverso mal escrito.
+
+---
+
+## Status de execução (2026-10-20)
+
+Tarefas 1 a 8 concluídas, revisadas e publicadas em `main`; CI verde (jobs `verificar`, `commits` e `app`).
+
+- **Pendente, depende do Pedro:** Tarefa 2, Passo 8 — criar `project.local.yml` (time de assinatura) e rodar `make app && open build/Capta.app` para conferir o ícone na barra de menus e `codesign -d --entitlements - build/Capta.app`. Fazer antes do plano de captura.
+- **Desvios aceitos:** CoreText permitido no núcleo; `CODE_SIGN_ENTITLEMENTS` no lugar da chave `entitlements:` do XcodeGen; alvo de teste `CaptaSistemaTests`; `ErroDocumento.idDuplicado`; `ErroRenderizacao`; `validar()` exige a versão atual do esquema; desfoque ignora a opacidade do estilo.
+- **Decisões para o próximo plano (antes de qualquer `.capta` gravado pelo app):** numeração de etapas por ordem de criação (spec §4.8) em vez de ordem das camadas; fechar o esquema v1 (Codable explícito de `Geometria`, girar, estilo de ponta, fonte/alinhamento, rótulo de etapa); API do renderizador com contexto e área suja; `Edicao.lote`.
+
