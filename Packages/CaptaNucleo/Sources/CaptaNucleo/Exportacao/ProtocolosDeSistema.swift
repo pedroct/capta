@@ -44,6 +44,12 @@ public struct CombinacaoDeTeclas: Equatable, Sendable {
         codigoDaTecla: 3,
         modificadores: [.controle, .opcao]
     )
+
+    /// ⌃⌥C (código `8`, o `kVK_ANSI_C`): abre o overlay de captura de região e janela.
+    public static let capturaLivre = CombinacaoDeTeclas(
+        codigoDaTecla: 8,
+        modificadores: [.controle, .opcao]
+    )
 }
 
 public enum ErroAtalho: Error, Equatable, Sendable {

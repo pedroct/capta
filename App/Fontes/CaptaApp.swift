@@ -9,6 +9,7 @@ import SwiftUI
 @Observable
 final class EstadoDoMenu {
     var atalhoIndisponivel = false
+    var atalhoDeCapturaLivreIndisponivel = false
 }
 
 /// Única fiação do app: compõe os adaptadores do sistema e liga o atalho global.
@@ -17,6 +18,8 @@ struct CaptaApp: App {
     @State private var estado: EstadoDoMenu
     private let fluxo: FluxoDeCaptura
     private let atalho = AtalhoGlobalCarbon()
+    private let atalhoDeCapturaLivre = AtalhoGlobalCarbon()
+    private let overlay = GerenciadorDoOverlay()
 
     init() {
         let estado = EstadoDoMenu()
@@ -44,6 +47,14 @@ struct CaptaApp: App {
         } catch {
             estado.atalhoIndisponivel = true
         }
+        let overlay = overlay
+        do {
+            try atalhoDeCapturaLivre.registrar(.capturaLivre) {
+                Task { @MainActor in overlay.abrir(aoFechar: {}) }
+            }
+        } catch {
+            estado.atalhoDeCapturaLivreIndisponivel = true
+        }
         self.fluxo = fluxo
         self._estado = State(initialValue: estado)
     }
@@ -54,7 +65,7 @@ struct CaptaApp: App {
                 Task { await fluxo.capturarTelaInteira() }
             }
             .keyboardShortcut("f", modifiers: [.control, .option])
-            if estado.atalhoIndisponivel {
+            if estado.atalhoIndisponivel || estado.atalhoDeCapturaLivreIndisponivel {
                 Text("Atalho indisponível")
             }
             Divider()
