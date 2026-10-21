@@ -11,8 +11,9 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
     /// Refaz a captura quando a pessoa pede "Tentar de novo" na ajuda.
     var tentarDeNovo: (@MainActor () -> Void)?
 
-    private var janelasDeCaptura: [NSWindow] = []
-    private var janelaDeAjuda: NSWindow?
+    /// Leitura liberada para os testes; só o gerenciador muda.
+    private(set) var janelasDeCaptura: [NSWindow] = []
+    private(set) var janelaDeAjuda: NSWindow?
     private let modeloDeAjuda = AjudaDePermissaoModelo()
 
     // MARK: Apresentador
