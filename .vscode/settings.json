@@ -1,0 +1,6 @@
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "pedroct",
+        "projectKey": "pedroct_capta"
+    }
+}
