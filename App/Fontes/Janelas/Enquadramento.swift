@@ -1,9 +1,23 @@
 import CoreGraphics
+import Foundation
 
 /// Como a imagem se acomoda na janela de captura.
 enum ModoDeExibicao {
     case ajustar
     case tamanhoReal
+
+    /// O outro modo: o botão da barra alterna entre os dois.
+    var alternado: ModoDeExibicao {
+        self == .ajustar ? .tamanhoReal : .ajustar
+    }
+
+    /// Rótulo do botão da barra, que nomeia o modo para onde ele leva.
+    var rotuloDaAlternancia: String {
+        switch self {
+        case .ajustar: String(localized: "Tamanho real")
+        case .tamanhoReal: String(localized: "Ajustar à janela")
+        }
+    }
 }
 
 /// Escala de exibição da imagem na área disponível.

@@ -52,6 +52,20 @@ struct EnquadramentoTests {
         #expect(Enquadramento.escala(imagem: imagem, area: semAltura, modo: .ajustar) == 1)
     }
 
+    // MARK: - Alternância de modo
+
+    @Test func alternarTrocaEntreAjustarETamanhoReal() {
+        #expect(ModoDeExibicao.ajustar.alternado == .tamanhoReal)
+        #expect(ModoDeExibicao.tamanhoReal.alternado == .ajustar)
+    }
+
+    @Test func rotuloDaAlternanciaNomeiaOModoParaOndeVai() {
+        #expect(ModoDeExibicao.ajustar.rotuloDaAlternancia == String(localized: "Tamanho real"))
+        #expect(
+            ModoDeExibicao.tamanhoReal.rotuloDaAlternancia == String(localized: "Ajustar à janela")
+        )
+    }
+
     // MARK: - Janela inicial
 
     @Test func tamanhoInicialLimitaA80PorCentoDaTelaESomaABarra() {

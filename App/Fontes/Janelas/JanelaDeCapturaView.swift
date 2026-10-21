@@ -56,10 +56,8 @@ struct JanelaDeCapturaView: View {
                     .foregroundStyle(Tema.textoSecundario)
                     .accessibilityLabel(Text(confirmacao))
             }
-            Button(modo == .ajustar ? "Tamanho real" : "Ajustar à janela") {
-                modo = modo == .ajustar ? .tamanhoReal : .ajustar
-            }
-            .accessibilityLabel(Text(modo == .ajustar ? "Tamanho real" : "Ajustar à janela"))
+            Button(modo.rotuloDaAlternancia) { modo = modo.alternado }
+                .accessibilityLabel(Text(modo.rotuloDaAlternancia))
         }
         .padding(Tema.Espaco.e3)
         .background(Tema.fundoDoPainel(reduzirTransparencia: reduzirTransparencia))
