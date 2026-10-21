@@ -2,9 +2,10 @@
 CaptaNucleo=98
 CaptaSistema=98
 # App/Fontes sem CaptaApp.swift, medido por `make cobertura-app` (fora do `make verificar`).
-# Provisório: medido localmente: 84,38 % (616/730), arredondado para baixo.
+# Provisório: local 84,38 % (616/730) e CI 84,27 % (616/731); piso com folga de 0,2 ponto, porque
+# o runner conta uma linha a mais no JanelaDeCapturaView.
 # O GerenciadorDeJanelas é testado com janelas reais no app que hospeda os testes; as views
 # entram na conta porque essas janelas as desenham, sem asserção sobre o layout. Ficam fora
 # os caminhos com runModal(), os Ajustes do Sistema, o reinício do app e as ações da barra
-# da captura. Vale o menor entre CI e local; a CI ainda não mediu. Reajustar quando medir.
-App=84.3
+# da captura. Vale o menor entre CI e local.
+App=84.0
