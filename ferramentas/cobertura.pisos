@@ -4,4 +4,6 @@ CaptaSistema=98
 # App/Fontes sem CaptaApp.swift, medido por `make cobertura-app` (fora do `make verificar`).
 # Provisório: reajustar ao valor medido no runner da CI (macos-26) quando a primeira view
 # com lógica entrar (spec §9.1); vale o menor entre CI e local.
-App=100
+# Medido localmente com o fluxo de captura: 99,53 % (213/214; falta o valor reserva do
+# subsistema do Logger, usado só sem identificador de bundle).
+App=99.5
