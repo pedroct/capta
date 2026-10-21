@@ -16,3 +16,4 @@ project.local.yml
 *.provisionprofile
 *.dmg
 .DS_Store
+.scannerwork/
