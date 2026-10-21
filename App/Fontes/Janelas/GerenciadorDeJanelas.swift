@@ -14,15 +14,11 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
     private var janelasDeCaptura: [NSWindow] = []
     private var janelaDeAjuda: NSWindow?
     private let modeloDeAjuda = AjudaDePermissaoModelo()
-    private var aguardandoResultadoDoNovoTeste = false
 
     // MARK: Apresentador
 
     func mostrarAjudaDePermissao() {
-        if aguardandoResultadoDoNovoTeste {
-            aguardandoResultadoDoNovoTeste = false
-            modeloDeAjuda.tentouDeNovoSemSucesso()
-        }
+        modeloDeAjuda.permissaoSegueNegada()
         if let janela = janelaDeAjuda {
             exibir(janela)
             return
@@ -33,7 +29,7 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
                 NSWorkspace.shared.open(ConfiguracoesDoSistema.urlGravacaoDeTela)
             },
             tentarDeNovo: { [weak self] in
-                self?.aguardandoResultadoDoNovoTeste = true
+                self?.modeloDeAjuda.tentouDeNovo()
                 self?.tentarDeNovo?()
             },
             reiniciar: { Self.reiniciar() }
@@ -48,8 +44,9 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
     }
 
     func mostrarCaptura(_ captura: CapturaAberta) {
-        // A captura deu certo: a ajuda, se estava aberta, não é mais necessária.
-        aguardandoResultadoDoNovoTeste = false
+        // A captura deu certo: a ajuda, se estava aberta, não é mais necessária, e uma
+        // revogação futura a abre do começo, sem o botão de reiniciar.
+        modeloDeAjuda.reiniciarEstado()
         janelaDeAjuda?.close()
 
         // A janela nasce depois da view; a referência fraca deixa o alerta achá-la depois.
@@ -60,11 +57,23 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
         )
         let janela = criarJanela(com: visao, titulo: captura.nome)
         referencia.janela = janela
-        let tela = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame.size
-        let largura = min(captura.base.width.pontos(captura.escala), (tela?.width ?? 1280) * 0.8)
-        let altura = min(captura.base.height.pontos(captura.escala), (tela?.height ?? 800) * 0.8)
-        janela.setContentSize(NSSize(width: max(largura, 480), height: max(altura, 320) + 52))
-        janela.center()
+        // Abre na tela do cursor, que é a tela capturada, e não na tela principal.
+        let cursor = NSEvent.mouseLocation
+        let tela =
+            NSScreen.screens.first { $0.frame.contains(cursor) } ?? NSScreen.main
+            ?? NSScreen.screens.first
+        let imagem = CGSize(
+            width: Double(captura.base.width) / captura.escala,
+            height: Double(captura.base.height) / captura.escala
+        )
+        janela.setContentSize(
+            Enquadramento.tamanhoInicial(imagem: imagem, telaVisivel: tela?.visibleFrame.size)
+        )
+        if let area = tela?.visibleFrame {
+            janela.setFrameOrigin(Enquadramento.origemCentralizada(janela.frame.size, em: area))
+        } else {
+            janela.center()
+        }
         janelasDeCaptura.append(janela)
         exibir(janela)
     }
@@ -72,6 +81,8 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
     /// Alerta do fluxo (a captura falhou): em folha sobre a ajuda, se ela está aberta, porque
     /// foi dali que veio o "Tentar de novo"; senão, alerta do app.
     func mostrarAlerta(_ mensagem: MensagemDeErro) {
+        // Se veio de um "Tentar de novo", o novo teste acabou aqui, e não por permissão.
+        modeloDeAjuda.novoTesteFalhouPorOutroMotivo()
         mostrarAlerta(mensagem, em: janelaDeAjuda)
     }
 
@@ -145,8 +156,4 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
 @MainActor
 private final class ReferenciaDeJanela {
     weak var janela: NSWindow?
-}
-
-extension Int {
-    fileprivate func pontos(_ escala: Double) -> Double { Double(self) / escala }
 }

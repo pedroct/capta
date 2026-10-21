@@ -51,4 +51,48 @@ struct EnquadramentoTests {
         #expect(Enquadramento.escala(imagem: imagem, area: semLargura, modo: .ajustar) == 1)
         #expect(Enquadramento.escala(imagem: imagem, area: semAltura, modo: .ajustar) == 1)
     }
+
+    // MARK: - Janela inicial
+
+    @Test func tamanhoInicialLimitaA80PorCentoDaTelaESomaABarra() {
+        let tamanho = Enquadramento.tamanhoInicial(
+            imagem: CGSize(width: 3000, height: 2000),
+            telaVisivel: CGSize(width: 1500, height: 1000)
+        )
+        #expect(tamanho == CGSize(width: 1200, height: 800 + Enquadramento.alturaDaBarra))
+    }
+
+    @Test func tamanhoInicialRespeitaOMinimoEUsaATelaPadraoSemTela() {
+        let pequena = Enquadramento.tamanhoInicial(
+            imagem: CGSize(width: 100, height: 50),
+            telaVisivel: nil
+        )
+        #expect(pequena == CGSize(width: 480, height: 320 + Enquadramento.alturaDaBarra))
+        // Sem tela, o limite é 80 % de 1280 x 800.
+        let grande = Enquadramento.tamanhoInicial(
+            imagem: CGSize(width: 5000, height: 5000),
+            telaVisivel: nil
+        )
+        #expect(grande == CGSize(width: 1024, height: 640 + Enquadramento.alturaDaBarra))
+    }
+
+    @Test func origemCentralizaNaTelaDadaInclusiveNaSegunda() {
+        // Segunda tela à direita da principal, em coordenadas do AppKit.
+        let segunda = CGRect(x: 1440, y: 0, width: 1920, height: 1080)
+        let origem = Enquadramento.origemCentralizada(
+            CGSize(width: 1000, height: 600),
+            em: segunda
+        )
+        #expect(origem == CGPoint(x: 1440 + 460, y: 240))
+    }
+
+    @Test func origemMantemOTopoEOLadoEsquerdoDentroDaTela() {
+        let tela = CGRect(x: -800, y: 100, width: 800, height: 600)
+        let origem = Enquadramento.origemCentralizada(
+            CGSize(width: 1000, height: 900),
+            em: tela
+        )
+        // Maior que a tela: encosta à esquerda e no topo, para a barra de título ficar visível.
+        #expect(origem == CGPoint(x: -800, y: 700 - 900))
+    }
 }
