@@ -1,0 +1,106 @@
+import CoreGraphics
+import Foundation
+import ImageIO
+import Testing
+
+@testable import CaptaNucleo
+
+private func novaPastaTemporaria() throws -> URL {
+    let pasta = FileManager.default.temporaryDirectory
+        .appendingPathComponent("capta-teste-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: pasta, withIntermediateDirectories: true)
+    return pasta
+}
+
+private func remover(_ url: URL) {
+    try? FileManager.default.removeItem(at: url)
+}
+
+private func captura(escala: Double = 2) -> ImagemCapturada {
+    ImagemCapturada(
+        imagem: imagemSolida(CGSize(width: 40, height: 30), cor: CorRGBA(r: 1, g: 0, b: 0, a: 1)),
+        escala: escala
+    )
+}
+
+private func itens(_ url: URL) throws -> [String] {
+    try FileManager.default.contentsOfDirectory(atPath: url.path).sorted()
+}
+
+@Test func documentoNasceComPixelsEEscalaDaCaptura() throws {
+    let documento = try Documento.novo(de: captura(escala: 2))
+    #expect(documento.tamanhoBase == CGSize(width: 40, height: 30))
+    #expect(documento.escala == 2)
+    #expect(documento.objetos.isEmpty)
+}
+
+@Test func escalaInvalidaNaoCriaDocumento() {
+    #expect(throws: ErroDocumento.tamanhoInvalido) {
+        _ = try Documento.novo(de: captura(escala: 0))
+    }
+}
+
+@Test func nomeUsaDataEHoraDoFusoDado() throws {
+    let utc = try #require(TimeZone(identifier: "UTC"))
+    let data = Date(timeIntervalSince1970: 1_792_497_845)  // 2026-10-20 12:04:05 UTC
+    #expect(Rascunho.nome(para: data, fuso: utc) == "Captura 2026-10-20 às 12.04.05")
+    let saoPaulo = try #require(TimeZone(identifier: "America/Sao_Paulo"))
+    #expect(Rascunho.nome(para: data, fuso: saoPaulo) == "Captura 2026-10-20 às 09.04.05")
+}
+
+@Test func gravarCriaPastaEPacoteLegivel() throws {
+    let raiz = try novaPastaTemporaria()
+    defer { remover(raiz) }
+    let pasta = raiz.appendingPathComponent("novas/rascunhos", isDirectory: true)
+    let c = captura()
+    let documento = try Documento.novo(de: c)
+    let url = try Rascunho.gravar(c, documento: documento, em: pasta, nome: "Captura X")
+    #expect(url.lastPathComponent == "Captura X.capta")
+
+    let lido = try PacoteCapta.ler(de: url)
+    #expect(lido.documento.tamanhoBase == CGSize(width: 40, height: 30))
+    #expect(lido.documento.escala == 2)
+    #expect(lido.documento.objetos.isEmpty)
+    let fonte = try #require(CGImageSourceCreateWithData(lido.baseDados as CFData, nil))
+    let base = try #require(CGImageSourceCreateImageAtIndex(fonte, 0, nil))
+    #expect(base.width == 40 && base.height == 30)
+    #expect(lido.miniaturaDados?.isEmpty == false)
+}
+
+@Test func nomeRepetidoGanhaSufixoENaoSobrescreve() throws {
+    let pasta = try novaPastaTemporaria()
+    defer { remover(pasta) }
+    let c = captura()
+    let documento = try Documento.novo(de: c)
+    let a = try Rascunho.gravar(c, documento: documento, em: pasta, nome: "N")
+    let b = try Rascunho.gravar(c, documento: documento, em: pasta, nome: "N")
+    let d = try Rascunho.gravar(c, documento: documento, em: pasta, nome: "N")
+    #expect([a, b, d].map(\.lastPathComponent) == ["N.capta", "N 2.capta", "N 3.capta"])
+    #expect(try itens(pasta) == ["N 2.capta", "N 3.capta", "N.capta"])
+}
+
+@Test func pastaSemPermissaoDeEscritaLanca() throws {
+    let pasta = try novaPastaTemporaria()
+    let gerenciador = FileManager.default
+    try gerenciador.setAttributes([.posixPermissions: 0o500], ofItemAtPath: pasta.path)
+    defer {
+        try? gerenciador.setAttributes([.posixPermissions: 0o700], ofItemAtPath: pasta.path)
+        remover(pasta)
+    }
+    let c = captura()
+    let documento = try Documento.novo(de: c)
+    #expect(throws: (any Error).self) {
+        _ = try Rascunho.gravar(c, documento: documento, em: pasta, nome: "N")
+    }
+}
+
+@Test func escalaInvalidaNaoCriaNada() throws {
+    let pasta = try novaPastaTemporaria()
+    defer { remover(pasta) }
+    let c = captura(escala: 0)
+    let documento = Documento.novo(tamanhoBase: CGSize(width: 40, height: 30), escala: 0)
+    #expect(throws: (any Error).self) {
+        _ = try Rascunho.gravar(c, documento: documento, em: pasta, nome: "N")
+    }
+    #expect(try itens(pasta).isEmpty)
+}
