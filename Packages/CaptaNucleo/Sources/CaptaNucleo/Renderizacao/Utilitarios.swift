@@ -3,10 +3,11 @@ import CoreGraphics
 /// Cor do modelo como `CGColor` sRGB.
 func cgCor(_ cor: CorRGBA) -> CGColor {
     CGColor(
-        colorSpace: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
-        components: [CGFloat(cor.r), CGFloat(cor.g), CGFloat(cor.b), CGFloat(cor.a)]
+        srgbRed: CGFloat(cor.r),
+        green: CGFloat(cor.g),
+        blue: CGFloat(cor.b),
+        alpha: CGFloat(cor.a)
     )
-        ?? CGColor(gray: 0, alpha: 1)
 }
 
 /// Retângulo padronizado; `nil` se sem área (tamanho zero) ou com números não finitos.

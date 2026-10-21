@@ -122,9 +122,7 @@ public struct Renderizador: Sendable {
             )
         case .carimbo(let retangulo, let simbolo):
             desenharCarimbo(simbolo: simbolo, em: retangulo, cor: estilo.cor, contexto: contexto)
-        case .desfoque:
-            // Tratado em `renderizar`, fora da camada de transparência.
-            break
+        case .desfoque: break  // Tratado em `renderizar`, fora da camada de transparência.
         }
     }
 }
