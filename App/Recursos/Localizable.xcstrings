@@ -1,6 +1,149 @@
 {
   "sourceLanguage" : "pt-BR",
   "strings" : {
+    "A captura não foi guardada. Copiar e salvar continuam funcionando." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A captura não foi guardada. Copiar e salvar continuam funcionando."
+          }
+        }
+      }
+    },
+    "Abrir Configurações do Sistema" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Configurações do Sistema"
+          }
+        }
+      }
+    },
+    "Ajustar à janela" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustar à janela"
+          }
+        }
+      }
+    },
+    "Captura de tela" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Captura de tela"
+          }
+        }
+      }
+    },
+    "Copiado" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiado"
+          }
+        }
+      }
+    },
+    "Copiar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar"
+          }
+        }
+      }
+    },
+    "Não foi possível capturar a tela." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível capturar a tela."
+          }
+        }
+      }
+    },
+    "Não foi possível copiar a imagem." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível copiar a imagem."
+          }
+        }
+      }
+    },
+    "Não foi possível salvar o arquivo." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível salvar o arquivo."
+          }
+        }
+      }
+    },
+    "OK" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "Para capturar a tela, o Capta precisa da permissão de Gravação de Tela. Nada sai do seu Mac." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para capturar a tela, o Capta precisa da permissão de Gravação de Tela. Nada sai do seu Mac."
+          }
+        }
+      }
+    },
+    "Permissão de Gravação de Tela" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permissão de Gravação de Tela"
+          }
+        }
+      }
+    },
+    "Reiniciar o Capta" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reiniciar o Capta"
+          }
+        }
+      }
+    },
     "Sair do Capta" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8,6 +151,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sair do Capta"
+          }
+        }
+      }
+    },
+    "Salvar como Capta…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar como Capta…"
+          }
+        }
+      }
+    },
+    "Salvar como PNG…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar como PNG…"
+          }
+        }
+      }
+    },
+    "Salvo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvo"
+          }
+        }
+      }
+    },
+    "Tamanho real" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamanho real"
+          }
+        }
+      }
+    },
+    "Tentar de novo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tentar de novo"
           }
         }
       }
