@@ -16,7 +16,8 @@ public enum TipoDesfoque: String, Codable, Equatable, Sendable {
 /// Geometria de uma anotação.
 ///
 /// Todas as coordenadas estão em pixels da imagem base do documento, com origem no canto
-/// superior esquerdo e eixo Y crescendo para baixo.
+/// superior esquerdo e eixo Y crescendo para baixo. Retângulos, `tamanhoFonte`, `diametro` e
+/// `intensidade` também são medidos em pixels da imagem base, não em pontos de tela.
 public enum Geometria: Codable, Equatable, Sendable {
     case seta(inicio: CGPoint, fim: CGPoint)
     case linha(inicio: CGPoint, fim: CGPoint)

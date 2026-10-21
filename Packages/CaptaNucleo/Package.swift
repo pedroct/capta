@@ -16,7 +16,7 @@ let package = Package(
         .target(name: "CaptaSistema", dependencies: ["CaptaNucleo"], swiftSettings: rigor),
         .testTarget(
             name: "CaptaNucleoTests",
-            dependencies: ["CaptaNucleo", "CaptaSistema"],
+            dependencies: ["CaptaNucleo"],
             swiftSettings: rigor
         ),
         .testTarget(

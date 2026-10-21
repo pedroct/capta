@@ -194,9 +194,15 @@ struct RenderizadorRecorteDesfoqueTests {
         let esperado = todosOsPixels(try renderizar([]))
         let regiao = CGRect(x: 20, y: 20, width: 40, height: 40)
         for tipo in [TipoDesfoque.borrar, .pixelizar] {
-            for intensidade in [0, -3, Double.nan, Double.infinity] {
+            for intensidade in [0, -3] as [Double] {
                 let saida = try renderizar([desfoque(regiao, tipo, intensidade: intensidade)])
                 #expect(todosOsPixels(saida) == esperado)
+            }
+            // Não finita é documento inválido: o renderizador valida e lança.
+            for intensidade in [Double.nan, Double.infinity] {
+                #expect(throws: ErroDocumento.valorNaoFinito) {
+                    try renderizar([desfoque(regiao, tipo, intensidade: intensidade)])
+                }
             }
         }
     }

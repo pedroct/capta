@@ -5,10 +5,14 @@ import Foundation
 ///
 /// Coordenadas em pixels da imagem base, origem no canto superior esquerdo, Y para baixo.
 /// A ordem de ``objetos`` é a ordem das camadas: o último fica por cima.
+///
+/// Os retângulos das anotações podem estar invertidos (largura ou altura negativa) ou ter
+/// tamanho zero; quem consome (renderizador, interface) padroniza com `standardized`.
 public struct Documento: Codable, Equatable, Sendable {
-    public var versaoEsquema: Int
-    public var tamanhoBase: CGSize
-    public var escala: Double
+    public internal(set) var versaoEsquema: Int
+    /// Tamanho da imagem base em pixels.
+    public internal(set) var tamanhoBase: CGSize
+    public internal(set) var escala: Double
     public internal(set) var recorte: CGRect?
     public internal(set) var objetos: [Anotacao]
 
@@ -54,6 +58,11 @@ public struct Documento: Codable, Equatable, Sendable {
 
     /// Confere finitude, faixas e consistência do documento.
     public func validar() throws {
+        // Um Documento em memória é sempre da versão atual. As migrações de versões antigas
+        // serão escritas junto com a primeira mudança de esquema, antes da decodificação.
+        guard versaoEsquema == Esquema.versaoAtual else {
+            throw ErroDocumento.valorForaDeFaixa("versaoEsquema")
+        }
         try exigirFinitos([tamanhoBase.width, tamanhoBase.height, escala])
         guard tamanhoBase.width > 0, tamanhoBase.height > 0, escala > 0 else {
             throw ErroDocumento.tamanhoInvalido

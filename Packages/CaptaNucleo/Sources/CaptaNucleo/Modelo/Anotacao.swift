@@ -1,6 +1,8 @@
 import Foundation
 
 /// Um objeto de anotação sobre a imagem base.
+///
+/// Os retângulos da geometria podem vir invertidos ou com tamanho zero; quem consome padroniza.
 public struct Anotacao: Codable, Equatable, Identifiable, Sendable {
     public var id: UUID
     public var geometria: Geometria

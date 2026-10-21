@@ -17,6 +17,7 @@ public struct Renderizador: Sendable {
     /// A saída é sRGB, 8 bits por componente, `premultipliedLast`, com o tamanho em pixels da base.
     /// Se o documento tem recorte, ele é aplicado por último e define o tamanho da saída.
     /// - Throws: ``ErroDocumento/tamanhoInvalido`` se `base` não tiver o `tamanhoBase` do documento;
+    ///   o erro de ``Documento/validar()`` se o documento for inválido;
     ///   ``ErroDocumento/recorteInvalido`` se o recorte não cabe na imagem;
     ///   ``ErroRenderizacao`` se o contexto ou a imagem final não puderam ser criados.
     public func renderizar(_ documento: Documento, base: CGImage) throws -> CGImage {
@@ -25,6 +26,8 @@ public struct Renderizador: Sendable {
             Double(base.height) == documento.tamanhoBase.height,
             base.width > 0, base.height > 0
         else { throw ErroDocumento.tamanhoInvalido }
+        // Documento montado à mão (NaN, recorte fora da base) lança em vez de renderizar em silêncio.
+        try documento.validar()
 
         guard let espaco = CGColorSpace(name: CGColorSpace.sRGB),
             let contexto = CGContext(
@@ -50,13 +53,13 @@ public struct Renderizador: Sendable {
 
         for objeto in documento.objetos {
             // O desfoque lê o compósito até aqui; isso não pode acontecer dentro da camada de
-            // transparência. O trecho filtrado é desenhado sem camada (a opacidade do objeto
-            // entra pelo alfa global).
+            // transparência. O trecho filtrado é desenhado sem camada e sempre com alfa total:
+            // `Estilo.opacidade` é ignorada, senão um desfoque a 30% deixaria 70% do conteúdo
+            // sensível visível.
             if case .desfoque(let regiao, let tipo, let intensidade) = objeto.geometria {
                 let ci = ciContexto ?? criarContextoCoreImage()
                 ciContexto = ci
                 contexto.saveGState()
-                contexto.setAlpha(CGFloat(objeto.estilo.opacidade))
                 aplicarDesfoque(
                     regiao: regiao,
                     tipo: tipo,
