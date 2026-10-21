@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Selecionar o Xcode mais novo instalado
         run: |
@@ -45,6 +47,37 @@ jobs:
       - name: Testes do núcleo
         run: make test
 
+      - name: Conferir tokens do design system
+        run: make tokens
+
+      - name: Conferir entitlements
+        run: make entitlements
+
+  app:
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Selecionar o Xcode mais novo instalado
+        run: |
+          set -eu
+          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -n 1)
+          echo "Xcode escolhido: $xcode"
+          echo "DEVELOPER_DIR=$xcode/Contents/Developer" >> "$GITHUB_ENV"
+
+      - name: Instalar XcodeGen e xcbeautify
+        run: brew install xcodegen xcbeautify
+
+      - name: Gerar o projeto e compilar o app
+        # O Makefile exporta CAPTA_LOCAL sozinho; sem project.local.yml, o include é desligado.
+        run: make gerar build
+
   commits:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -52,6 +85,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Validar mensagens de commit (Conventional Commits)
         env:
