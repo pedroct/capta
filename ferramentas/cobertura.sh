@@ -15,7 +15,7 @@ if [ ! -f "$pisos" ]; then
 fi
 
 mkdir -p "$saida"
-rm -f "$saida/resumo.txt" "$saida/llvm-cov.json" "$saida"/bruto-*.json
+rm -f "$saida/resumo.txt" "$saida/llvm-cov.json" "$saida/sonar-cobertura.xml" "$saida"/bruto-*.json
 
 cd "$pacote"
 swift test --enable-code-coverage >&2
@@ -39,6 +39,7 @@ done
 
 python3 -I - "$raiz" "$saida" "$pisos" <<'PY'
 import json, os, re, sys
+import xml.etree.ElementTree as ET
 
 raiz, saida, arq_pisos = sys.argv[1:4]
 ALVOS = ["CaptaNucleo", "CaptaSistema"]
@@ -103,6 +104,39 @@ def pct(cob, tot):
     return 100.0 * cob / tot if tot else 0.0
 
 
+def linhas_executaveis(arq):
+    """Replica a regra de linhas do llvm-cov (a mesma do llvm-cov show): {linha: contagem}.
+
+    O resumo do export soma por função e conta duas vezes linhas compartilhadas por
+    closures; aqui cada linha vale uma vez, como o SonarQube espera."""
+    segs = arq.get("segments", [])
+    if not segs:
+        return {}
+    resultado = {}
+    i = 0
+    envolvente = None
+    for linha in range(segs[0][0], segs[-1][0] + 1):
+        inicio = i
+        while i < len(segs) and segs[i][0] == linha:
+            i += 1
+        da_linha = segs[inicio:i]
+        # segmento: [linha, coluna, contagem, tem_contagem, entrada_de_regiao, lacuna]
+        def inicia_regiao(s):
+            return s[3] and s[4] and not s[5]
+        n_inicios = sum(1 for s in da_linha if inicia_regiao(s))
+        pulada = bool(da_linha) and not da_linha[0][3] and da_linha[0][4]
+        mapeada = not pulada and ((envolvente is not None and envolvente[3]) or n_inicios > 0)
+        if mapeada:
+            cont = envolvente[2] if envolvente is not None else 0
+            for s in da_linha:
+                if inicia_regiao(s):
+                    cont = max(cont, s[2])
+            resultado[linha] = cont
+        if da_linha:
+            envolvente = da_linha[-1]
+    return resultado
+
+
 linhas_txt = []
 falhas = []
 combinado = {"data": [{"files": []}]}
@@ -143,6 +177,19 @@ with open(os.path.join(saida, "resumo.txt"), "w", encoding="utf-8") as f:
     f.write(texto)
 with open(os.path.join(saida, "llvm-cov.json"), "w", encoding="utf-8") as f:
     json.dump(combinado, f)
+
+raiz_xml = ET.Element("coverage", version="1")
+for alvo in ALVOS:
+    for a in sorted(arquivos[alvo].values(), key=lambda a: a["filename"]):
+        mapa = linhas_executaveis(a)
+        no = ET.SubElement(raiz_xml, "file", path=a["filename"])
+        for linha in sorted(mapa):
+            ET.SubElement(no, "lineToCover", lineNumber=str(linha),
+                          covered="true" if mapa[linha] > 0 else "false")
+raiz_xml[:] = sorted(raiz_xml, key=lambda e: e.get("path"))
+ET.indent(raiz_xml)
+ET.ElementTree(raiz_xml).write(os.path.join(saida, "sonar-cobertura.xml"),
+                               encoding="utf-8", xml_declaration=True)
 sys.stdout.write(texto)
 for falha in falhas:
     print(f"cobertura: FALHA: {falha}", file=sys.stderr)
