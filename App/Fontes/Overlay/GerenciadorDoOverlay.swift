@@ -230,7 +230,9 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
     ) {
         guard aberto, sessao == self.sessao else { return }
         aberto = false
-        Self.log.info("overlay fechou: \(motivo.textoDoLog, privacy: .public)")
+        Self.log.info(
+            "overlay fechou: \(motivo.textoDoLog, privacy: .public) frontmost=\(NSWorkspace.shared.frontmostApplication?.localizedName ?? "nil", privacy: .public)"
+        )
         atalhoDeEsc.liberar()
         tarefaDeAtivacao?.cancel()
         tarefaDeDiagnostico?.cancel()
@@ -251,7 +253,13 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
         let aDevolver = anterior
         anterior = nil
         if let aDevolver, motivo.devolveOFoco(com: resultado) {
+            Self.log.info(
+                "devolverFoco: vai reativar \(aDevolver.localizedName ?? "nil", privacy: .public)"
+            )
             devolverFoco(aDevolver, resultado)
+            Self.log.info(
+                "devolverFoco: depois de reativar, frontmost=\(NSWorkspace.shared.frontmostApplication?.localizedName ?? "nil", privacy: .public)"
+            )
         }
         retomar(resultado)
     }
@@ -304,6 +312,9 @@ extension GerenciadorDoOverlay {
             return
         }
         observar(NSApplication.didBecomeActiveNotification) { gerenciador in
+            Self.log.info(
+                "didBecomeActive: ativo=\(NSApp.isActive) frontmost=\(NSWorkspace.shared.frontmostApplication?.localizedName ?? "nil", privacy: .public)"
+            )
             guard gerenciador.aberto, gerenciador.observadorDePerda == nil else { return }
             Self.log.info("app ficou ativo; armando cancelamento por perda de ativação")
             gerenciador.tornarChaveAJanelaDoCursor()
@@ -317,6 +328,9 @@ extension GerenciadorDoOverlay {
             object: nil,
             queue: .main
         ) { [weak self] _ in
+            Self.log.info(
+                "didResignActive: ativo=\(NSApp.isActive) frontmost=\(NSWorkspace.shared.frontmostApplication?.localizedName ?? "nil", privacy: .public)"
+            )
             MainActor.assumeIsolated { self?.aplicar(.perdeuAtivacao, sessao: sessao) }
         }
     }
