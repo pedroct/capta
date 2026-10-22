@@ -2,6 +2,7 @@ import Testing
 
 @testable import CaptaNucleo
 
-@Test func versaoAtualDoEsquemaEUm() {
-    #expect(Esquema.versaoAtual == 1)
+@Test func versaoAtualDoEsquemaEDois() {
+    #expect(Esquema.versaoAtual == 2)
+    #expect(Esquema.versaoMinimaLegivel == 1)
 }

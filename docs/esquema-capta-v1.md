@@ -1,6 +1,8 @@
 # Esquema do arquivo `.capta`, versão 1
 
-Referência do JSON do documento (`Documento`) gravado dentro do pacote `.capta`. O JSON é codificado com `.sortedKeys` e `.prettyPrinted`. O teste `EsquemaV1CongeladoTests` guarda o JSON completo de um documento com um objeto de cada tipo e falha se o formato mudar.
+> Versão congelada, só lida e migrada. O esquema em uso é a v2: `docs/esquema-capta-v2.md`.
+
+Referência do JSON do documento (`Documento`) gravado dentro do pacote `.capta`. O JSON é codificado com `.sortedKeys` e `.prettyPrinted`. O literal `jsonEsquemaV1DeReferencia` (um documento com um objeto de cada tipo) fica intacto e `EsquemaV1CongeladoTests` confere que ele ainda decodifica, migrado para a versão atual.
 
 ## Regra de congelamento
 
@@ -18,7 +20,7 @@ Depois do primeiro `.capta` real gravado pelo app, a v1 está congelada; mudanç
 
 | Chave | Tipo | Obrigatória | Observação |
 | --- | --- | --- | --- |
-| `versaoEsquema` | inteiro | sim | Igual a `Esquema.versaoAtual` (1). |
+| `versaoEsquema` | inteiro | sim | Na v1, igual a 1. |
 | `tamanhoBase` | tamanho | sim | Largura e altura finitas e maiores que zero. |
 | `escala` | número | sim | Finita e maior que zero. |
 | `recorte` | retângulo | não | Ausente significa sem recorte. Largura e altura positivas, dentro de `tamanhoBase`. |

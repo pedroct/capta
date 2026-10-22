@@ -72,6 +72,11 @@ public struct Documento: Codable, Equatable, Sendable {
             proximaOrdem = 0
             numerarPelaLista()
         }
+        // Versões legíveis anteriores à atual são migradas antes de validar; as demais seguem
+        // como estão e `validar()` as recusa.
+        if (Esquema.versaoMinimaLegivel..<Esquema.versaoAtual).contains(versaoEsquema) {
+            Migracao.migrar(&self, desde: versaoEsquema)
+        }
         try validar()
     }
 
@@ -87,8 +92,8 @@ public struct Documento: Codable, Equatable, Sendable {
 
     /// Confere finitude, faixas e consistência do documento.
     public func validar() throws {
-        // Um Documento em memória é sempre da versão atual. As migrações de versões antigas
-        // serão escritas junto com a primeira mudança de esquema, antes da decodificação.
+        // Um Documento em memória é sempre da versão atual: as versões antigas já foram
+        // migradas na decodificação (``Migracao``).
         guard versaoEsquema == Esquema.versaoAtual else {
             throw ErroDocumento.valorForaDeFaixa("versaoEsquema")
         }

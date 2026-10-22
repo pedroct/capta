@@ -4,9 +4,9 @@ import Testing
 
 @testable import CaptaNucleo
 
-/// Trava o JSON do esquema v1. Se este teste quebrar, o formato do arquivo `.capta` mudou:
-/// leia `docs/esquema-capta-v1.md` antes de atualizar o literal.
-@Suite("Esquema v1 congelado")
+/// Garante que o JSON do esquema v1 (congelado, `docs/esquema-capta-v1.md`) continua legível:
+/// a v1 não é mais gravada, só lida e migrada para a versão atual.
+@Suite("Leitura do esquema v1")
 struct EsquemaV1CongeladoTests {
     private static func anotacao(
         _ n: Int,
@@ -95,7 +95,7 @@ struct EsquemaV1CongeladoTests {
         ]
     }
 
-    private static func documentoCompleto() throws -> Documento {
+    static func documentoCompleto() throws -> Documento {
         let documento = Documento(
             versaoEsquema: Esquema.versaoAtual,
             tamanhoBase: CGSize(width: 800.5, height: 600.5),
@@ -108,23 +108,18 @@ struct EsquemaV1CongeladoTests {
         return documento
     }
 
-    private static func codificador() -> JSONEncoder {
+    static func codificador() -> JSONEncoder {
         let codificador = JSONEncoder()
         codificador.outputFormatting = [.sortedKeys, .prettyPrinted]
         return codificador
     }
 
-    @Test func documentoCompletoTemJsonDeReferencia() throws {
-        let dados = try Self.codificador().encode(try Self.documentoCompleto())
-        let texto = try #require(String(data: dados, encoding: .utf8))
-        #expect(texto == jsonEsquemaV1DeReferencia)
-    }
-
-    @Test func jsonDeReferenciaDecodificaDeVolta() throws {
+    @Test func jsonV1DeReferenciaDecodificaMigrado() throws {
         let decodificado = try JSONDecoder().decode(
             Documento.self,
             from: Data(jsonEsquemaV1DeReferencia.utf8)
         )
+        #expect(decodificado.versaoEsquema == 2)
         #expect(decodificado == (try Self.documentoCompleto()))
     }
 }

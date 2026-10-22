@@ -75,9 +75,63 @@ func lerVersaoEsquemaZeroOuNegativaLancaValorForaDeFaixa(versao: Int) throws {
     )
     let json = destino.appendingPathComponent("documento.json")
     let texto = try String(contentsOf: json, encoding: .utf8)
-        .replacingOccurrences(of: "\"versaoEsquema\" : 1", with: "\"versaoEsquema\" : \(versao)")
+        .replacingOccurrences(
+            of: "\"versaoEsquema\" : \(Esquema.versaoAtual)",
+            with: "\"versaoEsquema\" : \(versao)"
+        )
     try Data(texto.utf8).write(to: json)
     #expect(throws: ErroDocumento.valorForaDeFaixa("versaoEsquema")) {
         try PacoteCapta.ler(de: destino)
     }
+}
+
+/// Versão posterior à atual no disco: o pacote avisa que o arquivo é de um Capta mais novo.
+@Test func lerVersaoEsquemaTresLancaVersaoMaisNova() throws {
+    let pasta = try novaPastaTemporaria()
+    defer { remover(pasta) }
+    let destino = pasta.appendingPathComponent("a.capta")
+    try PacoteCapta.gravar(
+        documentoCompleto(),
+        baseDados: base,
+        miniaturaDados: miniatura,
+        em: destino
+    )
+    let json = destino.appendingPathComponent("documento.json")
+    let texto = try String(contentsOf: json, encoding: .utf8)
+        .replacingOccurrences(
+            of: "\"versaoEsquema\" : \(Esquema.versaoAtual)",
+            with: "\"versaoEsquema\" : 3"
+        )
+    try Data(texto.utf8).write(to: json)
+    #expect(throws: ErroPacote.versaoMaisNova(3)) {
+        try PacoteCapta.ler(de: destino)
+    }
+}
+
+@Test func lerPacoteV1MigraEAtualizarGravaV2() throws {
+    let pasta = try novaPastaTemporaria()
+    defer { remover(pasta) }
+    let destino = pasta.appendingPathComponent("a.capta")
+    let original = documentoCompleto()
+    try PacoteCapta.gravar(original, baseDados: base, miniaturaDados: miniatura, em: destino)
+    let json = destino.appendingPathComponent("documento.json")
+    let texto = try String(contentsOf: json, encoding: .utf8)
+        .replacingOccurrences(of: "\"versaoEsquema\" : 2", with: "\"versaoEsquema\" : 1")
+    try Data(texto.utf8).write(to: json)
+
+    // Data antiga e fixa em `base.png`, para provar que `atualizar` não o regrava.
+    let urlBase = destino.appendingPathComponent("base.png")
+    let datafixa = Date(timeIntervalSince1970: 1_000_000)
+    try FileManager.default.setAttributes([.modificationDate: datafixa], ofItemAtPath: urlBase.path)
+
+    let lido = try PacoteCapta.ler(de: destino)
+    #expect(lido.documento.versaoEsquema == 2)
+    #expect(lido.documento == original)
+
+    try PacoteCapta.atualizar(lido.documento, miniaturaDados: nil, em: destino)
+    let gravado = try String(contentsOf: json, encoding: .utf8)
+    #expect(gravado.contains("\"versaoEsquema\" : 2"))
+    #expect(try Data(contentsOf: urlBase) == base)
+    let atributos = try FileManager.default.attributesOfItem(atPath: urlBase.path)
+    #expect(atributos[.modificationDate] as? Date == datafixa)
 }

@@ -205,7 +205,10 @@ private func itens(_ url: URL) throws -> [String] {
     )
     let json = destino.appendingPathComponent("documento.json")
     let texto = try String(contentsOf: json, encoding: .utf8)
-        .replacingOccurrences(of: "\"versaoEsquema\" : 1", with: "\"versaoEsquema\" : 99")
+        .replacingOccurrences(
+            of: "\"versaoEsquema\" : \(Esquema.versaoAtual)",
+            with: "\"versaoEsquema\" : 99"
+        )
     try Data(texto.utf8).write(to: json)
     #expect(throws: ErroPacote.versaoMaisNova(99)) { try PacoteCapta.ler(de: destino) }
 }

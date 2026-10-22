@@ -29,4 +29,4 @@ Sempre pelo `make`; o Makefile define o `DEVELOPER_DIR` do Xcode-beta. `swift te
 
 ## Estado e próximos passos
 
-O Plano 1 (esqueleto e núcleo) está concluído; o status e as decisões adiadas estão no fim de `docs/superpowers/plans/2026-10-20-capta-plano-1-esqueleto-e-nucleo.md`. Antes de qualquer app gravar `.capta`, fechar o esquema v1 e decidir a numeração de etapas (criação x camadas).
+O Plano 1 (esqueleto e núcleo) está concluído; o status e as decisões adiadas estão no fim de `docs/superpowers/plans/2026-10-20-capta-plano-1-esqueleto-e-nucleo.md`. Esquema em v2 (`docs/esquema-capta-v2.md`), que muda no lugar até o fim do Plano 5c e então congela.
