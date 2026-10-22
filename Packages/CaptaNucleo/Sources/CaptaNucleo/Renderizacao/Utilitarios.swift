@@ -22,10 +22,30 @@ func retanguloUtil(_ retangulo: CGRect) -> CGRect? {
     return r
 }
 
+/// Bitmap transparente sRGB, 8 bits por componente, `premultipliedLast`, com o tamanho dado em
+/// pixels (inteiro e positivo).
+/// - Throws: ``ErroRenderizacao/falhaAoCriarContexto`` se o contexto não pôde ser criado.
+func contextoTransparente(_ tamanho: CGSize) throws -> CGContext {
+    guard let espaco = CGColorSpace(name: CGColorSpace.sRGB),
+        let contexto = CGContext(
+            data: nil,
+            width: Int(tamanho.width),
+            height: Int(tamanho.height),
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: espaco,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )
+    else { throw ErroRenderizacao.falhaAoCriarContexto }
+    return contexto
+}
+
 /// Falhas internas do renderizador (distintas de documento inválido).
 public enum ErroRenderizacao: Error, Equatable, Sendable {
     /// O `CGContext` de composição não pôde ser criado.
     case falhaAoCriarContexto
     /// A imagem final não pôde ser gerada.
     case falhaAoGerarImagem
+    /// O contexto recebido por `compor` não tem o tamanho em pixels da base.
+    case contextoIncompativel
 }

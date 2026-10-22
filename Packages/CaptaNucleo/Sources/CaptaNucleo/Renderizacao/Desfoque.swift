@@ -6,6 +6,17 @@ import Foundation
 /// Limite superior do raio (borrar) e da escala (pixelizar): mesmo teto do CoreImage.
 private let intensidadeMaxima: Double = 100
 
+/// Quanto o desfoque lê além da própria região, em pixels: o filtro olha o compósito em volta
+/// para calcular a borda. Borrar: três raios (o alcance prático do gaussiano), `ceil(3 × raio)`.
+/// Pixelizar: um bloco (o centro de um bloco da borda pode cair fora da região), `ceil(escala)`.
+/// Raio e escala com os mesmos limites que o filtro aplica.
+func margemDeLeitura(tipo: TipoDesfoque, intensidade: Double) -> CGFloat {
+    switch tipo {
+    case .borrar: return CGFloat(ceil(3 * min(intensidade, intensidadeMaxima)))
+    case .pixelizar: return CGFloat(ceil(max(min(intensidade, intensidadeMaxima), 1)))
+    }
+}
+
 extension Renderizador {
     /// Aplica o desfoque sobre o que já foi composto em `contexto`.
     ///
