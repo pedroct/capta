@@ -22,6 +22,8 @@ Lista para o Pedro percorrer com tela e permissão reais, depois do Plano 3. Cad
 - [ ] Com o overlay aberto, trocar de app (`⌘Tab`) ou mudar a resolução de um monitor cancela o overlay sem deixar nada na tela.
 - [ ] Desconecte um monitor com o overlay aberto (com duas telas): o overlay cancela e fecha em todas as telas; `Esc` continua funcionando em outros apps.
 - [ ] Clique de primeira: ao abrir o overlay a janela fica ativa e com o teclado (log `overlay`: "app ficou ativo", janela `chave=1`); o primeiro clique já começa a seleção, sem precisar clicar duas vezes para dar foco.
+- [ ] `Esc` cancela o overlay: o foco volta ao app que estava ativo antes de abrir (sem precisar clicar nele para continuar usando).
+- [ ] Deixe o Dock em modo de ocultar automaticamente, ou mude *Reduzir transparência* nas Configurações, com o overlay aberto: nenhum dos dois cancela o overlay nem trava o app.
 
 ## Telas, Spaces e tela cheia
 
@@ -38,11 +40,11 @@ Lista para o Pedro percorrer com tela e permissão reais, depois do Plano 3. Cad
 
 - [ ] Arraste uma região: ela fica ativa com o contorno, os pixels de fora escurecidos e o rótulo de dimensões em pixels (só largura × altura).
 - [ ] As dimensões mostradas batem com o PNG salvo, em pixels, em tela Retina e em tela 1x.
-- [ ] Arraste as bordas e os cantos: a seleção redimensiona; o cursor muda nas bordas.
+- [ ] Arraste as bordas e os cantos: a seleção redimensiona.
 - [ ] Arraste por dentro: a seleção se move sem sair da tela.
 - [ ] Setas movem a seleção 1 px; `⇧` com setas move 10 px.
 - [ ] Clique fora da seleção começa outra.
-- [ ] Região sem atraso, `Enter` ou soltar para confirmar: o PNG sai com exatamente o que foi visto. Abra no Preview, ferramenta Mostrar Inspetor, e compare pixel a pixel com a tela (canto superior esquerdo, tamanho exato).
+- [ ] Região sem atraso, `Enter` confirma: o PNG sai com exatamente o que foi visto. Abra no Preview, ferramenta Mostrar Inspetor, e compare pixel a pixel com a tela (canto superior esquerdo, tamanho exato).
 - [ ] Repita o item anterior numa tela de escala não inteira (por exemplo, "Mais espaço" ou 1,5×): o retângulo mostrado e o capturado coincidem, sem 1 px de diferença.
 - [ ] Repita numa tela secundária com origem negativa (acima ou à esquerda da principal): a região capturada é exatamente a selecionada, não a deslocada pela origem.
 - [ ] Região de 1 px de largura ou altura, junto de uma borda da tela: captura sem erro ou o overlay a recusa de forma clara. Anote o comportamento.
@@ -69,6 +71,7 @@ Lista para o Pedro percorrer com tela e permissão reais, depois do Plano 3. Cad
 - [ ] Janela parcialmente fora da tela: sai inteira ou com o comportamento anotado (efeito de `ignoreGlobalClipSingleWindow`).
 - [ ] `F` captura a tela inteira da tela sob o cursor, logo ao abrir, sem mexer o mouse; com duas telas, a tela do cursor.
 - [ ] A lista de janelas não mostra nem captura janelas do próprio Capta, e a ordem da frente para trás está certa.
+- [ ] Capture a janela de um app que não está em primeiro plano: o Capta se ativa antes de congelar as telas, então anote se a janela sai na imagem com a aparência de ativa ou de inativa (cor da barra de título e dos semáforos).
 
 ## Atraso, contagem e cursor
 
@@ -76,11 +79,12 @@ Lista para o Pedro percorrer com tela e permissão reais, depois do Plano 3. Cad
 - [ ] Sem atraso, o controle **Incluir cursor** fica desabilitado e explica o motivo (o cursor só entra com atraso); com atraso, fica habilitado e mostra o valor lembrado.
 - [ ] Com atraso, a janelinha da contagem aparece no topo da tela certa (inclusive de uma janela numa tela secundária), conta de 1 em 1 s e não aparece na imagem final.
 - [ ] `Esc` durante a contagem cancela; o clique na contagem também cancela; em ambos não sobra rascunho em `Capturas`.
-- [ ] `Esc` apertado exatamente quando a contagem termina (condição de corrida conhecida): registre se a captura saiu ou foi cancelada; as duas respostas são aceitáveis, mas o app não pode travar nem deixar o `Esc` global preso.
+- [ ] `Esc` apertado exatamente quando a contagem termina: a captura é sempre cancelada (sem rascunho), e o app não pode travar nem deixar o `Esc` global preso.
+- [ ] Confirmando com atraso, o foco volta ao app que estava ativo antes de abrir o overlay logo que a contagem começa (sem precisar clicar nele): deve ser possível interagir com ele (por exemplo reabrir um menu) enquanto a contagem corre, sem perder o tempo do atraso clicando de volta nele.
 - [ ] Abra um menu de aplicativo, comece uma região por cima dele com atraso de 3 s e deixe o menu aberto: a imagem final mostra o menu aberto (o menu não fecha ao abrir o overlay se o atraso permitir reabri-lo; anote o fluxo que funcionou).
 - [ ] Com atraso e **Incluir cursor** ligado, região e janela mostram o cursor na imagem; desligado, não mostram. Sem atraso, nunca mostram.
-- [ ] Feche a janela capturada durante o atraso: aparece o alerta de janela não encontrada e não sobra rascunho.
-- [ ] Desconecte o monitor da região durante o atraso: aparece o alerta de tela não encontrada.
+- [ ] Feche a janela capturada durante o atraso: aparece o alerta curto genérico ("Não foi possível capturar a tela.") e não sobra rascunho. Hoje o mesmo texto aparece para qualquer falha da captura ao vivo, sem detalhe por causa (janela ou tela que sumiram); anote se isso incomodar.
+- [ ] Desconecte o monitor da região durante o atraso: aparece o mesmo alerta curto genérico de falha.
 - [ ] Minimize a janela, ou mande-a para outro Space, durante o atraso: observe e anote o que acontece (alerta, ou captura de uma janela fora da tela).
 - [ ] Revogue a permissão de gravação de tela nas Configurações durante o atraso: o fim da contagem leva à ajuda de permissão, e não a uma falha genérica.
 
@@ -131,13 +135,11 @@ Desvios da spec (Tarefa 10):
 
 Menores adiados:
 
-- [ ] Vão entre o painel de ajuda e a barra do overlay (`PaineisDoOverlay`) deixa o clique começar uma seleção.
 - [ ] Os painéis são atualizados a cada evento em todas as telas (guardar por mudança); *Reduzir transparência* não redesenha ao mudar com o overlay aberto.
 - [ ] Uma `Task` já cancelada pisca o overlay (checar `Task.isCancelled` antes de abrir).
 - [ ] Tokens de `Tema` duplicados e a posse de `destaqueFundo` invertida (`Tema.Overlay.*`).
-- [ ] `Esc` apertado no instante em que a contagem termina ainda pode capturar (`cancelarContagem` cancela uma `Task` já terminada; corrigir com uma flag).
 - [ ] `JanelaDaContagem`: sem `deinit` que libere o `Esc`; `aoCancelar` com padrão silencioso; rótulo e anúncio podem duplicar a leitura do VoiceOver.
 - [ ] Captura de janela fora de toda tela dá `.telaNaoEncontrada` (poderia cair em `desktopIndependentWindow.pointPixelScale`); a conferência de tamanho da janela (quadro × escala) pode ser rígida demais, caso a lista acima mostre divergência de 1 px ou de escala.
 - [ ] Região fracionária aceita em `RecorteDeImagem`; conversão de seleção sem tamanho mínimo; teste do meio ponto não distingue `toNearestOrEven` de `floor`.
-- [ ] `AtalhoGlobalCarbon`: contador estático com `nonisolated(unsafe)` e trava; o aviso "Atalho indisponível" é o mesmo texto para os dois atalhos; o aviso de `⌃⌥C` fica entre os dois itens de captura; chaves do catálogo fora de ordem alfabética.
+- [ ] `AtalhoGlobalCarbon`: contador estático com `nonisolated(unsafe)` e trava; o aviso de `⌃⌥C` fica entre os dois itens de captura; chaves do catálogo fora de ordem alfabética.
 - [ ] Testes: os de caminho feliz do overlay instalam monitores `NSEvent` reais; faltam testes de NaN e de limites fracionários da seleção; a fiação real do `CaptaApp` está fora da conta de cobertura.
