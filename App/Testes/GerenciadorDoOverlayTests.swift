@@ -172,7 +172,9 @@ struct GerenciadorDoOverlayTests: BancadaDoOverlay {
         let janela = JanelaDeOverlay(quadro: quadro)
         #expect(janela.canBecomeKey)
         #expect(!janela.canBecomeMain)
-        #expect(janela.level == .screenSaver)
+        // Acima do Dock e da barra de menus, sem esconder o alternador de apps (ver `nivel`).
+        #expect(janela.level == .popUpMenu)
+        #expect(JanelaDeOverlay.nivel == .popUpMenu)
         let acima = CGRect(x: 0, y: 5000, width: 40, height: 30)
         #expect(janela.constrainFrameRect(acima, to: nil) == acima)
     }

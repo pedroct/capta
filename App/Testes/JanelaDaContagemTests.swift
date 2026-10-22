@@ -65,6 +65,16 @@ struct JanelaDaContagemTests {
         #expect(atalho.liberacoes == 1)
     }
 
+    @Test func painelUsaOMesmoNivelDoOverlay() {
+        let j = janela(AtalhoFalso(), Cancelamentos())
+        #expect(j.nivelDoPainel == nil)
+        j.mostrar(segundos: 3, naTela: Self.tela)
+        #expect(j.nivelDoPainel == .popUpMenu)
+        #expect(j.nivelDoPainel == JanelaDeOverlay.nivel)
+        j.fechar()
+        #expect(j.nivelDoPainel == nil)
+    }
+
     @Test func fecharDuasVezesLiberaUmaVezSo() {
         let atalho = AtalhoFalso()
         let j = janela(atalho, Cancelamentos())

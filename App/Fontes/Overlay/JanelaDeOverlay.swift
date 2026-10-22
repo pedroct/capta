@@ -4,6 +4,21 @@ import AppKit
 ///
 /// Precisa ser `key` para receber o teclado num app de barra de menus.
 final class JanelaDeOverlay: NSPanel {
+    /// Nível do overlay e da janelinha da contagem.
+    ///
+    /// Valores do `CGWindowLevel.h` do SDK: Dock 20, barra de menus 24, barra de status 25,
+    /// menu pop-up 101, overlay 102, ajuda 200, arrasto 500, protetor de tela 1000. O
+    /// `.popUpMenu` (101) fica acima do Dock, da barra de menus e dos itens de status, que o
+    /// overlay precisa cobrir (spec §4.3). Com o nível anterior, `.screenSaver` (1000), o HUD do
+    /// alternador de apps (⌘Tab) não aparecia no teste em tela real enquanto o overlay ou a
+    /// contagem estavam abertos (a troca de app ainda acontecia, às cegas); o mais provável é
+    /// que ficasse atrás das janelas do Capta.
+    ///
+    /// É uma escolha pelos níveis documentados do CoreGraphics: a Apple não publica o nível do
+    /// alternador do sistema. Precisa ser confirmada de novo em tela real: barra de menus e Dock
+    /// ainda cobertos, e o HUD do ⌘Tab visível com o overlay ou a contagem abertos.
+    static let nivel: NSWindow.Level = .popUpMenu
+
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
@@ -15,7 +30,8 @@ final class JanelaDeOverlay: NSPanel {
             backing: .buffered,
             defer: false
         )
-        level = .screenSaver
+        // `.popUpMenu` (101), não `.screenSaver` (1000), para não esconder o ⌘Tab (ver `nivel`).
+        level = Self.nivel
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         // A vista cobre tudo com a imagem congelada.
         isOpaque = true

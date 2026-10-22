@@ -45,6 +45,9 @@ final class JanelaDaContagem: ApresentadorDaContagem {
     /// O número que está na janelinha (vazio quando fechada).
     var numeroExibido: String { vista?.numero.stringValue ?? "" }
 
+    /// O nível da janelinha enquanto ela existe (`nil` quando fechada).
+    var nivelDoPainel: NSWindow.Level? { painel?.level }
+
     init(
         atalhoDeEsc: any AtalhoGlobal,
         alturaDaPrincipal: @escaping @MainActor () -> CGFloat = {
@@ -159,7 +162,10 @@ final class JanelaDaContagem: ApresentadorDaContagem {
             backing: .buffered,
             defer: false
         )
-        painel.level = .screenSaver
+        // Mesmo nível do overlay (`.popUpMenu`, 101): acima da barra de menus e do Dock e, a
+        // confirmar em tela real, abaixo do alternador do ⌘Tab. O porquê está em
+        // `JanelaDeOverlay.nivel`.
+        painel.level = JanelaDeOverlay.nivel
         painel.collectionBehavior = [
             .canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle,
         ]
