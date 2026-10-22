@@ -284,6 +284,20 @@ actor Anotacoes<Valor: Sendable> {
     func anotar(_ valor: Valor) { valores.append(valor) }
 }
 
+/// Guarda o `FluxoDeCaptura` depois de criado, para a `pausa` (que roda na mesma contagem)
+/// poder cancelar a contagem a partir de dentro dela mesma, numa corrida exata com o fim.
+final class CaixaDoFluxo: @unchecked Sendable {
+    weak var fluxo: FluxoDeCaptura?
+    private let trava = NSLock()
+    private var chamadas = 0
+
+    func proximaChamada() -> Int {
+        trava.withLock {
+            chamadas += 1; return chamadas
+        }
+    }
+}
+
 /// Área de transferência que guarda o último PNG ou falha.
 final class AreaDeTransferenciaFalsa: AreaDeTransferencia {
     private let falhar: Bool

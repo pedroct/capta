@@ -41,6 +41,13 @@ final class FluxoDeCaptura {
     private var capturando = false
     /// A contagem que está correndo, para `cancelarContagem` a interromper.
     private var tarefaDaContagem: Task<Bool, Never>?
+    /// `Esc` ou clique pediram o cancelamento desta contagem.
+    ///
+    /// Sozinho, `tarefaDaContagem?.cancel()` corre uma corrida estreita: se o cancelamento chega
+    /// bem quando a última pausa de 1 s já terminou, `ContagemRegressiva.executar` não torna a
+    /// checar `Task.isCancelled` antes de devolver `true`, e a captura ao vivo aconteceria mesmo
+    /// cancelada. Esta marca é conferida à parte do valor devolvido pela contagem.
+    private var contagemCancelada = false
     /// Gravação do rascunho da última captura (os testes a aguardam).
     private(set) var gravacaoDoRascunho: Task<Void, Never>?
 
@@ -116,7 +123,9 @@ final class FluxoDeCaptura {
             guard let escolha else { return }
             let atraso = escolha.opcoes.atraso
             if atraso != .nenhum {
-                guard await contar(atraso.rawValue, naTela: escolha.telaDaContagem) else { return }
+                contagemCancelada = false
+                let terminou = await contar(atraso.rawValue, naTela: escolha.telaDaContagem)
+                guard terminou && !contagemCancelada else { return }
                 contagem.fechar()
             }
             // Com atraso, a partir do fim da contagem: o que interessa é o tempo da captura.
@@ -138,6 +147,7 @@ final class FluxoDeCaptura {
 
     /// Cancela a contagem em andamento (o `Esc` ou o clique na janelinha); nada é capturado.
     func cancelarContagem() {
+        contagemCancelada = true
         tarefaDaContagem?.cancel()
     }
 
