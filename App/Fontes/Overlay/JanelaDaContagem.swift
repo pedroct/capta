@@ -216,4 +216,8 @@ final class VistaDaContagem: FundoDePainel {
     override func mouseDown(with event: NSEvent) {
         MainActor.assumeIsolated { aoClicar?() }
     }
+
+    // Outro app pode estar à frente quando a contagem aparece (spec §4.9); sem isto, o primeiro
+    // clique só ativaria a janela, e só o segundo cancelaria.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }

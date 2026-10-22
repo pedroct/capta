@@ -40,11 +40,15 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
     private let centro: NotificationCenter
     private let appAtivo: @MainActor () -> Bool
     private let aoMudarAjuda: @MainActor (Bool) -> Void
+    private let appFrontmost: @MainActor () -> NSRunningApplication?
+    private let devolverFoco: @MainActor (NSRunningApplication?, ResultadoDoOverlay) -> Void
 
     private(set) var estado: EstadoDoOverlay?
     private(set) var janelasAbertas: [NSWindow] = []
     private var vistas: [VistaDoOverlay] = []
     private var continuacao: CheckedContinuation<ResultadoDoOverlay, Never>?
+    /// App à frente antes de `ativar()`; devolvido no `Esc` e na confirmação com atraso.
+    private var anterior: NSRunningApplication?
     /// Cada abertura tem um número; gatilhos atrasados de uma sessão velha são ignorados.
     private var sessao: UInt64 = 0
     private var monitorDeTeclas: Any?
@@ -72,7 +76,15 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
         },
         centro: NotificationCenter = .default,
         appAtivo: @escaping @MainActor () -> Bool = { NSApp.isActive },
-        aoMudarAjuda: @escaping @MainActor (Bool) -> Void = { _ in }
+        aoMudarAjuda: @escaping @MainActor (Bool) -> Void = { _ in },
+        // `nil` quando já era o próprio Capta (nada a devolver).
+        appFrontmost: @escaping @MainActor () -> NSRunningApplication? = {
+            let frontmost = NSWorkspace.shared.frontmostApplication
+            return frontmost?.processIdentifier == NSRunningApplication.current.processIdentifier
+                ? nil : frontmost
+        },
+        devolverFoco: @escaping @MainActor (NSRunningApplication?, ResultadoDoOverlay) -> Void =
+            GerenciadorDoOverlay.devolverFocoPeloSistema
     ) {
         self.atalhoDeEsc = atalhoDeEsc
         self.criarJanela = criarJanela
@@ -81,6 +93,8 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
         self.centro = centro
         self.appAtivo = appAtivo
         self.aoMudarAjuda = aoMudarAjuda
+        self.appFrontmost = appFrontmost
+        self.devolverFoco = devolverFoco
     }
 
     func escolher(
@@ -137,6 +151,8 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
     // MARK: - Abrir e encerrar
 
     private func abrir(_ telas: [TelaCongelada], estado inicial: EstadoDoOverlay, sessao: UInt64) {
+        // Um retorno antecipado abaixo não deve devolver o foco de uma sessão anterior.
+        anterior = nil
         do {
             try atalhoDeEsc.registrar(
                 CombinacaoDeTeclas(codigoDaTecla: Self.codigoDoEsc, modificadores: [])
@@ -165,6 +181,7 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
         }
         janelasAbertas = zip(telas, vistas).map { criarJanela($0, $1) }
 
+        anterior = appFrontmost()
         tarefaDeAtivacao = ativar()
         for janela in janelasAbertas { janela.orderFrontRegardless() }
         tornarChaveAJanelaDoCursor()
@@ -226,7 +243,20 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
         vistas = []
         estado = nil
         NSCursor.arrow.set()
+        let aDevolver = anterior
+        anterior = nil
+        if let aDevolver, Self.devolveOFoco(resultado) {
+            devolverFoco(aDevolver, resultado)
+        }
         retomar(resultado)
+    }
+
+    /// Com atraso ou cancelado, devolve; sem atraso, o resultado já abre a janela do Capta.
+    private static func devolveOFoco(_ resultado: ResultadoDoOverlay) -> Bool {
+        switch resultado {
+        case .cancelado: true
+        case .confirmado(_, let opcoes): opcoes.atraso != .nenhum
+        }
     }
 
     private func retomar(_ resultado: ResultadoDoOverlay) {
@@ -326,6 +356,14 @@ extension GerenciadorDoOverlay {
                 )
             }
         }
+    }
+
+    /// Pede ao app anterior que retome a ativação (macOS 14+, a partir de quem está ativo agora).
+    private static func devolverFocoPeloSistema(
+        _ anterior: NSRunningApplication?,
+        _ resultado: ResultadoDoOverlay
+    ) {
+        _ = anterior?.activate(from: .current, options: [])
     }
 
     /// Janela de produção: sobre a tela, no espaço do AppKit.
