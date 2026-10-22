@@ -75,6 +75,7 @@ public struct Renderizador: Sendable {
             // recebem a opacidade do objeto.
             contexto.setAlpha(CGFloat(objeto.estilo.opacidade))
             contexto.beginTransparencyLayer(auxiliaryInfo: nil)
+            contexto.concatenate(objeto.transformacaoDeRotacao)
             desenhar(objeto, documento: documento, em: contexto)
             contexto.endTransparencyLayer()
             contexto.restoreGState()
@@ -125,5 +126,31 @@ public struct Renderizador: Sendable {
             desenharCarimbo(simbolo: simbolo, em: retangulo, cor: estilo.cor, contexto: contexto)
         case .desfoque: break  // Tratado em `renderizar`, fora da camada de transparência.
         }
+    }
+}
+
+extension Anotacao {
+    /// Rotação do objeto no sistema do documento: em torno do centro do retângulo (etapa: do
+    /// `centro`), matriz de rotação padrão com Y para baixo, então ângulo positivo gira no
+    /// sentido horário na tela. Mesma convenção de ``limites``, do acerto e das alças.
+    var transformacaoDeRotacao: CGAffineTransform {
+        guard rotacao != 0 else { return .identity }
+        let centro: CGPoint
+        switch geometria {
+        case .forma(_, let r), .texto(let r, _, _, _, _), .carimbo(let r, _), .realce(let r),
+            .desfoque(let r, _, _):
+            let r = r.standardized
+            centro = CGPoint(x: r.midX, y: r.midY)
+        case .etapa(let c, _, _):
+            centro = c
+        case .seta, .linha:
+            // `Documento.validar()` recusa rotação em seta, linha e desfoque.
+            return .identity
+        }
+        // No contexto já invertido, `rotated(by:)` leva (x, y) a
+        // (x·cos − y·sen, x·sen + y·cos) em coordenadas do documento.
+        return CGAffineTransform(translationX: centro.x, y: centro.y)
+            .rotated(by: CGFloat(rotacao))
+            .translatedBy(x: -centro.x, y: -centro.y)
     }
 }
