@@ -343,7 +343,7 @@ Sequência (spec §4.1): disparo sem captura nem seleção em andamento → perm
 - [x] **Step 1: Escrever `docs/verificacao-manual-overlay.md`** com um item marcável por linha, no formato da lista da fatia 3: overlay cobre barra de menus e Dock; `Esc` em todos os estados (antes de arrastar, com seleção, com a lupa, no modo janela, na contagem); uma, duas e três telas, escalas mistas, tela acima ou à esquerda da principal; app em tela cheia e outro Space; região sem atraso sai **exatamente** o que foi visto (conferir por pixel no Preview, também numa tela de escala não inteira); a região não passa para outra tela; ajuste de bordas, mover e setas (1 px e `⇧` 10 px); dimensões em pixels corretas; lupa nos quatro cantos da tela e a 8× com grade; `H` oculta e lembra a ajuda; `Espaço` alterna; janela com parte coberta sai inteira, sem sombra, na escala certa; janela entre duas telas; `F` captura a tela sob o cursor; menu de aplicativo capturado por região com atraso de 3 s; contagem visível, fora da imagem, `Esc` cancela; cursor aparece só com atraso e o controle explica sem atraso; janela que fecha durante a contagem mostra alerta; desconectar um monitor com o overlay aberto cancela; `⌃⌥C` em conflito com outro app mostra "Atalho indisponível" e o menu funciona; `⌃⌥C` e `⌃⌥F` não se confundem; nenhuma permissão nova pedida; VoiceOver lê o rótulo e a contagem; *Reduzir transparência* e *Reduzir movimento*; o menu da barra não aparece na imagem congelada; tempo do atalho ao overlay (alvo < 500 ms, ler o log; medir com uma e com três telas, e conferir o uso de memória do Capta com três telas).
 - [x] **Step 2: Rodar `make cobertura-app`**, anotar o valor medido de `App/Fontes` e ajustar `App=` (o piso é provisório; vale o menor entre CI e local), em commit próprio (`test(app): ajusta o piso de cobertura do app`).
 - [x] **Step 3: Rodar `make verificar` e `make cobertura-app`** → Expected: PASS; commit da lista (`docs: adiciona a lista de verificação manual do overlay`).
-- [ ] **Step 4: 🔒 Pedir ao Pedro** para percorrer a lista (`make app && open build/Capta.app`, com duas telas para os itens de várias telas) e registrar as falhas como pendências no status deste plano.
+- [x] **Step 4: 🔒 Pedir ao Pedro** para percorrer a lista (`make app && open build/Capta.app`, com duas telas para os itens de várias telas) e registrar as falhas como pendências no status deste plano.
 - [ ] **Step 5: 🔒 `git push`** só depois da confirmação do Pedro; conferir `gh run list --limit 1` → `success`; se o piso do app medido na CI for menor que o local, baixar `App=` ao valor da CI em commit próprio.
 
 ---
@@ -357,17 +357,23 @@ Sequência (spec §4.1): disparo sem captura nem seleção em andamento → perm
 
 ---
 
-## Status de execução (2026-10-21)
+## Status de execução (2026-10-22)
 
-- **Tarefas 1 a 13:** concluídas e revisadas. A Tarefa 14 está feita nos passos 1 a 3: lista em `docs/verificacao-manual-overlay.md` e piso do app subido para `App=89.0` (medido local 89,96 %, 1856/2063).
+- **Tarefas 1 a 13:** concluídas e revisadas. **Tarefa 14:** completa nos passos 1 a 4 — lista em `docs/verificacao-manual-overlay.md` (todos os itens de teste marcados `[x]`), piso do app em `App=89.0` e verificação em tela real feita pelo Pedro. **Pendente:** só o passo 5, `git push`.
+- **Revisão final do branch inteiro** (modelo `opus`, base `a73db78`): veredito "com correções", 1 achado Importante (foco não devolvido ao app anterior) e alguns Menores; corrigidos numa única rodada permitida pelo processo, com re-review escopado confirmando os 4 achados endereçados. O próprio fix wave introduziu 2 riscos novos de foco, reconhecidos e registrados na lista manual para confirmação em tela real (sem segunda rodada, por regra do processo).
 - **Prova de foco da Tarefa 1:** passou na máquina do Pedro (build `15fe54d`, `⌃⌥C`). Log: "ao abrir: ativo=false chave=0", depois "app ficou ativo" e "300 ms depois: ativo=true chave=1"; o overlay fechou pelo atalho global do `Esc`.
-- **Pendente do Pedro:** a verificação em tela real (Tarefa 14, passo 4) e o `git push` (passo 5). Falhas da lista viram pendências aqui.
 
-**Rodadas de correção depois da Tarefa 1 concluída:**
+**Rodadas de correção depois da Tarefa 1 concluída (antes da revisão final):**
 
 1. Inicializador designado do `NSPanel` em `JanelaDeOverlay` (o build quebrava) e `set -o pipefail` no Makefile, porque o GNU Make 3.81 ignora `.SHELLFLAGS` e `make verificar` saía 0 com o build quebrado.
 2. `Esc` como atalho global (Carbon) enquanto o overlay existe, ativação por `NSWorkspace.openApplication` e logs da categoria `overlay`.
 3. Invariante de liberação do `Esc` em toda saída, inclusive com `NSScreen.screens` vazio (monitores e registro não vazam), com costura testável e Tasks canceladas.
+
+**Achados do Pedro em tela real, depois da revisão final, cada um com correção própria:**
+
+4. O `⌘Tab` não mostrava a telinha do alternador do sistema com o overlay ou a contagem abertos (nível `.screenSaver`, acima demais). Baixado para `.popUpMenu` (101): ainda cobre Dock (20), barra de menus (24) e barra de status (25), mas fica abaixo de onde o alternador aparentemente vive. Confirmado funcionando em tela real.
+5. Confirmado em tela real: ao perder a ativação (`⌘Tab` para outro app), o encerramento ainda reativava o app de **antes de abrir o overlay**, em vez de respeitar a troca que o sistema já tinha feito. Corrigido com um tipo próprio (`MotivoDoEncerramento`, com origem própria ou externa): só `Esc` e confirmação com atraso devolvem o foco; perda de ativação e mudança de telas nunca devolvem. Os `switch` não têm `default`, então um evento novo não compila até alguém classificar a origem. Confirmado em três rodadas reais, com log de diagnóstico (`didBecomeActive`/`didResignActive`/`frontmost=`).
+6. Investigado e descartado como bug: apps com a janela minimizada não "sobem" sozinhos ao ficarem ativos (comportamento padrão do macOS, não do Capta).
 
 **Desvios aceitos (rulings do controlador e do revisor da Tarefa 10):**
 
