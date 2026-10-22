@@ -202,4 +202,10 @@ final class PaineisDoOverlay: NSStackView {
         ajuda.mostrar(modo: estado.modo)
         barra.mostrar(opcoes: estado.opcoes, ajudaVisivel: estado.ajudaVisivel)
     }
+
+    // A pilha não cobre o vão entre `ajuda` e `barra` com nenhuma vista: sem isto, um clique
+    // bem no vão caía na vista de baixo e começava uma seleção vazia, perdendo a escolhida.
+    override func mouseDown(with event: NSEvent) {}
+    override func mouseDragged(with event: NSEvent) {}
+    override func mouseUp(with event: NSEvent) {}
 }

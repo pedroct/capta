@@ -120,6 +120,30 @@ struct PaineisDoOverlayTests: BancadaDaVista {
         #expect(recebidos.isEmpty)
     }
 
+    @Test func cliqueNoVaoEntreOsPaineisNaoComecaSelecao() throws {
+        let vista = try vista()
+        var recebidos: [EventoDoOverlay] = []
+        vista.aoEvento = { recebidos.append($0) }
+        let evento = try #require(
+            NSEvent.mouseEvent(
+                with: .leftMouseDown,
+                location: .zero,
+                modifierFlags: [],
+                timestamp: 0,
+                windowNumber: 0,
+                context: nil,
+                eventNumber: 0,
+                clickCount: 1,
+                pressure: 1
+            )
+        )
+        // No vão entre `ajuda` e `barra`, nenhuma das duas vistas recebe o clique: cai na pilha.
+        vista.paineis.mouseDown(with: evento)
+        vista.paineis.mouseDragged(with: evento)
+        vista.paineis.mouseUp(with: evento)
+        #expect(recebidos.isEmpty)
+    }
+
     @Test func paineisSaoDesenhados() throws {
         let vista = try vista()
         vista.mostrar(estado(eventos: [.cursorMoveu(CGPoint(x: 50, y: 50))]))
