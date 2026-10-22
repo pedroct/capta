@@ -1,6 +1,12 @@
 import CoreGraphics
 import Foundation
 
+/// Tamanho (comprimento) da cabeça da seta: 4 vezes a largura, no mínimo 10 e no máximo o
+/// comprimento da seta. Usado pelo desenho e pelos limites do objeto.
+func tamanhoDaCabeca(largura: Double, comprimento: CGFloat) -> CGFloat {
+    min(max(CGFloat(largura) * 4, 10), comprimento)
+}
+
 extension Renderizador {
     /// Aplica a largura e o tracejado do estilo ao contexto; `false` se não há traço.
     private func prepararTraco(_ estilo: Estilo, em contexto: CGContext) -> Bool {
@@ -71,7 +77,7 @@ extension Renderizador {
         guard comprimento.isFinite, comprimento > 0.001 else { return }
         let ux = dx / comprimento
         let uy = dy / comprimento
-        let tamanhoCabeca = min(max(CGFloat(estilo.largura) * 4, 10), comprimento)
+        let tamanhoCabeca = tamanhoDaCabeca(largura: estilo.largura, comprimento: comprimento)
         let meiaLargura = tamanhoCabeca * 0.5
         let baseCabeca = CGPoint(x: fim.x - ux * tamanhoCabeca, y: fim.y - uy * tamanhoCabeca)
 
