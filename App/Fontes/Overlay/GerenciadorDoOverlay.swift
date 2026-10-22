@@ -47,7 +47,8 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
     private(set) var janelasAbertas: [NSWindow] = []
     private var vistas: [VistaDoOverlay] = []
     private var continuacao: CheckedContinuation<ResultadoDoOverlay, Never>?
-    /// App à frente antes de `ativar()`; devolvido no `Esc` e na confirmação com atraso.
+    /// App à frente antes de `ativar()`; devolvido no `Esc` e na confirmação com atraso, nunca
+    /// quando o encerramento vem de fora (ver `MotivoDoEncerramento.origem`).
     private var anterior: NSRunningApplication?
     /// Cada abertura tem um número; gatilhos atrasados de uma sessão velha são ignorados.
     private var sessao: UInt64 = 0
@@ -124,7 +125,7 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
             }
         } onCancel: {
             Task { @MainActor [weak self] in
-                self?.encerrar(.cancelado, motivo: "tarefa cancelada", sessao: sessao)
+                self?.encerrar(.cancelado, motivo: .tarefaCancelada, sessao: sessao)
             }
         }
     }
@@ -167,7 +168,7 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
         aberto = true
         guard !telas.isEmpty else {
             Self.log.error("overlay não abriu: nenhuma tela")
-            encerrar(.cancelado, motivo: "sem telas", sessao: sessao)
+            encerrar(.cancelado, motivo: .semTelas, sessao: sessao)
             return
         }
         // O cursor do estado inicial é (0, 0): sem a posição real, o realce e o `F` errariam.
@@ -215,17 +216,21 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
         let novo = atual.reduzindo(evento)
         estado = novo
         if let resultado = novo.resultado {
-            encerrar(resultado, motivo: Self.motivo(de: evento), sessao: sessao)
+            encerrar(resultado, motivo: MotivoDoEncerramento(de: evento), sessao: sessao)
             return
         }
         for vista in vistas { vista.mostrar(novo) }
         if novo.ajudaVisivel != atual.ajudaVisivel { aoMudarAjuda(novo.ajudaVisivel) }
     }
 
-    private func encerrar(_ resultado: ResultadoDoOverlay, motivo: String, sessao: UInt64) {
+    private func encerrar(
+        _ resultado: ResultadoDoOverlay,
+        motivo: MotivoDoEncerramento,
+        sessao: UInt64
+    ) {
         guard aberto, sessao == self.sessao else { return }
         aberto = false
-        Self.log.info("overlay fechou: \(motivo, privacy: .public)")
+        Self.log.info("overlay fechou: \(motivo.textoDoLog, privacy: .public)")
         atalhoDeEsc.liberar()
         tarefaDeAtivacao?.cancel()
         tarefaDeDiagnostico?.cancel()
@@ -245,18 +250,10 @@ final class GerenciadorDoOverlay: SeletorDeCaptura {
         NSCursor.arrow.set()
         let aDevolver = anterior
         anterior = nil
-        if let aDevolver, Self.devolveOFoco(resultado) {
+        if let aDevolver, motivo.devolveOFoco(com: resultado) {
             devolverFoco(aDevolver, resultado)
         }
         retomar(resultado)
-    }
-
-    /// Com atraso ou cancelado, devolve; sem atraso, o resultado já abre a janela do Capta.
-    private static func devolveOFoco(_ resultado: ResultadoDoOverlay) -> Bool {
-        switch resultado {
-        case .cancelado: true
-        case .confirmado(_, let opcoes): opcoes.atraso != .nenhum
-        }
     }
 
     private func retomar(_ resultado: ResultadoDoOverlay) {
@@ -378,15 +375,6 @@ extension GerenciadorDoOverlay {
         )
         janela.contentView = vista
         return janela
-    }
-
-    private static func motivo(de evento: EventoDoOverlay) -> String {
-        switch evento {
-        case .tecla(.esc): "Esc"
-        case .telasMudaram: "telas mudaram"
-        case .perdeuAtivacao: "perda de ativação"
-        default: "confirmado"
-        }
     }
 
     private func registrarDiagnostico(momento: String) {
