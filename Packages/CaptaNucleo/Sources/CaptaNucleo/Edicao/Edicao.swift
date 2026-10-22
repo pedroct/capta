@@ -10,7 +10,7 @@ public enum Ordem: Equatable, Sendable {
 }
 
 /// Uma operação de edição sobre um ``Documento``.
-public enum Edicao: Sendable {
+public enum Edicao: Equatable, Sendable {
     case adicionar(Anotacao)
     case remover(Set<UUID>)
     /// Troca a anotação de mesmo `id`, mantendo a posição nas camadas e a ordem de criação.
@@ -20,12 +20,16 @@ public enum Edicao: Sendable {
     case definirRecorte(CGRect?)
     /// Só vale para anotações `.etapa`; para qualquer outra lança `valorForaDeFaixa("etapa")`.
     case definirReinicioDeEtapa(UUID, Bool)
+    /// Aplica as edições em ordem sobre a mesma cópia; vale como um único passo no histórico.
+    indirect case lote([Edicao])
 }
 
 extension Documento {
     /// Aplica a edição neste documento (já copiado pelo chamador); a validação fica com quem chama.
     mutating func aplicarSemValidar(_ edicao: Edicao) throws {
         switch edicao {
+        case .lote(let edicoes):
+            for item in edicoes { try aplicarSemValidar(item) }
         case .adicionar(let anotacao):
             let (seguinte, estourou) = proximaOrdem.addingReportingOverflow(1)
             guard !estourou else { throw ErroDocumento.valorForaDeFaixa("ordem") }
@@ -94,7 +98,7 @@ extension Documento {
 }
 
 extension Geometria {
-    fileprivate func deslocada(por d: CGVector) -> Geometria {
+    func deslocada(por d: CGVector) -> Geometria {
         func ponto(_ p: CGPoint) -> CGPoint { CGPoint(x: p.x + d.dx, y: p.y + d.dy) }
         func retangulo(_ r: CGRect) -> CGRect { r.offsetBy(dx: d.dx, dy: d.dy) }
         switch self {

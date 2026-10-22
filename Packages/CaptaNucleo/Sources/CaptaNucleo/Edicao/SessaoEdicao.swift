@@ -30,6 +30,15 @@ public struct SessaoEdicao: Sendable {
         documento = copia
     }
 
+    /// Aplica e valida a edição numa cópia, sem tocar o documento nem o histórico.
+    /// Serve à prévia de um arrasto; lança ``ErroDocumento`` se a edição for inválida.
+    public func simular(_ edicao: Edicao) throws -> Documento {
+        var copia = documento
+        try copia.aplicarSemValidar(edicao)
+        try copia.validar()
+        return copia
+    }
+
     /// Volta ao estado anterior; devolve `false` se não há o que desfazer.
     @discardableResult
     public mutating func desfazer() -> Bool {
