@@ -11,7 +11,7 @@ public struct EstadoDoEditor: Equatable, Sendable {
     /// Retângulo do arraste de seleção em curso (pixels do documento), para a vista desenhar.
     public private(set) var retanguloDeSelecao: CGRect?
     /// Gesto do mouse em andamento (botão apertado), ou `nil`.
-    private var gesto: GestoDoEditor?
+    var gesto: GestoDoEditor?
 
     /// Deslocamento, em pixels, das cópias de `.duplicar`.
     private static let deslocamentoDaCopia: CGFloat = 10
@@ -62,9 +62,9 @@ public struct EstadoDoEditor: Equatable, Sendable {
             // ação, ela substitui a prévia (`.aplicar` limpa a prévia na sessão).
             let cancelamento = cancelarGesto()
             return comandar(evento, contexto) ?? cancelamento
-        case .alterarEstilo:
-            // Tarefa 7.
-            return nil
+        case .alterarEstilo(let alteracao):
+            let cancelamento = cancelarGesto()
+            return alterarEstilo(alteracao, em: contexto.documento) ?? cancelamento
         }
     }
 
@@ -95,11 +95,12 @@ public struct EstadoDoEditor: Equatable, Sendable {
         _ contexto: ContextoDoEditor
     ) -> AcaoDoEditor? {
         let cancelamento = cancelarGesto()
-        guard ferramenta == .selecao else { return cancelamento }
         let shift = modificadores.contains(.shift)
         if let achada = alcaSob(ponto, contexto) {
             let folga = CGVector(dx: achada.posicao.x - ponto.x, dy: achada.posicao.y - ponto.y)
             gesto = .alca(achada.alca, original: achada.objeto, folga: folga, comPrevia: false)
+        } else if ferramenta != .selecao {
+            gesto = .criando(id: contexto.novoId(), inicio: ponto, comPrevia: false)
         } else if let alvo = contexto.documento.objeto(
             em: ponto,
             tolerancia: contexto.tolerancia
@@ -186,6 +187,10 @@ public struct EstadoDoEditor: Equatable, Sendable {
             // Sem deslocamento não há o que mostrar; se havia prévia, ela sai da tela agora.
             guard mostrar else { return comPrevia ? .cancelarPrevia : nil }
             return .previa(.mover(selecao, deslocamento: delta))
+        case .criando(let id, let inicio, _):
+            gesto = .criando(id: id, inicio: inicio, comPrevia: true)
+            let nova = criada(id: id, de: inicio, ate: ponto, shift: shift)
+            return .previa(.adicionar(nova))
         case .alca(let alca, let original, let folga, _):
             gesto = .alca(alca, original: original, folga: folga, comPrevia: true)
             return .previa(.substituir(GestoDoEditor.editada(original, alca, ponto, folga, shift)))
@@ -215,6 +220,8 @@ public struct EstadoDoEditor: Equatable, Sendable {
             let delta = GestoDoEditor.delta(de: inicio, ate: ponto, restrito: shift)
             guard delta != .zero else { return comPrevia ? .cancelarPrevia : nil }
             return .aplicar(.mover(selecao, deslocamento: delta))
+        case .criando(let id, let inicio, _):
+            return concluirCriacao(id: id, inicio: inicio, ponto, shift, contexto)
         case .alca(let alca, let original, let folga, let comPrevia):
             let nova = GestoDoEditor.editada(original, alca, ponto, folga, shift)
             guard nova != original else { return comPrevia ? .cancelarPrevia : nil }

@@ -13,12 +13,15 @@ enum GestoDoEditor: Equatable, Sendable {
     /// Arrastar uma alça (ou o ponto de giro) do objeto `original`. `folga` é a distância da
     /// alça ao pixel do clique, somada ao cursor para a alça não pular até ele.
     case alca(AlcaArrastada, original: Anotacao, folga: CGVector, comPrevia: Bool)
+    /// Criar o objeto `id` com a ferramenta ativa, a partir de `inicio`.
+    case criando(id: UUID, inicio: CGPoint, comPrevia: Bool)
 
     var temPrevia: Bool {
         switch self {
         case .marcando: false
         case .movendo(_, _, let comPrevia, _): comPrevia
         case .alca(_, _, _, let comPrevia): comPrevia
+        case .criando(_, _, let comPrevia): comPrevia
         }
     }
 }

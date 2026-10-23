@@ -166,14 +166,14 @@ private let b = anotacaoB
     #expect(estado == antes)
 }
 
-@Test func eventosDeMouseForaDaSelecaoEAlteracaoDeEstiloFicamParaAProximaTarefa() throws {
+@Test func pressionarComFerramentaDeCriacaoComecaACriarEOEstiloVaiParaAMemoria() throws {
     let ctx = contextoDoEditor(try documentoDoEditor([a]))
     var estado = editorCom(selecao: [a.id])
     _ = estado.reduzir(.escolher(.seta), contexto: ctx)
-    let antes = estado
     #expect(estado.reduzir(.pressionar(pontoDoEditor(150, 150), []), contexto: ctx) == nil)
+    #expect(estado.selecao.isEmpty)
     #expect(estado.reduzir(.alterarEstilo(.largura(8)), contexto: ctx) == nil)
-    #expect(estado == antes)
+    #expect(estado.memoria[.seta].largura == 8)
 }
 
 @Test func padroesDoEstado() {
