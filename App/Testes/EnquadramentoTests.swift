@@ -52,20 +52,6 @@ struct EnquadramentoTests {
         #expect(Enquadramento.escala(imagem: imagem, area: semAltura, modo: .ajustar) == 1)
     }
 
-    // MARK: - Alternância de modo
-
-    @Test func alternarTrocaEntreAjustarETamanhoReal() {
-        #expect(ModoDeExibicao.ajustar.alternado == .tamanhoReal)
-        #expect(ModoDeExibicao.tamanhoReal.alternado == .ajustar)
-    }
-
-    @Test func rotuloDaAlternanciaNomeiaOModoParaOndeVai() {
-        #expect(ModoDeExibicao.ajustar.rotuloDaAlternancia == String(localized: "Tamanho real"))
-        #expect(
-            ModoDeExibicao.tamanhoReal.rotuloDaAlternancia == String(localized: "Ajustar à janela")
-        )
-    }
-
     // MARK: - Janela inicial
 
     @Test func tamanhoInicialLimitaA80PorCentoDaTelaESomaABarra() {
@@ -73,6 +59,7 @@ struct EnquadramentoTests {
             imagem: CGSize(width: 3000, height: 2000),
             telaVisivel: CGSize(width: 1500, height: 1000)
         )
+        // 80 % da tela na largura inclui o painel de propriedades.
         #expect(tamanho == CGSize(width: 1200, height: 800 + Enquadramento.alturaDaBarra))
     }
 
@@ -81,13 +68,36 @@ struct EnquadramentoTests {
             imagem: CGSize(width: 100, height: 50),
             telaVisivel: nil
         )
-        #expect(pequena == CGSize(width: 480, height: 320 + Enquadramento.alturaDaBarra))
+        #expect(
+            pequena
+                == CGSize(
+                    width: 480 + Enquadramento.larguraDoPainel,
+                    height: 320 + Enquadramento.alturaDaBarra
+                )
+        )
         // Sem tela, o limite é 80 % de 1280 x 800.
         let grande = Enquadramento.tamanhoInicial(
             imagem: CGSize(width: 5000, height: 5000),
             telaVisivel: nil
         )
         #expect(grande == CGSize(width: 1024, height: 640 + Enquadramento.alturaDaBarra))
+    }
+
+    @Test func aAlturaDaBarraSomaFerramentasERodape() {
+        #expect(
+            Enquadramento.alturaDaBarra
+                == Enquadramento.alturaDasFerramentas + Enquadramento.alturaDoRodape
+        )
+        #expect(Enquadramento.larguraDoPainel == 232)
+    }
+
+    @Test func tamanhoMinimoCabeNoTamanhoInicialMinimo() {
+        let inicial = Enquadramento.tamanhoInicial(
+            imagem: CGSize(width: 10, height: 10),
+            telaVisivel: nil
+        )
+        #expect(Enquadramento.tamanhoMinimo.width <= inicial.width)
+        #expect(Enquadramento.tamanhoMinimo.height <= inicial.height)
     }
 
     @Test func origemCentralizaNaTelaDadaInclusiveNaSegunda() {

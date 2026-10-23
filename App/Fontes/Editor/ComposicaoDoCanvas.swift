@@ -33,8 +33,19 @@ final class ComposicaoDoCanvas {
         } else {
             area = nil
         }
-        try renderizador.compor(documento, base: base, em: contexto, area: area)
-        guard let nova = contexto.makeImage() else { throw ErroRenderizacao.falhaAoCriarContexto }
+        do {
+            try renderizador.compor(documento, base: base, em: contexto, area: area)
+        } catch {
+            // O contexto pode ter ficado pela metade: a próxima chamada recompõe tudo.
+            anterior = nil
+            imagem = nil
+            throw error
+        }
+        guard let nova = contexto.makeImage() else {
+            anterior = nil
+            imagem = nil
+            throw ErroRenderizacao.falhaAoCriarContexto
+        }
         anterior = documento
         imagem = nova
         return nova

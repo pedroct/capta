@@ -1,23 +1,10 @@
 import CoreGraphics
 import Foundation
 
-/// Como a imagem se acomoda na janela de captura.
+/// Como a imagem se acomoda na área do canvas.
 enum ModoDeExibicao {
     case ajustar
     case tamanhoReal
-
-    /// O outro modo: o botão da barra alterna entre os dois.
-    var alternado: ModoDeExibicao {
-        self == .ajustar ? .tamanhoReal : .ajustar
-    }
-
-    /// Rótulo do botão da barra, que nomeia o modo para onde ele leva.
-    var rotuloDaAlternancia: String {
-        switch self {
-        case .ajustar: String(localized: "Tamanho real")
-        case .tamanhoReal: String(localized: "Ajustar à janela")
-        }
-    }
 }
 
 /// Escala de exibição da imagem na área disponível.
@@ -33,16 +20,28 @@ enum Enquadramento {
         return min(1, area.width / imagem.width, area.height / imagem.height)
     }
 
-    /// Altura da barra de ações, somada à da imagem no conteúdo da janela.
-    static let alturaDaBarra = 52.0
+    /// Altura da barra de ferramentas.
+    static let alturaDasFerramentas = 52.0
+    /// Altura do rodapé (zoom, tamanho e salvamento).
+    static let alturaDoRodape = 28.0
+    /// Largura do painel de propriedades, à direita do canvas.
+    static let larguraDoPainel = 232.0
+    /// Altura da barra de ferramentas somada à do rodapé: o que a janela gasta além do canvas.
+    static let alturaDaBarra = alturaDasFerramentas + alturaDoRodape
+    /// Menor conteúdo da janela do editor: a barra de ferramentas ainda cabe inteira.
+    static let tamanhoMinimo = CGSize(width: 640, height: 320 + alturaDaBarra)
 
-    /// Tamanho inicial do conteúdo da janela: a imagem em pontos, limitada a 80 % da área
-    /// visível da tela e com mínimo de 480 x 320, mais a barra. Sem tela, vale 1280 x 800.
+    /// Tamanho inicial do conteúdo da janela: o canvas com a imagem em pontos (mínimo 480 x 320),
+    /// mais o painel e as barras. O conjunto sem as barras fica em 80 % da área visível da tela,
+    /// quando a imagem é maior. Sem tela, vale 1280 x 800.
     static func tamanhoInicial(imagem: CGSize, telaVisivel: CGSize?) -> CGSize {
         let tela = telaVisivel ?? CGSize(width: 1280, height: 800)
-        let largura = min(imagem.width, tela.width * 0.8)
+        let largura = min(imagem.width, tela.width * 0.8 - larguraDoPainel)
         let altura = min(imagem.height, tela.height * 0.8)
-        return CGSize(width: max(largura, 480), height: max(altura, 320) + alturaDaBarra)
+        return CGSize(
+            width: max(largura, 480) + larguraDoPainel,
+            height: max(altura, 320) + alturaDaBarra
+        )
     }
 
     /// Origem (canto inferior esquerdo, coordenadas do AppKit) que centraliza um quadro de

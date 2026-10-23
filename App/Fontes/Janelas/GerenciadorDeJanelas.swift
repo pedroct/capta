@@ -15,10 +15,17 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
     private(set) var janelasDeCaptura: [NSWindow] = []
     private(set) var janelaDeAjuda: NSWindow?
     private let modeloDeAjuda = AjudaDePermissaoModelo()
+    /// Onde o editor guarda o último estilo de cada ferramenta.
+    private let defaults: UserDefaults
     /// A captura de cada janela, para salvar o pendente ao fechar e ao encerrar o app.
     private var capturas: [ObjectIdentifier: CapturaAberta] = [:]
     /// Salvamentos disparados pelo fechamento de janelas que ainda não terminaram.
     private var fechamentos: [UUID: Task<Void, Never>] = [:]
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        super.init()
+    }
 
     // MARK: Apresentador
 
@@ -56,8 +63,9 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
 
         // A janela nasce depois da view; a referência fraca deixa o alerta achá-la depois.
         let referencia = ReferenciaDeJanela()
-        let visao = JanelaDeCapturaView(
-            captura: captura,
+        let editor = EditorDaCaptura(captura: captura, memoria: MemoriaLembrada(defaults: defaults))
+        let visao = JanelaDoEditorView(
+            editor: editor,
             mostrarAlerta: { [weak self] in self?.mostrarAlerta($0, em: referencia.janela) }
         )
         let janela = criarJanela(com: visao, titulo: captura.nome)
@@ -74,6 +82,7 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
             alturaEmPixels: captura.base.height,
             escala: captura.escala
         )
+        janela.contentMinSize = Enquadramento.tamanhoMinimo
         janela.setContentSize(
             Enquadramento.tamanhoInicial(imagem: imagem, telaVisivel: tela?.visibleFrame.size)
         )

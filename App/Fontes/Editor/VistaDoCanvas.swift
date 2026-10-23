@@ -1,6 +1,5 @@
 import AppKit
 import CaptaNucleo
-import CaptaSistema
 import SwiftUI
 
 /// O canvas do editor em AppKit: traduz mouse, teclado e pinça em eventos do editor e desenha a
@@ -10,18 +9,16 @@ import SwiftUI
 final class VistaDoCanvas: NSView {
     /// Lado das alças, em pontos da tela.
     private static let ladoDaAlca: CGFloat = 8
-    private static let distanciaDoGiroEmPontos: CGFloat = 20
 
     private let editor: EditorDaCaptura
     private let composicao: ComposicaoDoCanvas?
-    private var jaAjustou = false
+    /// Há um ajuste de zoom agendado para depois do passe de layout atual.
+    private var ajusteAgendado = false
 
     init(editor: EditorDaCaptura) {
         self.editor = editor
-        composicao = try? ComposicaoDoCanvas(
-            base: editor.captura.base,
-            renderizador: Renderizador(provedorDeSimbolos: ProvedorDeSimbolosSF())
-        )
+        // O mesmo renderizador da captura: o canvas e o copiar/salvar PNG desenham igual.
+        composicao = try? editor.novaComposicao()
         super.init(frame: .zero)
         setAccessibilityElement(true)
         setAccessibilityRole(.image)
@@ -70,14 +67,19 @@ final class VistaDoCanvas: NSView {
         )
     }
 
-    /// Chamada pela rolagem a cada layout: ajusta o tamanho da vista e, na primeira vez com área,
-    /// escolhe o zoom que cabe a imagem inteira.
+    /// Chamada pela rolagem a cada layout: informa a área ao editor e acomoda o tamanho da vista.
+    /// No modo ajustar, o zoom novo é aplicado logo depois do passe de layout, e não durante ele:
+    /// mexer em estado observado no meio de uma atualização de view é o que o SwiftUI reclama.
     func ajustar(area: CGSize) {
         guard area.width > 0, area.height > 0 else { return }
-        if !jaAjustou {
-            jaAjustou = true
-            let escala = Enquadramento.escala(imagem: imagemEmPontos, area: area, modo: .ajustar)
-            editor.zoom = Double(escala)
+        if editor.areaVisivelMudou(area), !ajusteAgendado {
+            ajusteAgendado = true
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                ajusteAgendado = false
+                editor.aplicarAjuste()
+                redimensionar(area: enclosingScrollView?.contentSize ?? bounds.size)
+            }
         }
         redimensionar(area: area)
     }
@@ -126,7 +128,7 @@ final class VistaDoCanvas: NSView {
     }
 
     override func magnify(with event: NSEvent) {
-        editor.zoom = Zoom.limitado(editor.zoom * (1 + Double(event.magnification)))
+        editor.pinca(Double(event.magnification))
         redimensionar(area: enclosingScrollView?.contentSize ?? bounds.size)
     }
 
@@ -204,7 +206,7 @@ final class VistaDoCanvas: NSView {
         for posicao in unico.alcas().values {
             desenharAlca(em: emPontos(posicao, moldura: moldura))
         }
-        let distancia = conversao.pixels(dePontos: Self.distanciaDoGiroEmPontos)
+        let distancia = conversao.pixels(dePontos: EditorDaCaptura.giroEmPontos)
         if let giro = unico.pontoDeGiro(distancia: distancia) {
             let centro = emPontos(giro, moldura: moldura)
             let raio = Self.ladoDaAlca / 2

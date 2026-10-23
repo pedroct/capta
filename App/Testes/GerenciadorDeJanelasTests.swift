@@ -90,12 +90,19 @@ struct GerenciadorDeJanelasTests {
         let gerenciador = GerenciadorDeJanelas()
         defer { fecharTudo(gerenciador) }
 
-        // 8 x 6 pixels em escala 2 é menor que o mínimo: vale 480 x 320 mais a barra.
+        // 8 x 6 pixels em escala 2 é menor que o mínimo: vale 480 x 320 mais o painel e as barras.
         gerenciador.mostrarCaptura(try captura())
 
         let janela = try #require(gerenciador.janelasDeCaptura.first)
         let conteudo = janela.contentRect(forFrameRect: janela.frame).size
-        #expect(conteudo == CGSize(width: 480, height: 320 + Enquadramento.alturaDaBarra))
+        #expect(
+            conteudo
+                == CGSize(
+                    width: 480 + Enquadramento.larguraDoPainel,
+                    height: 320 + Enquadramento.alturaDaBarra
+                )
+        )
+        #expect(janela.contentMinSize == Enquadramento.tamanhoMinimo)
         #expect(janela.styleMask.contains(.resizable))
         if !NSScreen.screens.isEmpty {
             #expect(NSScreen.screens.contains { $0.visibleFrame.contains(janela.frame) })
@@ -137,7 +144,7 @@ struct GerenciadorDeJanelasTests {
         defer { fecharTudo(gerenciador) }
         gerenciador.mostrarCaptura(try captura())
         let janela = try #require(gerenciador.janelasDeCaptura.first)
-        let controlador = janela.contentViewController as? NSHostingController<JanelaDeCapturaView>
+        let controlador = janela.contentViewController as? NSHostingController<JanelaDoEditorView>
 
         try #require(controlador).rootView.mostrarAlerta(.naoFoiPossivelCopiar)
 

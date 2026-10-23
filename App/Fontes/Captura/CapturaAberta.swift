@@ -39,7 +39,8 @@ final class CapturaAberta {
     /// Aviso discreto que a janela mostra na barra (spec §4.5): só quando o rascunho falhou.
     var aviso: MensagemDeErro? { rascunho == .falhou ? .rascunhoNaoGuardado : nil }
 
-    private let renderizador: Renderizador
+    /// O único renderizador da captura: o canvas, copiar e salvar PNG desenham com ele.
+    let renderizador: Renderizador
     private let painel: any PainelDeArquivos
     private let areaDeTransferencia: any AreaDeTransferencia
     private let pastaDeRascunhos: URL

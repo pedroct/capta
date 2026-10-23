@@ -58,6 +58,21 @@ struct ComposicaoDoCanvasTests {
         #expect(primeira === segunda)
     }
 
+    @Test func composicaoQueFalhaNaoDeixaEstadoVelhoParaTras() throws {
+        let base = try imagemDeTeste(largura: 64, altura: 48)
+        let composicao = try ComposicaoDoCanvas(base: base, renderizador: renderizador)
+        let valido = try documento()
+        let primeira = try composicao.atualizar(para: valido)
+        // Documento de outro tamanho: o renderizador recusa.
+        let outro = try documento(largura: 32, altura: 24)
+        #expect(throws: (any Error).self) { try composicao.atualizar(para: outro) }
+        // Depois da falha, o mesmo documento de antes recompõe tudo, em vez de devolver a
+        // imagem velha porque "nada mudou".
+        let depois = try composicao.atualizar(para: valido)
+        #expect(depois !== primeira)
+        #expect(try bytes(depois) == bytes(primeira))
+    }
+
     /// Custo medido (não é um piso): documento grande com um objeto enorme tocado por uma área
     /// pequena. Só confere que a recomposição incremental termina; o número vai no relatório.
     @Test func custoDaRecomposicaoEmDocumentoGrande() throws {

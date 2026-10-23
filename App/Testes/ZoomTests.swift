@@ -37,6 +37,15 @@ struct ZoomTests {
         #expect(Zoom.limitado(1.2) == 1.2)
     }
 
+    @Test func limitadoPartindoDeZoomAbaixoDoPisoNaoSobeParaOPiso() {
+        // Começou a pinça em 10 % (ajuste de imagem enorme): o piso é o ponto de partida.
+        #expect(Zoom.limitado(0.05, partindoDe: 0.1) == 0.1)
+        #expect(Zoom.limitado(0.12, partindoDe: 0.1) == 0.12)
+        // De 50 % em diante vale o piso de sempre.
+        #expect(Zoom.limitado(0.01, partindoDe: 0.5) == 0.25)
+        #expect(Zoom.limitado(9, partindoDe: 0.5) == 4)
+    }
+
     @Test func toleranciaEmPontosViraPixelsDeAcordoComOZoom() {
         let afastado = ConversaoDoCanvas(zoom: 0.25, escala: 2)
         let perto = ConversaoDoCanvas(zoom: 4, escala: 2)
