@@ -25,6 +25,9 @@ final class SalvamentoAutomatico {
 
     private(set) var estado: EstadoDoSalvamento = .salvo
 
+    /// Roda depois de cada gravação que deu certo (o menu relê as capturas recentes).
+    @ObservationIgnored var aoGravar: (@MainActor () -> Void)?
+
     @ObservationIgnored private let atraso: Duration
     @ObservationIgnored private let dormir: @Sendable (Duration) async throws -> Void
     @ObservationIgnored private let gravar: Gravador
@@ -86,6 +89,7 @@ final class SalvamentoAutomatico {
             do {
                 try await gravar(alvo.documento, alvo.url)
                 estado = pendente == nil ? .salvo : .pendente
+                aoGravar?()
             } catch {
                 RegistroDeCaptura.falha("salvarRascunho", error)
                 // Sem edição mais nova, o mesmo documento fica na fila para a próxima tentativa.

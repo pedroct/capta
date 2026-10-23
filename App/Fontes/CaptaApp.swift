@@ -23,6 +23,7 @@ struct CaptaApp: App {
             aoMudarAjuda: opcoes.gravarAjuda
         )
         let contagem = JanelaDaContagem(atalhoDeEsc: AtalhoGlobalCarbon())
+        let pasta = Self.pastaDeRascunhos()
         let fluxo = FluxoDeCaptura(
             capturador: CapturadorSC(),
             permissao: PermissaoCG(),
@@ -30,13 +31,17 @@ struct CaptaApp: App {
             seletor: overlay,
             contagem: contagem,
             opcoes: opcoes,
-            pastaDeRascunhos: Self.pastaDeRascunhos(),
+            pastaDeRascunhos: pasta,
             cursor: CapturadorSC.posicaoDoCursor,
             agora: { Date() },
             defaults: .standard,
             painel: PainelDeArquivosAppKit(),
-            areaDeTransferencia: AreaDeTransferenciaPB()
+            areaDeTransferencia: AreaDeTransferenciaPB(),
+            // Nada garante que o conteúdo do menu seja reavaliado ao abrir: a lista é relida
+            // quando um rascunho é gravado, a cada salvamento e na abertura do app.
+            aoMudarRecentes: { estado.atualizarRecentes(em: pasta) }
         )
+        estado.atualizarRecentes(em: pasta)
         // O fluxo guarda as janelas; a volta é fraca para não criar ciclo.
         janelas.tentarDeNovo = { [weak fluxo] in
             guard let fluxo else { return }
@@ -79,6 +84,18 @@ struct CaptaApp: App {
             .keyboardShortcut("f", modifiers: [.control, .option])
             if estado.atalhoDeTelaInteiraIndisponivel {
                 Text("Atalho ⌃⌥F indisponível")
+            }
+            Divider()
+            Menu("Capturas recentes") {
+                if estado.recentes.isEmpty {
+                    Button("Nenhuma captura") {}
+                        .disabled(true)
+                }
+                ForEach(estado.recentes, id: \.url) { recente in
+                    Button(recente.nome) {
+                        Task { await fluxo.abrirRecente(recente.url) }
+                    }
+                }
             }
             Divider()
             Button("Sair do Capta") {

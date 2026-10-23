@@ -206,8 +206,17 @@ final class ApresentadorFalso: Apresentador {
     private(set) var ajudas = 0
     private(set) var capturas: [CapturaAberta] = []
     private(set) var alertas: [MensagemDeErro] = []
+    /// Pacotes que "já têm janela": `trazerParaFrente` os reconhece e anota o pedido.
+    var pacotesAbertos: Set<URL> = []
+    private(set) var trazidos: [URL] = []
 
     func mostrarAjudaDePermissao() { ajudas += 1 }
+
+    func trazerParaFrente(_ url: URL) -> Bool {
+        guard pacotesAbertos.contains(url) else { return false }
+        trazidos.append(url)
+        return true
+    }
 
     func mostrarCaptura(_ captura: CapturaAberta) { capturas.append(captura) }
 

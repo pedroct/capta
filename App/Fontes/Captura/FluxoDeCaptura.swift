@@ -35,6 +35,7 @@ final class FluxoDeCaptura {
     private let painel: any PainelDeArquivos
     private let areaDeTransferencia: any AreaDeTransferencia
     private let pausa: Pausa
+    private let aoMudarRecentes: @MainActor () -> Void
     private let renderizador = Renderizador(provedorDeSimbolos: ProvedorDeSimbolosSF())
 
     /// Há captura, overlay ou contagem em andamento.
@@ -50,6 +51,8 @@ final class FluxoDeCaptura {
     private var contagemCancelada = false
     /// Gravação do rascunho da última captura (os testes a aguardam).
     private(set) var gravacaoDoRascunho: Task<Void, Never>?
+    /// Pacotes recentes que estão sendo lidos, para um segundo clique não abrir outra janela.
+    private var abrindoRecentes: Set<URL> = []
 
     init(
         capturador: any Capturador,
@@ -65,7 +68,8 @@ final class FluxoDeCaptura {
         gravadorDeRascunho: @escaping GravadorDeRascunho = FluxoDeCaptura.gravadorPadrao,
         painel: any PainelDeArquivos,
         areaDeTransferencia: any AreaDeTransferencia,
-        pausa: @escaping Pausa = { try await Task.sleep(for: $0) }
+        pausa: @escaping Pausa = { try await Task.sleep(for: $0) },
+        aoMudarRecentes: @escaping @MainActor () -> Void = {}
     ) {
         self.capturador = capturador
         self.permissao = permissao
@@ -80,6 +84,7 @@ final class FluxoDeCaptura {
         self.painel = painel
         self.areaDeTransferencia = areaDeTransferencia
         self.pausa = pausa
+        self.aoMudarRecentes = aoMudarRecentes
     }
 
     // MARK: - Tela inteira
@@ -175,6 +180,53 @@ final class FluxoDeCaptura {
         }
     }
 
+    // MARK: - Capturas recentes
+
+    /// Reabre um pacote `.capta` da lista de recentes (spec §4.8).
+    ///
+    /// Se o pacote já tem janela, ela vem para a frente. Senão lê e decodifica fora da *main
+    /// actor* e abre o editor com o próprio pacote como rascunho. Pacote corrompido, de versão
+    /// mais nova ou apagado vira o alerta ``MensagemDeErro/naoFoiPossivelAbrir``; a leitura
+    /// nunca escreve no pacote.
+    func abrirRecente(_ url: URL) async {
+        if apresentador.trazerParaFrente(url) { return }
+        guard abrindoRecentes.insert(url).inserted else { return }
+        defer { abrindoRecentes.remove(url) }
+        do {
+            let imagem = try await Self.lerPacote(url)
+            let captura = montarCaptura(
+                nome: url.deletingPathExtension().lastPathComponent,
+                documento: imagem.documento,
+                imagem: imagem.base,
+                rascunho: .gravado(url)
+            )
+            apresentador.mostrarCaptura(captura)
+        } catch {
+            RegistroDeCaptura.falha("abrirRecente", error)
+            apresentador.mostrarAlerta(.naoFoiPossivelAbrir)
+            // A lista do menu estava velha (pacote apagado ou estragado): relê.
+            aoMudarRecentes()
+        }
+    }
+
+    /// Lê o pacote e decodifica a base fora da *main actor*. A base tem de ter o tamanho que o
+    /// documento declara; senão as coordenadas das anotações não casariam com a imagem.
+    nonisolated private static func lerPacote(
+        _ url: URL
+    ) async throws -> (documento: Documento, base: ImagemCapturada) {
+        try await Task.detached(priority: .userInitiated) {
+            let conteudo = try PacoteCapta.ler(de: url)
+            let imagem = try CodificadorPNG.decodificar(conteudo.baseDados)
+            let tamanho = conteudo.documento.tamanhoBase
+            guard CGFloat(imagem.width) == tamanho.width, CGFloat(imagem.height) == tamanho.height
+            else { throw ErroImagem.falhaAoDecodificar }
+            return (
+                conteudo.documento,
+                ImagemCapturada(imagem: imagem, escala: conteudo.documento.escala)
+            )
+        }.value
+    }
+
     // MARK: - Comum aos dois caminhos
 
     /// Sem permissão, pede uma única vez ao sistema e mostra a ajuda.
@@ -210,21 +262,36 @@ final class FluxoDeCaptura {
     private func abrir(_ imagem: ImagemCapturada, aoMostrar: () -> Void) throws {
         let documento = try Documento.novo(de: imagem)
         let nome = Rascunho.nome(para: agora())
-        let captura = CapturaAberta(
+        let captura = montarCaptura(
             nome: nome,
             documento: documento,
-            base: imagem.imagem,
-            escala: imagem.escala,
-            rascunho: .gravando,
-            renderizador: renderizador,
-            painel: painel,
-            areaDeTransferencia: areaDeTransferencia,
-            pastaDeRascunhos: pastaDeRascunhos,
-            gravadorDeRascunho: gravadorDeRascunho
+            imagem: imagem,
+            rascunho: .gravando
         )
         apresentador.mostrarCaptura(captura)
         aoMostrar()
         gravarRascunho(imagem, documento: documento, nome: nome, em: captura)
+    }
+
+    private func montarCaptura(
+        nome: String,
+        documento: Documento,
+        imagem: ImagemCapturada,
+        rascunho: CapturaAberta.EstadoRascunho
+    ) -> CapturaAberta {
+        CapturaAberta(
+            nome: nome,
+            documento: documento,
+            base: imagem.imagem,
+            escala: imagem.escala,
+            rascunho: rascunho,
+            renderizador: renderizador,
+            painel: painel,
+            areaDeTransferencia: areaDeTransferencia,
+            pastaDeRascunhos: pastaDeRascunhos,
+            gravadorDeRascunho: gravadorDeRascunho,
+            aoPersistir: aoMudarRecentes
+        )
     }
 
     /// Grava o rascunho em paralelo e atualiza a captura ao terminar.

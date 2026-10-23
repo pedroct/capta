@@ -46,6 +46,8 @@ final class CapturaAberta {
     private let pastaDeRascunhos: URL
     private let gravadorDeRascunho: FluxoDeCaptura.GravadorDeRascunho
     private let salvamento: SalvamentoAutomatico
+    /// Avisa que o rascunho passou a existir ou foi regravado (o menu relê os recentes).
+    private let aoPersistir: @MainActor () -> Void
     /// Há edição que o rascunho ainda não recebeu porque ele estava gravando ou sendo refeito.
     private var edicaoEsperaORascunho = false
     private var recriacao: Task<Void, Never>?
@@ -64,7 +66,8 @@ final class CapturaAberta {
         pastaDeRascunhos: URL = FileManager.default.temporaryDirectory,
         gravadorDeRascunho: @escaping FluxoDeCaptura.GravadorDeRascunho =
             FluxoDeCaptura.gravadorPadrao,
-        salvamento: SalvamentoAutomatico? = nil
+        salvamento: SalvamentoAutomatico? = nil,
+        aoPersistir: @escaping @MainActor () -> Void = {}
     ) {
         self.nome = nome
         self.sessao = SessaoEdicao(documento: documento)
@@ -76,6 +79,7 @@ final class CapturaAberta {
         self.areaDeTransferencia = areaDeTransferencia
         self.pastaDeRascunhos = pastaDeRascunhos
         self.gravadorDeRascunho = gravadorDeRascunho
+        self.aoPersistir = aoPersistir
         self.salvamento =
             salvamento
             ?? SalvamentoAutomatico(
@@ -85,6 +89,7 @@ final class CapturaAberta {
                     renderizador: renderizador
                 )
             )
+        self.salvamento.aoGravar = aoPersistir
     }
 
     // MARK: Edição
@@ -158,6 +163,7 @@ final class CapturaAberta {
     }
 
     private func rascunhoMudou() {
+        if case .gravado = rascunho { aoPersistir() }
         switch rascunho {
         case .gravado(let url) where edicaoEsperaORascunho:
             edicaoEsperaORascunho = false

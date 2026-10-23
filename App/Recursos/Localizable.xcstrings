@@ -166,6 +166,17 @@
         }
       }
     },
+    "Capturas recentes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capturas recentes"
+          }
+        }
+      }
+    },
     "Captura de tela" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -415,6 +426,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nenhum"
+          }
+        }
+      }
+    },
+    "Nenhuma captura" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma captura"
+          }
+        }
+      }
+    },
+    "Não foi possível abrir a captura." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível abrir a captura."
           }
         }
       }

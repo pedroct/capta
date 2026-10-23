@@ -8,6 +8,7 @@ enum MensagemDeErro: Equatable {
     case naoFoiPossivelCopiar
     case naoFoiPossivelSalvar
     case rascunhoNaoGuardado
+    case naoFoiPossivelAbrir
 }
 
 extension MensagemDeErro {
@@ -22,6 +23,8 @@ extension MensagemDeErro {
             String(localized: "Não foi possível salvar o arquivo.")
         case .rascunhoNaoGuardado:
             String(localized: "A captura não foi guardada. Copiar e salvar continuam funcionando.")
+        case .naoFoiPossivelAbrir:
+            String(localized: "Não foi possível abrir a captura.")
         }
     }
 }
@@ -38,5 +41,7 @@ enum ResultadoDeAcao: Equatable {
 protocol Apresentador {
     func mostrarAjudaDePermissao()
     func mostrarCaptura(_ captura: CapturaAberta)
+    /// Traz para a frente a janela do pacote em `url`, se houver; `true` quando havia.
+    func trazerParaFrente(_ url: URL) -> Bool
     func mostrarAlerta(_ mensagem: MensagemDeErro)
 }

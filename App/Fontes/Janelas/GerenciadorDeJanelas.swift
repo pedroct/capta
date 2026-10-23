@@ -96,6 +96,19 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
         exibir(janela)
     }
 
+    func trazerParaFrente(_ url: URL) -> Bool {
+        let alvo = url.resolvingSymlinksInPath()
+        let janela = janelasDeCaptura.first { janela in
+            guard case .gravado(let aberto)? = capturas[ObjectIdentifier(janela)]?.rascunho
+            else { return false }
+            return aberto.resolvingSymlinksInPath() == alvo
+        }
+        guard let janela else { return false }
+        if janela.isMiniaturized { janela.deminiaturize(nil) }
+        exibir(janela)
+        return true
+    }
+
     /// Grava o que está pendente em todas as capturas, abertas ou em fechamento, e só volta
     /// com tudo no disco. É o que o encerramento do app espera.
     func salvarTodas() async {
