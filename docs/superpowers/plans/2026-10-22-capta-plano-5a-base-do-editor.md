@@ -95,16 +95,16 @@ docs/verificacao-manual-editor.md       (novo)
 **Interfaces:**
 - Produces: `Esquema.versaoAtual == 2`; `Esquema.versaoMinimaLegivel == 1`; `enum Migracao { static func migrar(_ documento: inout Documento, desde versao: Int) }` (interno). `Documento.init(from:)` lê `versaoEsquema`; se `versaoMinimaLegivel <= v < versaoAtual`, migra antes de `validar()`; fora disso deixa como está, e `validar()` lança `valorForaDeFaixa("versaoEsquema")` como hoje. A migração v1 → v2 só troca a versão (nenhum campo muda nesta versão).
 
-- [ ] **Step 1: Testes que falham**
+- [x] **Step 1: Testes que falham**
   - `EsquemaTests.versaoAtualDoEsquemaEDois`: `#expect(Esquema.versaoAtual == 2)` e `#expect(Esquema.versaoMinimaLegivel == 1)`.
   - `EsquemaV1CongeladoTests` (renomear a suíte para "Leitura do esquema v1"): `jsonV1DeReferenciaDecodificaMigrado`: decodificar `jsonEsquemaV1DeReferencia` dá o documento completo do teste com `versaoEsquema == 2` e os demais campos iguais. Remover `documentoCompletoTemJsonDeReferencia` (a v1 não é mais gravada); o literal v1 fica intacto.
   - `EsquemaV2Tests.documentoCompletoTemJsonDeReferenciaV2`: o mesmo documento completo codifica exatamente para `jsonEsquemaV2DeReferencia` (o literal da v1 com `"versaoEsquema" : 2`); e `jsonV2DecodificaDeVolta`. Comentário no topo: a v2 só congela no fim do Plano 5c (spec §4.9); até lá, quem acrescenta campo atualiza este literal no mesmo commit.
   - `PacoteCaptaTests.lerPacoteV1MigraEAtualizarGravaV2`: gravar um pacote, trocar no `documento.json` a versão por `1`, `ler` devolve `versaoEsquema == 2`; `atualizar` com esse documento grava `"versaoEsquema" : 2` e não toca `base.png` (bytes e data de modificação).
   - `VersaoEsquemaPacoteTests`: versão `3` no disco → `ErroPacote.versaoMaisNova(3)`; `0` e `-1` continuam `ErroDocumento.valorForaDeFaixa("versaoEsquema")`.
-- [ ] **Step 2: Rodar** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar** a versão e a migração. Comentário de `Esquema.versaoAtual`: v1 congelada (`docs/esquema-capta-v1.md`), v2 em `docs/esquema-capta-v2.md`, congela no fim do Plano 5c.
-- [ ] **Step 4: Escrever `docs/esquema-capta-v2.md`** no formato da v1: as mesmas tabelas, `versaoEsquema` = 2, uma seção "Migração" (v1 → v2: só a versão) e uma "Regra de congelamento" (muda no lugar até o fim do Plano 5c; depois, mudança incompatível sobe para 3 com migração e teste). Em `docs/esquema-capta-v1.md`, uma linha no topo apontando para a v2. Em `CLAUDE.md`, trocar a frase "Antes de qualquer app gravar `.capta`, fechar o esquema v1…" por: "Esquema em v2 (`docs/esquema-capta-v2.md`), que muda no lugar até o fim do Plano 5c e então congela."
-- [ ] **Step 5: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): sobe o esquema para v2 com migração da v1`).
+- [x] **Step 2: Rodar** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar** a versão e a migração. Comentário de `Esquema.versaoAtual`: v1 congelada (`docs/esquema-capta-v1.md`), v2 em `docs/esquema-capta-v2.md`, congela no fim do Plano 5c.
+- [x] **Step 4: Escrever `docs/esquema-capta-v2.md`** no formato da v1: as mesmas tabelas, `versaoEsquema` = 2, uma seção "Migração" (v1 → v2: só a versão) e uma "Regra de congelamento" (muda no lugar até o fim do Plano 5c; depois, mudança incompatível sobe para 3 com migração e teste). Em `docs/esquema-capta-v1.md`, uma linha no topo apontando para a v2. Em `CLAUDE.md`, trocar a frase "Antes de qualquer app gravar `.capta`, fechar o esquema v1…" por: "Esquema em v2 (`docs/esquema-capta-v2.md`), que muda no lugar até o fim do Plano 5c e então congela."
+- [x] **Step 5: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): sobe o esquema para v2 com migração da v1`).
 
 ### Task 2: Paleta, `Edicao.lote`, simular e cópias
 
@@ -121,16 +121,16 @@ docs/verificacao-manual-editor.md       (novo)
   - `Geometria.deslocada(por:)` passa de `fileprivate` a interna.
   - `extension Documento { public func copias(de ids: Set<UUID>, deslocamento: CGVector, novoId: () -> UUID) -> [Anotacao] }` — cópias na ordem das camadas, geometria deslocada, id novo; ids inexistentes são ignorados.
 
-- [ ] **Step 1: Testes que falham**
+- [x] **Step 1: Testes que falham**
   - `paletaTemOitoCoresDoTokensNaOrdem`: cada cor da `paleta` e `.realce` com os componentes dos hex acima (tolerância `1e-9`).
   - `loteDeDuasEdicoesDesfazNumPassoSo`: `lote([.adicionar(a), .mover([a.id], (5, 0))])` → um `desfazer()` volta ao documento vazio; `podeDesfazer == false`.
   - `loteInvalidoNaoMudaNada`: lote cujo segundo item remove id inexistente lança `objetoInexistente` e documento e histórico ficam iguais.
   - `loteVazioNaoCriaEntrada`; `loteAninhadoAplicaEmOrdem`.
   - `simularNaoTocaHistorico`: depois de `simular`, `documento` e `podeDesfazer` iguais; o devolvido contém a edição.
   - `copiasMantemOrdemDasCamadasEDeslocam`: documento com `a`, `b`, `c`; `copias(de: [c.id, a.id], deslocamento: (10, 10))` devolve `[a', c']` (ordem das camadas), com os ids do `novoId` na sequência e as geometrias deslocadas 10 px; `copias` de id inexistente devolve `[]`.
-- [ ] **Step 2: Rodar** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar.**
-- [ ] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona lote de edições, simulação e cópias`).
+- [x] **Step 2: Rodar** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar.**
+- [x] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona lote de edições, simulação e cópias`).
 
 ### Task 3: Limites, acerto e seleção por retângulo
 
@@ -145,7 +145,7 @@ docs/verificacao-manual-editor.md       (novo)
   - `extension Documento { public func objeto(em ponto: CGPoint, tolerancia: CGFloat) -> UUID?; public func objetos(tocando retangulo: CGRect) -> [UUID]; public func limites(de ids: Set<UUID>) -> CGRect? }`
   - Regras do acerto (de cima para baixo, o primeiro que acerta): seta e linha = distância ao segmento ≤ `largura/2 + tolerancia`; forma **sem** preenchimento = distância ao contorno ≤ `largura/2 + tolerancia`; forma **com** preenchimento, etapa, texto, carimbo, realce e desfoque = dentro da forma ampliada por `tolerancia`. Com rotação, o ponto vai antes para o referencial do objeto. `objetos(tocando:)` devolve, na ordem das camadas, os que têm `limites` que intersectam o retângulo padronizado.
 
-- [ ] **Step 1: Testes que falham** (`LimitesTests`, `AcertoTests`):
+- [x] **Step 1: Testes que falham** (`LimitesTests`, `AcertoTests`):
   - `limitesDaSetaIncluemACabeca`: seta `(0,0)→(100,0)`, largura 4 → cabeça 16 → limites `(-8, -8, 116, 16)`.
   - `limitesDaFormaGirada90GrausTrocamOsLados`: retângulo `(0,0,100,20)`, largura 0, `rotacao = .pi/2` → `(40, -40, 20, 100)` (tolerância `1e-9`).
   - `limitesDaEtapaSomamMeioTraco`; `limitesDeRetanguloInvertidoSaemPadronizados`.
@@ -154,9 +154,9 @@ docs/verificacao-manual-editor.md       (novo)
   - `linhaFinaAcertaComATolerancia`: linha largura 1 de `(0,0)` a `(100,0)`, tolerância 4: `(50, 4.4)` acerta, `(50, 4.6)` não.
   - `acertoEmTextoGirado`: texto girado 90° acerta num ponto que só está dentro depois da rotação.
   - `objetosTocandoDevolveNaOrdemDasCamadas`; `limitesDeIdsVaziosENil`.
-- [ ] **Step 2: Rodar** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar.**
-- [ ] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona limites e acerto das anotações`).
+- [x] **Step 2: Rodar** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar.**
+- [x] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona limites e acerto das anotações`).
 
 ### Task 4: Alças, redimensionar e girar
 
@@ -174,7 +174,7 @@ docs/verificacao-manual-editor.md       (novo)
     - `public func arrastando(_ alca: AlcaDeObjeto, ate ponto: CGPoint, restrito: Bool) -> Anotacao` — o canto ou a borda oposta fica parada **no mundo**, também com rotação; pode inverter o retângulo (o modelo aceita, quem consome padroniza). `restrito`: em seta e linha prende o ângulo em múltiplos de 45°; nos cantos mantém a proporção. Carimbo e etapa mantêm a proporção sempre (etapa muda o `diametro`).
     - `public func girando(ate ponto: CGPoint, restrito: Bool) -> Anotacao` — `rotacao` = ângulo do centro até o ponto, medido para que o ponto de giro fique sob o cursor; `restrito` prende em múltiplos de 15°; sem efeito em quem não aceita rotação.
 
-- [ ] **Step 1: Testes que falham:**
+- [x] **Step 1: Testes que falham:**
   - `alcasDaLinhaSaoOsDoisPontos`; `alcasDoRetanguloSaoOito`; `alcasDaFormaGiradaGiramJunto` (forma `(0,0,100,20)` girada 90°: o canto superior esquerdo vai para `(60, -40)`).
   - `arrastarCantoMantemOpostoParado`: retângulo `(10,10,100,50)`, canto inferior direito até `(200,100)` → `(10,10,190,90)`.
   - `arrastarCantoDeFormaGiradaMantemOpostoNoMundo`: forma girada 90°; depois de arrastar um canto, a posição no mundo do canto oposto é a mesma de antes (tolerância `1e-9`).
@@ -185,9 +185,9 @@ docs/verificacao-manual-editor.md       (novo)
   - `girarPoeOPontoDeGiroNaDirecaoDoCursor`: forma centrada em `(0,0)`, cursor em `(100, 0)` → `rotacao == .pi/2` e o `pontoDeGiro` do resultado fica na semirreta do centro ao cursor.
   - `girarPrendeEm15Graus`: cursor a 50° (sentido horário a partir de "para cima") com restrito → `rotacao == 45 × .pi / 180`.
   - `girarSetaNaoMudaNada`; `pontoDeGiroDaLinhaENil`.
-- [ ] **Step 2: Rodar** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar.** Com rotação: levar o ponto ao referencial local (rotação inversa em torno do centro), redimensionar no local, recalcular o centro para o oposto voltar ao mesmo ponto do mundo.
-- [ ] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona alças, redimensionar e girar anotações`).
+- [x] **Step 2: Rodar** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar.** Com rotação: levar o ponto ao referencial local (rotação inversa em torno do centro), redimensionar no local, recalcular o centro para o oposto voltar ao mesmo ponto do mundo.
+- [x] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona alças, redimensionar e girar anotações`).
 
 ### Task 5: Renderizador com rotação e área suja
 
@@ -207,7 +207,7 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
   - `renderizar(_:base:)` passa a ser `novoContexto` + `compor(area: nil)` + recorte, com o mesmo resultado de hoje.
   - `public enum AreaASerRedesenhada: Equatable, Sendable { case nada, tudo, retangulo(CGRect) }`; `extension Documento { public func areaAlterada(desde anterior: Documento) -> AreaASerRedesenhada }` — `tudo` se mudou `tamanhoBase` ou `escala`; `nada` se os objetos são iguais (mudança só de recorte é `nada`: o recorte é aplicado na exibição); senão a união dos `limites` antigos e novos dos objetos que entraram, saíram, mudaram (geometria, estilo, rotação), mudaram de posição relativa nas camadas, ou são etapas cujo `rotuloDaEtapa` mudou.
 
-- [ ] **Step 1: Testes que falham** (imagem de 200×120 com o gerador de `Apoio/Pixels.swift`):
+- [x] **Step 1: Testes que falham** (imagem de 200×120 com o gerador de `Apoio/Pixels.swift`):
   - `renderizarContinuaIgual`: os testes de renderizador existentes passam sem mudança.
   - `formaGirada90GrausPintaOndeOsLimitesDizem`: retângulo preenchido `(50,50,100,20)` girado `.pi/2` → pixel `(100, 20)` pintado, pixel `(60, 60)` não; e todo pixel pintado fica dentro de `limites`.
   - `realceGiradoETextoGiradoTambemGiram` (um pixel conferido em cada).
@@ -215,9 +215,9 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
   - `moverObjetoEmbaixoDeDesfoqueIgualAoRenderInteiro`: objeto parcialmente sob um desfoque `borrar` 10; mover o objeto → igual ao render inteiro. O mesmo com `pixelizar` 8 e movendo o **próprio** desfoque.
   - `contextoDeOutroTamanhoLanca`.
   - `areaAlteradaDeMoverEUniaoAntesEDepois`; `areaAlteradaSoDeRecorteENada`; `areaAlteradaDeEscalaETudo`; `removerEtapaIncluiAsQueRenumeram`: três etapas, remover a primeira → a área cobre as outras duas; `reordenarIncluiOsQueTrocaram`.
-- [ ] **Step 2: Rodar** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar.**
-- [ ] **Step 4: Rodar** `make verificar` → Expected: PASS. Dois commits: (`fix(nucleo): desenha a rotação das anotações`) e (`feat(nucleo): compõe o documento por área suja`).
+- [x] **Step 2: Rodar** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar.**
+- [x] **Step 4: Rodar** `make verificar` → Expected: PASS. Dois commits: (`fix(nucleo): desenha a rotação das anotações`) e (`feat(nucleo): compõe o documento por área suja`).
 
 ### Task 6: Máquina de estados do editor — seleção e gestos
 
@@ -242,10 +242,10 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
   - `.excluir` → `.aplicar(.remover(selecao))` e seleção vazia; `nil` sem seleção. `.duplicar` → `.aplicar(.lote(copias.map(.adicionar)))` com deslocamento 10 px e seleção = ids novos. `.deslocar(v)` → `.aplicar(.mover(selecao, v))`. `.selecionarTudo` → todos os ids. `.sincronizar` → tira da seleção os ids que não existem mais e cancela o gesto (`.cancelarPrevia` se havia prévia).
   - `.escolher(f)` cancela o gesto (`.cancelarPrevia` se havia prévia); escolher uma ferramenta de criação limpa a seleção; escolher `.selecao` a mantém.
 
-- [ ] **Step 1: Testes que falham** — um por regra acima, com ids fixos e `tolerancia = 4`, `distanciaDoGiro = 20`; mais: `pressionarEmAlcaTemPrioridadeSobreOutroObjeto`; `eventosDeArrastoSemPressionarSaoIgnorados`.
-- [ ] **Step 2: Rodar** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar.** Gesto privado como no `EstadoDoOverlay` (enum com o que precisa para recalcular a partir do clique).
-- [ ] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona a máquina de estados do editor com seleção`).
+- [x] **Step 1: Testes que falham** — um por regra acima, com ids fixos e `tolerancia = 4`, `distanciaDoGiro = 20`; mais: `pressionarEmAlcaTemPrioridadeSobreOutroObjeto`; `eventosDeArrastoSemPressionarSaoIgnorados`.
+- [x] **Step 2: Rodar** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar.** Gesto privado como no `EstadoDoOverlay` (enum com o que precisa para recalcular a partir do clique).
+- [x] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): adiciona a máquina de estados do editor com seleção`).
 
 ### Task 7: Máquina de estados do editor — criação e estilos
 
@@ -263,10 +263,10 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
   - `.alterarEstilo(x)` com seleção: `.aplicar(.lote(substituir…))` mudando só aquele campo em cada selecionado, e o mesmo campo em `memoria[ferramenta(de: geometria)]` de cada tipo selecionado. Sem seleção: muda só `memoria[ferramenta]` e devolve `nil`. `.opacidade` fica em 0…1, `.largura` ≥ 0 (valores fora são limitados, não lançam).
   - Para o realce, `.cor(c)` grava `c` com o alfa de `.realce` (`0x8C/255`), para continuar translúcido.
 
-- [ ] **Step 1: Testes que falham** — um por regra; mais `memoriaDecodificaJsonSemUmaFerramenta`, `memoriaIgnoraChaveDesconhecida`, `memoriaFazIdaEVolta`.
-- [ ] **Step 2: Rodar** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar.**
-- [ ] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): cria seta, linha, forma e realce e lembra o estilo por ferramenta`).
+- [x] **Step 1: Testes que falham** — um por regra; mais `memoriaDecodificaJsonSemUmaFerramenta`, `memoriaIgnoraChaveDesconhecida`, `memoriaFazIdaEVolta`.
+- [x] **Step 2: Rodar** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar.**
+- [x] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): cria seta, linha, forma e realce e lembra o estilo por ferramenta`).
 
 ### Task 8: Capturas recentes no núcleo e PNG de volta
 
@@ -281,12 +281,12 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
   - `public enum CapturasRecentes { public static let limitePadrao = 10; public static func listar(em pasta: URL, limite: Int = limitePadrao) throws -> [CapturaRecente] }` — só pastas com extensão `capta` que não começam com `.`; data = modificação do `documento.json` (pacote sem ele fica de fora); mais nova primeiro, empate pelo nome; pasta inexistente → `[]`.
   - `CodificadorPNG.decodificar(_ dados: Data) throws -> CGImage` — ImageIO; dados vazios ou que não são imagem lançam `ErroImagem.falhaAoDecodificar` (caso novo no `ErroImagem` que já existe).
 
-- [ ] **Step 1: Testes que falham** (pasta temporária, datas ajustadas com `FileManager.setAttributes`):
+- [x] **Step 1: Testes que falham** (pasta temporária, datas ajustadas com `FileManager.setAttributes`):
   - `listaOsMaisRecentesPrimeiro`; `respeitaOLimite` (12 pacotes, limite 10 → 10); `ignoraOcultosETemporarios` (`.Captura x.capta.tmp-UUID`, `.oculto.capta`); `ignoraOQueNaoECapta` (pasta `x`, arquivo `y.capta`); `pacoteSemDocumentoFicaDeFora`; `pastaInexistenteDevolveVazio`; `empateOrdenaPeloNome`.
   - `codificarEDecodificarFazIdaEVolta` (tamanho e um pixel conferido); `decodificarDadosInvalidosLanca`.
-- [ ] **Step 2: Rodar** `make test` → Expected: FAIL.
-- [ ] **Step 3: Implementar.**
-- [ ] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): lista as capturas recentes e decodifica PNG`).
+- [x] **Step 2: Rodar** `make test` → Expected: FAIL.
+- [x] **Step 3: Implementar.**
+- [x] **Step 4: Rodar** `make verificar` → Expected: PASS. Commit (`feat(nucleo): lista as capturas recentes e decodifica PNG`).
 
 ### Task 9: Registro de exclusões da cobertura do app
 
@@ -297,9 +297,9 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
 **Interfaces:**
 - Produces: o formato de `cobertura.exclusoes` (`caminho | motivo`, `#` comenta), com prefixo obrigatório `App/Fontes/`, motivo obrigatório, arquivo inexistente ou duplicado falha o portão. Os listados saem da conta do `App=` e do XML do Sonar e aparecem em "Fora da conta" no resumo, como no pacote. `CaptaApp.swift` continua fora pela regra que já existe.
 
-- [ ] **Step 1: Criar o registro vazio** (só o cabeçalho com as regras); as Tarefas 11 e 12 acrescentam `VistaDoCanvas.swift`, `JanelaDoEditorView.swift` e `PainelDePropriedadesView.swift` com o motivo.
-- [ ] **Step 2: Conferir o portão** com arquivos temporários na pasta de rascunho da sessão: `EXCLUSOES_APP=<sem motivo> make cobertura-app` → falha com "exclusão inválida"; `<caminho fora de App/Fontes/>` → falha; `<arquivo inexistente>` → falha; registro vazio → PASS com o mesmo total de hoje.
-- [ ] **Step 3: Rodar** `make verificar` e `make cobertura-app` → Expected: PASS. Commit próprio (`build: adiciona o registro de exclusões da cobertura do app`).
+- [x] **Step 1: Criar o registro vazio** (só o cabeçalho com as regras); as Tarefas 11 e 12 acrescentam `VistaDoCanvas.swift`, `JanelaDoEditorView.swift` e `PainelDePropriedadesView.swift` com o motivo.
+- [x] **Step 2: Conferir o portão** com arquivos temporários na pasta de rascunho da sessão: `EXCLUSOES_APP=<sem motivo> make cobertura-app` → falha com "exclusão inválida"; `<caminho fora de App/Fontes/>` → falha; `<arquivo inexistente>` → falha; registro vazio → PASS com o mesmo total de hoje.
+- [x] **Step 3: Rodar** `make verificar` e `make cobertura-app` → Expected: PASS. Commit próprio (`build: adiciona o registro de exclusões da cobertura do app`).
 
 ### Task 10: Captura com sessão de edição e salvamento automático
 
@@ -316,13 +316,13 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
   - Gravador padrão (fora da *main actor*): renderiza, `Miniatura.gerar`, `CodificadorPNG.codificar(escala: 1)` e `PacoteCapta.atualizar(documento, miniaturaDados:, em:)`.
   - `GerenciadorDeJanelas`: guarda a `CapturaAberta` de cada janela; `windowWillClose` dispara `salvarAgora()` (a `Task` segura a captura até terminar); `func salvarTodas() async`. `DelegadoDoApp: NSObject, NSApplicationDelegate` com `applicationShouldTerminate` → `.terminateLater` e `NSApp.reply(toApplicationShouldTerminate: true)` depois de `salvarTodas()`; ligado em `CaptaApp` por `@NSApplicationDelegateAdaptor` (conferir no SDK como entregar o gerenciador ao delegado).
 
-- [ ] **Step 1: Testes que falham** (relógio falso: `dormir` que só retorna quando o teste avança):
+- [x] **Step 1: Testes que falham** (relógio falso: `dormir` que só retorna quando o teste avança):
   - `agendarVariasVezesGravaSoOUltimo`; `esperaOAtrasoAntesDeGravar`; `salvarAgoraGravaOPendenteSemEsperar`; `salvarAgoraEsperaAGravacaoEmCurso`; `gravacoesNuncaSeSobrepoem`; `falhaMudaOEstadoEOProximoAgendarTentaDeNovo`.
   - `CapturaAberta`: `aplicarInvalidaNaoMudaNadaNemAgenda`; `desfazerERefazerAgendam`; `edicaoDuranteGravandoSalvaQuandoORascunhoTerminar`; `rascunhoQueFalhouERecriadoNoPrimeiroSalvamento`; `copiarUsaODocumentoAtual` (o PNG copiado tem a anotação recém-aplicada).
   - `GerenciadorDeJanelas`: `fecharAJanelaSalvaOPendente`; `salvarTodasEsperaTodas`.
-- [ ] **Step 2: Rodar** `make cobertura-app` → Expected: FAIL.
-- [ ] **Step 3: Implementar.**
-- [ ] **Step 4: Rodar** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): salva sozinho o rascunho e desfaz e refaz na captura`).
+- [x] **Step 2: Rodar** `make cobertura-app` → Expected: FAIL.
+- [x] **Step 3: Implementar.**
+- [x] **Step 4: Rodar** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): salva sozinho o rascunho e desfaz e refaz na captura`).
 
 ### Task 11: Canvas — zoom, composição e vista
 
@@ -340,15 +340,15 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
   - `@MainActor final class MemoriaLembrada { init(defaults: UserDefaults); var memoria: MemoriaDeEstilos }` — chave `editor.memoriaDeEstilos`, JSON; ausente ou ilegível → `.padrao`.
   - `VistaDoCanvas: NSView` (vertical invertido) dentro de um `NSScrollView`, por `NSViewRepresentable` (`CanvasDoEditor`): desenha a imagem da `ComposicaoDoCanvas` no zoom, contorno da seleção, alças de 8 pt, ponto de giro e o retângulo de seleção com `Tema.Overlay.destaque`; mouse → `.pressionar/.arrastar/.soltar` com `⇧`; `magnify(with:)` muda o zoom; teclas: `Esc`, setas (`⇧` = 10 px), `⌫`/`⌦` excluir, `V` Seleção, `A` Seta, `L` Linha, `R` Forma, `H` Realce. Pede o primeiro respondedor ao abrir.
 
-- [ ] **Step 1: Testes que falham:**
+- [x] **Step 1: Testes que falham:**
   - `Zoom`: `acimaDe100E150`, `acimaDe400Fica400`, `abaixoDe25Fica25`, `acimaDeValorEntreNiveisVaiAoProximo` (0.6 → 0.75), `limitadoPrende`.
   - `ConversaoDoCanvas`: escala 2, zoom 0.25 → `pixels(dePontos: 4) == 32`; zoom 4 → `2`; `pixel(de: ponto(de: p)) == p`.
   - `ComposicaoDoCanvas`: `atualizarComMudancaPequenaIgualAoRenderInteiro`; `semMudancaDevolveAMesmaImagem` (mesmo objeto `CGImage`, `===`).
   - `EditorDaCaptura`: `arrastarCriaPreviaESoltarAplica` (uma entrada no desfazer); `escNoMeioDoArrastoTiraAPrevia`; `desfazerNoMeioDoArrastoTiraAPreviaESincroniza`; `desfazerACriacaoTiraOObjetoDaSelecao`; `trocarDeFerramentaNoMeioDoArrastoCancela`; `cliqueEmLinhaFinaComZoom25E400Acerta` (linha de 1 px; clique a 3 pt da linha acerta nos dois zooms, a 5 pt não); `alterarEstiloGravaNaMemoriaLembrada`.
   - `MemoriaLembrada`: `semValorDevolvePadrao`, `valorIlegivelDevolvePadrao`, `gravaEle`.
-- [ ] **Step 2: Rodar** `make cobertura-app` → Expected: FAIL.
-- [ ] **Step 3: Implementar** (a vista por último, sem lógica além da tradução de eventos e do desenho).
-- [ ] **Step 4: Rodar** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): adiciona o canvas do editor com zoom e seleção`).
+- [x] **Step 2: Rodar** `make cobertura-app` → Expected: FAIL.
+- [x] **Step 3: Implementar** (a vista por último, sem lógica além da tradução de eventos e do desenho).
+- [x] **Step 4: Rodar** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): adiciona o canvas do editor com zoom e seleção`).
 
 ### Task 12: Janela do editor
 
@@ -366,10 +366,10 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
   - **Rodapé:** zoom em % (menu com os níveis, "Ajustar à janela" `⌘9`, "Tamanho real" `⌘0`; `⌘+`/`⌘-`), tamanho `L × A @Nx` da saída e o estado do salvamento ("Salvo automaticamente", "Salvando…", ou o aviso).
   - Menu de comandos com `⌘A` (selecionar tudo) e `⌘D` (duplicar). Todo controle com rótulo de acessibilidade; VoiceOver anuncia a ferramenta escolhida.
 
-- [ ] **Step 1: Testes que falham:** `mostrarCapturaAbreAJanelaComOEditor` (a `NSWindow` tem `NSHostingController<JanelaDoEditorView>`); `fecharAJanelaDoEditorSalva`; no `EditorDaCaptura`, `duplicarPeloComandoSelecionaAsCopias` e `selecionarTudoPeloComando`.
-- [ ] **Step 2: Rodar** `make cobertura-app` → Expected: FAIL.
-- [ ] **Step 3: Implementar**, textos no String Catalog, cores por `Tema.*`.
-- [ ] **Step 4: Rodar** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): troca a janela de resultado pelo editor`).
+- [x] **Step 1: Testes que falham:** `mostrarCapturaAbreAJanelaComOEditor` (a `NSWindow` tem `NSHostingController<JanelaDoEditorView>`); `fecharAJanelaDoEditorSalva`; no `EditorDaCaptura`, `duplicarPeloComandoSelecionaAsCopias` e `selecionarTudoPeloComando`.
+- [x] **Step 2: Rodar** `make cobertura-app` → Expected: FAIL.
+- [x] **Step 3: Implementar**, textos no String Catalog, cores por `Tema.*`.
+- [x] **Step 4: Rodar** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): troca a janela de resultado pelo editor`).
 
 ### Task 13: Capturas recentes no menu
 
@@ -385,10 +385,10 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
   - `FluxoDeCaptura.abrirRecente(_ url: URL) async` — se `trazerParaFrente` → fim; senão lê o pacote e decodifica a base **fora da *main actor***, monta a `CapturaAberta` com `rascunho: .gravado(url)`, nome = nome do pacote, escala = `documento.escala`, e mostra; qualquer erro (corrompido, versão mais nova, apagado) → registro e alerta `.naoFoiPossivelAbrir`, sem escrever nada no pacote.
   - `EstadoDoMenu.recentes: [CapturaRecente]` e `func atualizarRecentes(em pasta: URL)`; no `CaptaApp`, `Menu("Capturas recentes")` entre os itens de captura e "Sair", com um botão por captura e "Nenhuma captura" desabilitado se vazio. A lista é relida a cada abertura do menu; conferir no SDK se o conteúdo do `MenuBarExtra` é reavaliado ao abrir e, se não for, atualizar depois de cada rascunho gravado, salvamento e abertura do app.
 
-- [ ] **Step 1: Testes que falham:** `abrirRecenteMostraOEditorComORascunhoGravado`; `abrirRecenteJaAbertoTrazParaAFrenteSemOutraJanela`; `abrirRecenteCorrompidoAlertaENaoTocaOPacote` (bytes e datas iguais); `abrirRecenteDeVersaoMaisNovaAlerta`; `abrirRecenteApagadoAlerta`; `abrirRecenteV1MigraEOProximoSalvamentoGravaV2`; `atualizarRecentesPreencheOEstado`; texto da mensagem nova.
-- [ ] **Step 2: Rodar** `make cobertura-app` → Expected: FAIL.
-- [ ] **Step 3: Implementar.**
-- [ ] **Step 4: Rodar** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): reabre capturas recentes pelo menu`).
+- [x] **Step 1: Testes que falham:** `abrirRecenteMostraOEditorComORascunhoGravado`; `abrirRecenteJaAbertoTrazParaAFrenteSemOutraJanela`; `abrirRecenteCorrompidoAlertaENaoTocaOPacote` (bytes e datas iguais); `abrirRecenteDeVersaoMaisNovaAlerta`; `abrirRecenteApagadoAlerta`; `abrirRecenteV1MigraEOProximoSalvamentoGravaV2`; `atualizarRecentesPreencheOEstado`; texto da mensagem nova.
+- [x] **Step 2: Rodar** `make cobertura-app` → Expected: FAIL.
+- [x] **Step 3: Implementar.**
+- [x] **Step 4: Rodar** `make verificar` e `make cobertura-app` → Expected: PASS. Commit (`feat(app): reabre capturas recentes pelo menu`).
 
 ### Task 14: Fechamento — lista manual, desempenho, piso e verificação com o Pedro
 
@@ -396,9 +396,9 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
 - Create: `docs/verificacao-manual-editor.md`
 - Modify: `ferramentas/cobertura.pisos` (`App=`, em commit próprio), este plano (status ao fim)
 
-- [ ] **Step 1: Escrever `docs/verificacao-manual-editor.md`**, um item marcável por linha: cada ferramenta (seta, linha, as três formas, realce) com mouse e trackpad e com `⇧`; mover, redimensionar, girar, excluir, duplicar e setas; seleção por retângulo e com `⇧`; desfazer e refazer de cada gesto num passo só; zoom 25 % e 400 %, pinça, `⌘0`, `⌘9`, em tela Retina e 1x; propriedades e memória por ferramenta depois de reabrir o app; salvar ao fechar e com `⌘Q` logo depois de uma edição (reabrir e conferir); Capturas recentes (abrir, abrir a mesma de novo, abrir uma v1 gravada antes desta fatia, apagar uma pelo Finder com o menu aberto); copiar e salvar PNG com anotações e conferir no Preview; tema escuro e Reduzir transparência; VoiceOver na barra e no painel; desempenho: arrastar um objeto numa captura 5K com 30 objetos e 2 desfoques, medindo com Instruments ou o registro (meta 60 fps, medir sem prometer; abaixo disso, registrar o número no status, sem bloquear).
-- [ ] **Step 2: Rodar `make cobertura-app`**, anotar o valor de `App/Fontes` e ajustar `App=` (não desce; sobe só em commit próprio, `test(app): sobe o piso de cobertura do app`).
-- [ ] **Step 3: Rodar `make verificar` e `make cobertura-app`** → Expected: PASS. Commit (`docs: adiciona a lista de verificação manual do editor`).
+- [x] **Step 1: Escrever `docs/verificacao-manual-editor.md`**, um item marcável por linha: cada ferramenta (seta, linha, as três formas, realce) com mouse e trackpad e com `⇧`; mover, redimensionar, girar, excluir, duplicar e setas; seleção por retângulo e com `⇧`; desfazer e refazer de cada gesto num passo só; zoom 25 % e 400 %, pinça, `⌘0`, `⌘9`, em tela Retina e 1x; propriedades e memória por ferramenta depois de reabrir o app; salvar ao fechar e com `⌘Q` logo depois de uma edição (reabrir e conferir); Capturas recentes (abrir, abrir a mesma de novo, abrir uma v1 gravada antes desta fatia, apagar uma pelo Finder com o menu aberto); copiar e salvar PNG com anotações e conferir no Preview; tema escuro e Reduzir transparência; VoiceOver na barra e no painel; desempenho: arrastar um objeto numa captura 5K com 30 objetos e 2 desfoques, medindo com Instruments ou o registro (meta 60 fps, medir sem prometer; abaixo disso, registrar o número no status, sem bloquear).
+- [x] **Step 2: Rodar `make cobertura-app`**, anotar o valor de `App/Fontes` e ajustar `App=` (não desce; sobe só em commit próprio, `test(app): sobe o piso de cobertura do app`).
+- [x] **Step 3: Rodar `make verificar` e `make cobertura-app`** → Expected: PASS. Commit (`docs: adiciona a lista de verificação manual do editor`).
 - [ ] **Step 4: 🔒 Pedir ao Pedro** para rodar `make app && open build/Capta.app` e percorrer a lista; registrar as falhas no status deste plano.
 - [ ] **Step 5: 🔒 `git push`** só depois da confirmação; conferir `gh run list --limit 1` → `success`; se o piso do app medido na CI for menor que o local, ajustar `App=` ao da CI em commit próprio.
 
