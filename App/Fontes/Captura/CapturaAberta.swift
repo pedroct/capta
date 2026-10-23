@@ -3,7 +3,10 @@ import CoreGraphics
 import Foundation
 import Observation
 
-/// Uma captura aberta numa janela: a imagem em memória, o documento e o estado do rascunho.
+/// Uma captura aberta numa janela: a imagem em memória, a sessão de edição e o rascunho.
+///
+/// Toda mudança do documento agenda o salvamento automático no rascunho; não há estado "não
+/// salvo" para a pessoa (spec §4.8).
 ///
 /// Copiar e salvar PNG funcionam desde o primeiro instante; salvar como Capta espera o rascunho.
 /// O trabalho pesado (renderizar, codificar, gravar) roda fora da *main actor*.
@@ -18,10 +21,17 @@ final class CapturaAberta {
     }
 
     let nome: String
-    let documento: Documento
+    private(set) var sessao: SessaoEdicao
     let base: CGImage
     let escala: Double
-    var rascunho: EstadoRascunho
+    var rascunho: EstadoRascunho {
+        didSet { rascunhoMudou() }
+    }
+
+    var documento: Documento { sessao.documento }
+    var podeDesfazer: Bool { sessao.podeDesfazer }
+    var podeRefazer: Bool { sessao.podeRefazer }
+    var estadoDoSalvamento: EstadoDoSalvamento { salvamento.estado }
 
     /// Enquanto o rascunho grava, salvar como Capta fica indisponível.
     var podeSalvarCapta: Bool { rascunho != .gravando }
@@ -32,6 +42,12 @@ final class CapturaAberta {
     private let renderizador: Renderizador
     private let painel: any PainelDeArquivos
     private let areaDeTransferencia: any AreaDeTransferencia
+    private let pastaDeRascunhos: URL
+    private let gravadorDeRascunho: FluxoDeCaptura.GravadorDeRascunho
+    private let salvamento: SalvamentoAutomatico
+    /// Há edição que o rascunho ainda não recebeu porque ele estava gravando ou sendo refeito.
+    private var edicaoEsperaORascunho = false
+    private var recriacao: Task<Void, Never>?
 
     init(
         nome: String,
@@ -41,16 +57,124 @@ final class CapturaAberta {
         rascunho: EstadoRascunho,
         renderizador: Renderizador,
         painel: any PainelDeArquivos,
-        areaDeTransferencia: any AreaDeTransferencia
+        areaDeTransferencia: any AreaDeTransferencia,
+        pastaDeRascunhos: URL = FileManager.default.temporaryDirectory,
+        gravadorDeRascunho: @escaping FluxoDeCaptura.GravadorDeRascunho =
+            FluxoDeCaptura.gravadorPadrao,
+        salvamento: SalvamentoAutomatico? = nil
     ) {
         self.nome = nome
-        self.documento = documento
+        self.sessao = SessaoEdicao(documento: documento)
         self.base = base
         self.escala = escala
         self.rascunho = rascunho
         self.renderizador = renderizador
         self.painel = painel
         self.areaDeTransferencia = areaDeTransferencia
+        self.pastaDeRascunhos = pastaDeRascunhos
+        self.gravadorDeRascunho = gravadorDeRascunho
+        self.salvamento =
+            salvamento
+            ?? SalvamentoAutomatico(
+                dormir: { try await Task.sleep(for: $0) },
+                gravar: Self.gravadorPadrao(
+                    base: ImagemCapturada(imagem: base, escala: escala),
+                    renderizador: renderizador
+                )
+            )
+    }
+
+    // MARK: Edição
+
+    /// Aplica a edição à sessão e agenda o salvamento. Edição inválida é registrada, devolve
+    /// `false` e não muda nada.
+    @discardableResult
+    func aplicar(_ edicao: Edicao) -> Bool {
+        let antes = documento
+        do {
+            try sessao.aplicar(edicao)
+        } catch {
+            RegistroDeCaptura.falha("aplicarEdicao", error)
+            return false
+        }
+        if documento != antes { documentoMudou() }
+        return true
+    }
+
+    func desfazer() {
+        if sessao.desfazer() { documentoMudou() }
+    }
+
+    func refazer() {
+        if sessao.refazer() { documentoMudou() }
+    }
+
+    /// Grava já o que estiver pendente (fechar a janela, encerrar o app) e espera terminar.
+    func salvarAgora() async {
+        await recriacao?.value
+        await salvamento.salvarAgora()
+    }
+
+    /// Espera a recriação do rascunho em curso, se houver. Serve aos testes.
+    func aguardarRascunho() async {
+        await recriacao?.value
+    }
+
+    /// Gravador padrão do rascunho: renderiza, gera a miniatura e atualiza o pacote, tudo fora
+    /// da *main actor*.
+    nonisolated static func gravadorPadrao(
+        base: ImagemCapturada,
+        renderizador: Renderizador
+    ) -> SalvamentoAutomatico.Gravador {
+        { documento, url in
+            try await Task.detached(priority: .utility) {
+                let renderizada = try renderizador.renderizar(documento, base: base.imagem)
+                let miniatura = try Miniatura.gerar(de: renderizada)
+                let miniaturaDados = try CodificadorPNG.codificar(miniatura, escala: 1)
+                try PacoteCapta.atualizar(documento, miniaturaDados: miniaturaDados, em: url)
+            }.value
+        }
+    }
+
+    private func documentoMudou() {
+        switch rascunho {
+        case .gravado(let url):
+            salvamento.agendar(documento, em: url)
+        case .gravando:
+            edicaoEsperaORascunho = true
+        case .falhou:
+            edicaoEsperaORascunho = true
+            recriarRascunho()
+        }
+    }
+
+    private func rascunhoMudou() {
+        guard case .gravado(let url) = rascunho, edicaoEsperaORascunho else { return }
+        edicaoEsperaORascunho = false
+        salvamento.agendar(documento, em: url)
+    }
+
+    /// Spec §4.8: o rascunho que falhou é refeito com o documento atual no primeiro salvamento.
+    /// O aviso continua se falhar de novo; a próxima edição tenta outra vez.
+    private func recriarRascunho() {
+        guard recriacao == nil else { return }
+        // O rascunho refeito já leva o documento atual: o que chegar depois fica marcado.
+        edicaoEsperaORascunho = false
+        let imagem = ImagemCapturada(imagem: base, escala: escala)
+        let atual = documento
+        let gravador = gravadorDeRascunho
+        let pasta = pastaDeRascunhos
+        let nome = nome
+        recriacao = Task {
+            do {
+                let url = try await gravador(imagem, atual, pasta, nome)
+                recriacao = nil
+                rascunho = .gravado(url)
+            } catch {
+                RegistroDeCaptura.falha("recriarRascunho", error)
+                recriacao = nil
+            }
+        }
     }
 
     /// Põe a imagem renderizada, em PNG, na área de transferência.
@@ -96,6 +220,8 @@ final class CapturaAberta {
         else { return .cancelado }
         switch rascunho {
         case .gravado(let origem):
+            // A cópia sai do rascunho: o pendente tem de estar nele antes.
+            await salvamento.salvarAgora()
             return await salvar("salvarCapta") {
                 try PacoteCapta.copiar(de: origem, para: destino)
             }

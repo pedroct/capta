@@ -26,6 +26,28 @@ struct GerenciadorDeJanelasTests {
         )
     }
 
+    /// Captura com rascunho gravado e salvamento de mentira.
+    private func capturaComSalvamento(
+        relogio: RelogioFalso,
+        gravador: GravadorDeDocumentoFalso
+    ) throws -> CapturaAberta {
+        let imagem = ImagemCapturada(imagem: try imagemDeTeste(), escala: 2)
+        return CapturaAberta(
+            nome: "Captura de teste",
+            documento: try Documento.novo(de: imagem),
+            base: imagem.imagem,
+            escala: imagem.escala,
+            rascunho: .gravado(URL(fileURLWithPath: "/rascunho.capta")),
+            renderizador: Renderizador(provedorDeSimbolos: ProvedorDeSimbolosSF()),
+            painel: PainelFalso(destino: nil),
+            areaDeTransferencia: AreaDeTransferenciaFalsa(),
+            salvamento: SalvamentoAutomatico(
+                dormir: { try await relogio.dormir($0) },
+                gravar: { try await gravador.gravar($0, $1) }
+            )
+        )
+    }
+
     /// Fecha as folhas e as janelas que o gerenciador acompanha.
     private func fecharTudo(_ gerenciador: GerenciadorDeJanelas) {
         let janelas = gerenciador.janelasDeCaptura + [gerenciador.janelaDeAjuda].compactMap { $0 }
@@ -121,6 +143,79 @@ struct GerenciadorDeJanelasTests {
 
         let folha = try #require(janela.attachedSheet)
         #expect(textos(em: folha.contentView).contains(MensagemDeErro.naoFoiPossivelCopiar.texto))
+    }
+
+    // MARK: - Salvamento ao fechar
+
+    private let recorte = Edicao.definirRecorte(CGRect(x: 0, y: 0, width: 4, height: 3))
+
+    @Test func fecharAJanelaSalvaOPendente() async throws {
+        let relogio = RelogioFalso()
+        let gravador = GravadorDeDocumentoFalso()
+        let gerenciador = GerenciadorDeJanelas()
+        defer { fecharTudo(gerenciador) }
+        let captura = try capturaComSalvamento(relogio: relogio, gravador: gravador)
+        gerenciador.mostrarCaptura(captura)
+        captura.aplicar(recorte)
+        let editado = captura.documento
+        // O atraso ainda não passou: nada foi gravado.
+        #expect(await gravador.iniciadas.isEmpty)
+
+        try #require(gerenciador.janelasDeCaptura.first).close()
+        await gerenciador.salvarTodas()
+
+        #expect(await gravador.concluidas == [editado])
+        #expect(captura.estadoDoSalvamento == .salvo)
+    }
+
+    @Test func fecharComGravacaoEmCursoEsperaTerminarAntesDeSalvarTodasVoltar() async throws {
+        let relogio = RelogioFalso()
+        let portao = Portao()
+        let gravador = GravadorDeDocumentoFalso(portao: portao)
+        let gerenciador = GerenciadorDeJanelas()
+        defer { fecharTudo(gerenciador) }
+        let captura = try capturaComSalvamento(relogio: relogio, gravador: gravador)
+        gerenciador.mostrarCaptura(captura)
+        captura.aplicar(recorte)
+        await relogio.aguardarEsperas(1)
+        await relogio.avancar()
+        await gravador.aguardarInicio()
+
+        try #require(gerenciador.janelasDeCaptura.first).close()
+        var voltou = false
+        let todas = Task { @MainActor in
+            await gerenciador.salvarTodas()
+            voltou = true
+        }
+        for _ in 0..<200 { await Task.yield() }
+        #expect(!voltou)
+
+        await portao.abrir()
+        await todas.value
+
+        #expect(voltou)
+        #expect(await gravador.concluidas == [captura.documento])
+    }
+
+    @Test func salvarTodasEsperaTodas() async throws {
+        let relogio = RelogioFalso()
+        let gravadorA = GravadorDeDocumentoFalso()
+        let gravadorB = GravadorDeDocumentoFalso()
+        let gerenciador = GerenciadorDeJanelas()
+        defer { fecharTudo(gerenciador) }
+        let primeira = try capturaComSalvamento(relogio: relogio, gravador: gravadorA)
+        let segunda = try capturaComSalvamento(relogio: relogio, gravador: gravadorB)
+        gerenciador.mostrarCaptura(primeira)
+        gerenciador.mostrarCaptura(segunda)
+        primeira.aplicar(recorte)
+        segunda.aplicar(.definirRecorte(CGRect(x: 0, y: 0, width: 5, height: 3)))
+
+        await gerenciador.salvarTodas()
+
+        #expect(await gravadorA.concluidas == [primeira.documento])
+        #expect(await gravadorB.concluidas == [segunda.documento])
+        #expect(primeira.estadoDoSalvamento == .salvo)
+        #expect(segunda.estadoDoSalvamento == .salvo)
     }
 
     // MARK: - Ajuda de permissão

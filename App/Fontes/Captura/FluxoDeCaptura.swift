@@ -218,7 +218,9 @@ final class FluxoDeCaptura {
             rascunho: .gravando,
             renderizador: renderizador,
             painel: painel,
-            areaDeTransferencia: areaDeTransferencia
+            areaDeTransferencia: areaDeTransferencia,
+            pastaDeRascunhos: pastaDeRascunhos,
+            gravadorDeRascunho: gravadorDeRascunho
         )
         apresentador.mostrarCaptura(captura)
         aoMostrar()

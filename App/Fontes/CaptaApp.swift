@@ -7,6 +7,7 @@ import SwiftUI
 /// Única fiação do app: compõe os adaptadores do sistema e liga o atalho global.
 @main
 struct CaptaApp: App {
+    @NSApplicationDelegateAdaptor(DelegadoDoApp.self) private var delegado
     @State private var estado: EstadoDoMenu
     private let fluxo: FluxoDeCaptura
     private let atalho = AtalhoGlobalCarbon()
@@ -15,6 +16,7 @@ struct CaptaApp: App {
     init() {
         let estado = EstadoDoMenu()
         let janelas = GerenciadorDeJanelas()
+        DelegadoDoApp.janelas = janelas
         let opcoes = OpcoesLembradas(defaults: .standard)
         let overlay = GerenciadorDoOverlay(
             atalhoDeEsc: AtalhoGlobalCarbon(),

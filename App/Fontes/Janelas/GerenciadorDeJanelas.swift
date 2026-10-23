@@ -15,6 +15,10 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
     private(set) var janelasDeCaptura: [NSWindow] = []
     private(set) var janelaDeAjuda: NSWindow?
     private let modeloDeAjuda = AjudaDePermissaoModelo()
+    /// A captura de cada janela, para salvar o pendente ao fechar e ao encerrar o app.
+    private var capturas: [ObjectIdentifier: CapturaAberta] = [:]
+    /// Salvamentos disparados pelo fechamento de janelas que ainda não terminaram.
+    private var fechamentos: [UUID: Task<Void, Never>] = [:]
 
     // MARK: Apresentador
 
@@ -79,7 +83,17 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
             janela.center()
         }
         janelasDeCaptura.append(janela)
+        capturas[ObjectIdentifier(janela)] = captura
         exibir(janela)
+    }
+
+    /// Grava o que está pendente em todas as capturas, abertas ou em fechamento, e só volta
+    /// com tudo no disco. É o que o encerramento do app espera.
+    func salvarTodas() async {
+        let abertas = Array(capturas.values)
+        let fechando = Array(fechamentos.values)
+        for captura in abertas { await captura.salvarAgora() }
+        for tarefa in fechando { await tarefa.value }
     }
 
     /// Alerta do fluxo (a captura falhou): em folha sobre a ajuda, se ela está aberta, porque
@@ -96,6 +110,14 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
         guard let janela = notification.object as? NSWindow else { return }
         janela.delegate = nil
         janelasDeCaptura.removeAll { $0 === janela }
+        if let captura = capturas.removeValue(forKey: ObjectIdentifier(janela)) {
+            // A tarefa segura a captura até gravar; o app não pergunta, só garante o disco.
+            let identificador = UUID()
+            fechamentos[identificador] = Task {
+                await captura.salvarAgora()
+                fechamentos[identificador] = nil
+            }
+        }
         if janelaDeAjuda === janela { janelaDeAjuda = nil }
         aplicarPolitica()
     }
