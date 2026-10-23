@@ -150,6 +150,7 @@ final class EditorDaCaptura {
             distanciaDoGiro: distanciaDoGiro,
             novoId: novoId
         )
+        let memoriaAntes = estado.memoria
         let acao = estado.reduzir(evento, contexto: contexto)
         var recusada = false
         switch acao {
@@ -163,7 +164,8 @@ final class EditorDaCaptura {
         case nil:
             previa = nil
         }
-        if estado.memoria != memoria.memoria { memoria.memoria = estado.memoria }
+        // Só grava o que este evento mudou: outra janela pode ter lembrado um estilo mais novo.
+        if estado.memoria != memoriaAntes { memoria.memoria = estado.memoria }
         // Edição recusada: a seleção pode apontar para um objeto que nunca existiu.
         if recusada { executar(.sincronizar, tolerancia: 0, distanciaDoGiro: 0) }
     }
