@@ -49,6 +49,8 @@ final class CapturaAberta {
     /// Há edição que o rascunho ainda não recebeu porque ele estava gravando ou sendo refeito.
     private var edicaoEsperaORascunho = false
     private var recriacao: Task<Void, Never>?
+    /// Quem espera o rascunho sair de `.gravando` (``salvarAgora()``).
+    private var esperasDoRascunho: [CheckedContinuation<Void, Never>] = []
 
     init(
         nome: String,
@@ -111,7 +113,13 @@ final class CapturaAberta {
     }
 
     /// Grava já o que estiver pendente (fechar a janela, encerrar o app) e espera terminar.
+    ///
+    /// Com o rascunho ainda `.gravando`, espera ele terminar: a edição feita nesse intervalo só
+    /// tem onde ser gravada depois (no rascunho novo, ou num refeito se ele falhar).
     func salvarAgora() async {
+        while rascunho == .gravando {
+            await withCheckedContinuation { esperasDoRascunho.append($0) }
+        }
         await recriacao?.value
         await salvamento.salvarAgora()
     }
@@ -150,9 +158,21 @@ final class CapturaAberta {
     }
 
     private func rascunhoMudou() {
-        guard case .gravado(let url) = rascunho, edicaoEsperaORascunho else { return }
-        edicaoEsperaORascunho = false
-        salvamento.agendar(documento, em: url)
+        switch rascunho {
+        case .gravado(let url) where edicaoEsperaORascunho:
+            edicaoEsperaORascunho = false
+            salvamento.agendar(documento, em: url)
+        case .falhou where edicaoEsperaORascunho:
+            // A edição que esperava o rascunho não pode esperar uma próxima: refaz já.
+            recriarRascunho()
+        default:
+            break
+        }
+        if rascunho != .gravando {
+            let esperas = esperasDoRascunho
+            esperasDoRascunho = []
+            esperas.forEach { $0.resume() }
+        }
     }
 
     /// Spec §4.8: o rascunho que falhou é refeito com o documento atual no primeiro salvamento.
@@ -219,27 +239,33 @@ final class CapturaAberta {
                 extensao: PacoteCapta.extensao
             )
         else { return .cancelado }
-        switch rascunho {
-        case .gravado(let origem):
+        if case .gravado(let origem) = rascunho {
             // A cópia sai do rascunho: o pendente tem de estar nele antes.
             await salvamento.salvarAgora()
-            return await salvar("salvarCapta") {
-                try PacoteCapta.copiar(de: origem, para: destino)
+            // Se o rascunho não recebeu o pendente, copiá-lo exportaria um documento velho.
+            if estadoDoSalvamento != .falhou {
+                return await salvar("salvarCapta") {
+                    try PacoteCapta.copiar(de: origem, para: destino)
+                }
             }
-        case .gravando, .falhou:
-            let documento = documento
-            let base = imagemEnviavel
-            return await salvar("salvarCapta") {
-                let baseDados = try CodificadorPNG.codificar(base.imagem, escala: base.escala)
-                let miniatura = try Miniatura.gerar(de: base.imagem)
-                let miniaturaDados = try CodificadorPNG.codificar(miniatura, escala: 1)
-                try PacoteCapta.gravar(
-                    documento,
-                    baseDados: baseDados,
-                    miniaturaDados: miniaturaDados,
-                    em: destino
-                )
-            }
+        }
+        return await salvarCaptaDaMemoria(em: destino)
+    }
+
+    /// Exporta o `.capta` da imagem e do documento em memória, sem passar pelo rascunho.
+    private func salvarCaptaDaMemoria(em destino: URL) async -> ResultadoDeAcao {
+        let documento = documento
+        let base = imagemEnviavel
+        return await salvar("salvarCapta") {
+            let baseDados = try CodificadorPNG.codificar(base.imagem, escala: base.escala)
+            let miniatura = try Miniatura.gerar(de: base.imagem)
+            let miniaturaDados = try CodificadorPNG.codificar(miniatura, escala: 1)
+            try PacoteCapta.gravar(
+                documento,
+                baseDados: baseDados,
+                miniaturaDados: miniaturaDados,
+                em: destino
+            )
         }
     }
 

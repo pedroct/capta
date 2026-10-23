@@ -137,7 +137,6 @@ struct CapturaAbertaEdicaoTests {
         )
 
         aberta.aplicar(Self.recorte)
-        await aberta.salvarAgora()
         #expect(await gravador.iniciadas.isEmpty)
 
         aberta.rascunho = .gravado(rascunhoGravado)
