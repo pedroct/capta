@@ -209,6 +209,16 @@ final class ApresentadorFalso: Apresentador {
     /// Pacotes que "já têm janela": `trazerParaFrente` os reconhece e anota o pedido.
     var pacotesAbertos: Set<URL> = []
     private(set) var trazidos: [URL] = []
+    private var fechando: [Task<Void, Never>] = []
+
+    /// Simula o fechamento da janela: a captura grava o que falta em segundo plano.
+    func iniciarFechamento(_ captura: CapturaAberta) {
+        fechando.append(Task { await captura.salvarAgora() })
+    }
+
+    func aguardarFechamentos() async {
+        for tarefa in fechando { await tarefa.value }
+    }
 
     func mostrarAjudaDePermissao() { ajudas += 1 }
 

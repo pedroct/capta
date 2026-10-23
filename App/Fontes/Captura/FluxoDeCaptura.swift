@@ -192,6 +192,8 @@ final class FluxoDeCaptura {
         if apresentador.trazerParaFrente(url) { return }
         guard abrindoRecentes.insert(url).inserted else { return }
         defer { abrindoRecentes.remove(url) }
+        // Uma janela recém-fechada deste pacote ainda pode estar gravando a última edição.
+        await apresentador.aguardarFechamentos()
         do {
             let imagem = try await Self.lerPacote(url)
             let captura = montarCaptura(

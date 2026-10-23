@@ -109,6 +109,13 @@ final class GerenciadorDeJanelas: NSObject, Apresentador, NSWindowDelegate {
         return true
     }
 
+    func aguardarFechamentos() async {
+        // Tarefas que surgirem durante a espera também contam: relê até esvaziar.
+        while !fechamentos.isEmpty {
+            for tarefa in Array(fechamentos.values) { await tarefa.value }
+        }
+    }
+
     /// Grava o que está pendente em todas as capturas, abertas ou em fechamento, e só volta
     /// com tudo no disco. É o que o encerramento do app espera.
     func salvarTodas() async {

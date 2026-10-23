@@ -43,5 +43,8 @@ protocol Apresentador {
     func mostrarCaptura(_ captura: CapturaAberta)
     /// Traz para a frente a janela do pacote em `url`, se houver; `true` quando havia.
     func trazerParaFrente(_ url: URL) -> Bool
+    /// Volta quando as janelas já fechadas terminaram de gravar o que faltava. Quem vai ler um
+    /// pacote que uma janela acabou de fechar espera por isto, para não ler o documento velho.
+    func aguardarFechamentos() async
     func mostrarAlerta(_ mensagem: MensagemDeErro)
 }
