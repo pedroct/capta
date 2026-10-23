@@ -9,9 +9,11 @@ public enum ErroImagem: Error, Equatable, Sendable {
     case escalaInvalida
     /// O ImageIO não conseguiu produzir os dados do PNG.
     case falhaAoCodificar
+    /// Os dados estão vazios ou não são uma imagem que o ImageIO consiga ler.
+    case falhaAoDecodificar
 }
 
-/// Codifica um `CGImage` em PNG com ImageIO.
+/// Codifica um `CGImage` em PNG e decodifica dados de imagem de volta, com ImageIO.
 public enum CodificadorPNG {
     /// DPI de uma imagem em escala 1x.
     private static let dpiBase = 72.0
@@ -38,5 +40,15 @@ public enum CodificadorPNG {
         CGImageDestinationAddImage(destino, imagem, propriedades as CFDictionary)
         guard CGImageDestinationFinalize(destino) else { throw ErroImagem.falhaAoCodificar }
         return dados as Data
+    }
+
+    /// Decodifica `dados` (PNG ou outro formato do ImageIO) em um `CGImage`.
+    /// - Throws: ``ErroImagem/falhaAoDecodificar`` se os dados forem vazios ou inválidos.
+    public static func decodificar(_ dados: Data) throws -> CGImage {
+        guard
+            let fonte = CGImageSourceCreateWithData(dados as CFData, nil),
+            let imagem = CGImageSourceCreateImageAtIndex(fonte, 0, nil)
+        else { throw ErroImagem.falhaAoDecodificar }
+        return imagem
     }
 }

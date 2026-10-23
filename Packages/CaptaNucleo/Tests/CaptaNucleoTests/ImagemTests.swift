@@ -19,6 +19,23 @@ struct ImagemTests {
         #expect(todosOsPixels(volta) == todosOsPixels(original))
     }
 
+    @Test func codificarEDecodificarFazIdaEVolta() throws {
+        let original = imagemSolida(CGSize(width: 5, height: 3), cor: vermelho)
+        let volta = try CodificadorPNG.decodificar(
+            try CodificadorPNG.codificar(original, escala: 1)
+        )
+        #expect(volta.width == 5)
+        #expect(volta.height == 3)
+        #expect(proximos(pixel(volta, x: 2, y: 1), 255, 0, 0))
+    }
+
+    @Test(arguments: [Data(), Data("isto não é uma imagem".utf8)])
+    func decodificarDadosInvalidosLanca(dados: Data) {
+        #expect(throws: ErroImagem.falhaAoDecodificar) {
+            try CodificadorPNG.decodificar(dados)
+        }
+    }
+
     @Test func pngGravaDpiConformeAEscala() throws {
         let dados = try CodificadorPNG.codificar(
             imagemSolida(CGSize(width: 4, height: 4), cor: vermelho),
