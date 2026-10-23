@@ -11,39 +11,7 @@ public struct EstadoDoEditor: Equatable, Sendable {
     /// Retângulo do arraste de seleção em curso (pixels do documento), para a vista desenhar.
     public private(set) var retanguloDeSelecao: CGRect?
     /// Gesto do mouse em andamento (botão apertado), ou `nil`.
-    private var gesto: Gesto?
-
-    /// Gesto da ferramenta Seleção, com o que for preciso para recalcular a partir do clique.
-    private enum Gesto: Equatable, Sendable {
-        /// Retângulo de seleção: `anterior` é o que já estava selecionado (com `⇧`).
-        case marcando(inicio: CGPoint, anterior: Set<UUID>)
-        /// Mover a seleção. `colapsarPara` é o objeto que vira a seleção única se o clique
-        /// terminar sem arraste.
-        case movendo(inicio: CGPoint, moveu: Bool, colapsarPara: UUID?)
-        /// Arrastar uma alça (ou o ponto de giro) do objeto `original`. `folga` é a distância da
-        /// alça ao pixel do clique, somada ao cursor para a alça não pular até ele.
-        case alca(AlcaArrastada, original: Anotacao, folga: CGVector, comPrevia: Bool)
-
-        var temPrevia: Bool {
-            switch self {
-            case .marcando: false
-            case .movendo(_, let moveu, _): moveu
-            case .alca(_, _, _, let comPrevia): comPrevia
-            }
-        }
-    }
-
-    /// A alça sob o clique: qual é, de quem, e onde está.
-    private struct AlcaEncontrada {
-        var alca: AlcaArrastada
-        var objeto: Anotacao
-        var posicao: CGPoint
-    }
-
-    private enum AlcaArrastada: Equatable, Sendable {
-        case redimensionar(AlcaDeObjeto)
-        case girar
-    }
+    private var gesto: GestoDoEditor?
 
     /// Deslocamento, em pixels, das cópias de `.duplicar`.
     private static let deslocamentoDaCopia: CGFloat = 10
@@ -86,10 +54,14 @@ public struct EstadoDoEditor: Equatable, Sendable {
             selecao.formIntersection(existentes)
             return cancelarGesto(avisando: false)
         case .selecionarTudo:
+            let cancelamento = cancelarGesto()
             selecao = Set(contexto.documento.objetos.map(\.id))
-            return nil
+            return cancelamento
         case .excluir, .duplicar, .deslocar:
-            return comandar(evento, contexto)
+            // Comando de teclado no meio do gesto encerra o gesto; se o comando também produz
+            // ação, ela substitui a prévia (`.aplicar` limpa a prévia na sessão).
+            let cancelamento = cancelarGesto()
+            return comandar(evento, contexto) ?? cancelamento
         case .alterarEstilo:
             // Tarefa 7.
             return nil
@@ -146,13 +118,13 @@ public struct EstadoDoEditor: Equatable, Sendable {
                 selecao.remove(alvo)
                 return
             }
-            gesto = .movendo(inicio: ponto, moveu: false, colapsarPara: nil)
+            gesto = .movendo(inicio: ponto, moveu: false, comPrevia: false, colapsarPara: nil)
         } else if selecao.contains(alvo) {
             // Já selecionado: mantém a seleção para arrastar vários; soltar sem mover colapsa.
-            gesto = .movendo(inicio: ponto, moveu: false, colapsarPara: alvo)
+            gesto = .movendo(inicio: ponto, moveu: false, comPrevia: false, colapsarPara: alvo)
         } else {
             selecao = [alvo]
-            gesto = .movendo(inicio: ponto, moveu: false, colapsarPara: nil)
+            gesto = .movendo(inicio: ponto, moveu: false, comPrevia: false, colapsarPara: nil)
         }
     }
 
@@ -200,15 +172,23 @@ public struct EstadoDoEditor: Equatable, Sendable {
         case nil:
             return nil
         case .marcando(let inicio, _):
-            retanguloDeSelecao = Self.retangulo(inicio, ponto)
+            retanguloDeSelecao = GestoDoEditor.retangulo(inicio, ponto)
             return nil
-        case .movendo(let inicio, let moveu, let colapsar):
-            let delta = Self.delta(de: inicio, ate: ponto, restrito: shift)
-            gesto = .movendo(inicio: inicio, moveu: moveu || delta != .zero, colapsarPara: colapsar)
+        case .movendo(let inicio, let moveu, let comPrevia, let colapsar):
+            let delta = GestoDoEditor.delta(de: inicio, ate: ponto, restrito: shift)
+            let mostrar = delta != .zero
+            gesto = .movendo(
+                inicio: inicio,
+                moveu: moveu || mostrar,
+                comPrevia: mostrar,
+                colapsarPara: colapsar
+            )
+            // Sem deslocamento não há o que mostrar; se havia prévia, ela sai da tela agora.
+            guard mostrar else { return comPrevia ? .cancelarPrevia : nil }
             return .previa(.mover(selecao, deslocamento: delta))
         case .alca(let alca, let original, let folga, _):
             gesto = .alca(alca, original: original, folga: folga, comPrevia: true)
-            return .previa(.substituir(Self.editada(original, alca, ponto, folga, shift)))
+            return .previa(.substituir(GestoDoEditor.editada(original, alca, ponto, folga, shift)))
         }
     }
 
@@ -222,7 +202,7 @@ public struct EstadoDoEditor: Equatable, Sendable {
         gesto = nil
         switch atual {
         case .marcando(let inicio, let anterior):
-            let area = Self.retangulo(inicio, ponto)
+            let area = GestoDoEditor.retangulo(inicio, ponto)
             retanguloDeSelecao = nil
             // `intersects` é falso para retângulo sem área: clique ou linha não seleciona nada.
             let tocados =
@@ -230,13 +210,13 @@ public struct EstadoDoEditor: Equatable, Sendable {
                 ? Set(contexto.documento.objetos(tocando: area)) : []
             selecao = anterior.union(tocados)
             return nil
-        case .movendo(let inicio, let moveu, let colapsar):
+        case .movendo(let inicio, let moveu, let comPrevia, let colapsar):
             if !moveu, let colapsar { selecao = [colapsar] }
-            let delta = Self.delta(de: inicio, ate: ponto, restrito: shift)
-            guard delta != .zero else { return moveu ? .cancelarPrevia : nil }
+            let delta = GestoDoEditor.delta(de: inicio, ate: ponto, restrito: shift)
+            guard delta != .zero else { return comPrevia ? .cancelarPrevia : nil }
             return .aplicar(.mover(selecao, deslocamento: delta))
         case .alca(let alca, let original, let folga, let comPrevia):
-            let nova = Self.editada(original, alca, ponto, folga, shift)
+            let nova = GestoDoEditor.editada(original, alca, ponto, folga, shift)
             guard nova != original else { return comPrevia ? .cancelarPrevia : nil }
             return .aplicar(.substituir(nova))
         }
@@ -244,35 +224,6 @@ public struct EstadoDoEditor: Equatable, Sendable {
 }
 
 extension EstadoDoEditor {
-    private static func retangulo(_ a: CGPoint, _ b: CGPoint) -> CGRect {
-        CGRect(x: a.x, y: a.y, width: b.x - a.x, height: b.y - a.y).standardized
-    }
-
-    /// Deslocamento do clique até o ponto; com `restrito`, só no eixo dominante.
-    private static func delta(de inicio: CGPoint, ate ponto: CGPoint, restrito: Bool) -> CGVector {
-        var dx = ponto.x - inicio.x
-        var dy = ponto.y - inicio.y
-        if restrito {
-            if abs(dx) >= abs(dy) { dy = 0 } else { dx = 0 }
-        }
-        return CGVector(dx: dx, dy: dy)
-    }
-
-    private static func editada(
-        _ original: Anotacao,
-        _ alca: AlcaArrastada,
-        _ cursor: CGPoint,
-        _ folga: CGVector,
-        _ restrito: Bool
-    ) -> Anotacao {
-        let ponto = CGPoint(x: cursor.x + folga.dx, y: cursor.y + folga.dy)
-        switch alca {
-        case .redimensionar(let alca):
-            return original.arrastando(alca, ate: ponto, restrito: restrito)
-        case .girar: return original.girando(ate: ponto, restrito: restrito)
-        }
-    }
-
     // MARK: - Comandos
 
     private mutating func comandar(_ evento: EventoDoEditor, _ contexto: ContextoDoEditor)
