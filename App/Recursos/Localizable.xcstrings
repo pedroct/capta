@@ -638,6 +638,17 @@
           }
         }
       }
+    },
+    "Área de edição da captura" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Área de edição da captura"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

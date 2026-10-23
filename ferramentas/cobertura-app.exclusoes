@@ -5,3 +5,4 @@
 # listado duas vezes, falha o portão. Lógica real fica fora da casca e é testada.
 # CaptaApp.swift (ponto de entrada) já fica fora por regra do cobertura_app.sh, sem constar aqui.
 # O portão do pacote (cobertura.sh) usa cobertura.exclusoes, não este arquivo.
+App/Fontes/Editor/VistaDoCanvas.swift | eventos de mouse, teclado e gesto e desenho AppKit, coberto pela lista manual; a regra mora no núcleo e no EditorDaCaptura
