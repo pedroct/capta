@@ -150,11 +150,12 @@ public struct EstadoDoEditor: Equatable, Sendable {
         if let giro = objeto.pontoDeGiro(distancia: contexto.distanciaDoGiro) {
             candidatas.append((.girar, giro))
         }
+        let folga = contexto.toleranciaDasAlcas ?? contexto.tolerancia
         var melhor: AlcaEncontrada?
         var menor = CGFloat.infinity
         for (alca, posicao) in candidatas {
             let distancia = hypot(posicao.x - ponto.x, posicao.y - ponto.y)
-            guard distancia <= contexto.tolerancia else { continue }
+            guard distancia <= folga else { continue }
             if distancia < menor {
                 menor = distancia
                 melhor = AlcaEncontrada(alca: alca, objeto: objeto, posicao: posicao)

@@ -47,17 +47,22 @@ public enum AcaoDoEditor: Equatable, Sendable {
 public struct ContextoDoEditor {
     public var documento: Documento
     public var tolerancia: CGFloat
+    /// Folga para acertar uma alça, quando difere da dos objetos (a alça é desenhada como um
+    /// quadrado maior que a tolerância dos objetos). `nil` usa ``tolerancia``.
+    public var toleranciaDasAlcas: CGFloat?
     public var distanciaDoGiro: CGFloat
     public var novoId: () -> UUID
 
     public init(
         documento: Documento,
         tolerancia: CGFloat,
+        toleranciaDasAlcas: CGFloat? = nil,
         distanciaDoGiro: CGFloat,
         novoId: @escaping () -> UUID
     ) {
         self.documento = documento
         self.tolerancia = tolerancia
+        self.toleranciaDasAlcas = toleranciaDasAlcas
         self.distanciaDoGiro = distanciaDoGiro
         self.novoId = novoId
     }

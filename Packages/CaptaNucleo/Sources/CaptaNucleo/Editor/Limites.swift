@@ -77,7 +77,8 @@ extension Anotacao {
             let r = r.standardized
             let p = noReferencialDoObjeto(ponto, centro: CGPoint(x: r.midX, y: r.midY))
             if estilo.preenchimento != nil {
-                return Self.distanciaComSinal(p, tipo, r) <= tolerancia
+                // A metade de fora do traço também é desenho, como em `limites`.
+                return Self.distanciaComSinal(p, tipo, r) <= meioTraco + tolerancia
             }
             return abs(Self.distanciaComSinal(p, tipo, r)) <= meioTraco + tolerancia
         case .texto(let r, _, _, _, _), .carimbo(let r, _), .realce(let r), .desfoque(let r, _, _):

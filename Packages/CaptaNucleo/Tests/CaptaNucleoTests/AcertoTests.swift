@@ -130,3 +130,15 @@ private func forma(
     #expect(doc.objeto(em: CGPoint(x: 210, y: 10), tolerancia: 0) == realce.id)
     #expect(doc.objeto(em: CGPoint(x: 310, y: 10), tolerancia: 0) == desfoque.id)
 }
+
+@Test func formaPreenchidaContaAMetadeDeForaDoTraco() throws {
+    // Traço de 10: a metade de fora (5) é parte do desenho, mesmo com tolerância 0.
+    let f = forma(.retangulo, CGRect(x: 0, y: 0, width: 100, height: 100), largura: 10, cheia: true)
+    let doc = try documento([f])
+    #expect(doc.objeto(em: CGPoint(x: 103, y: 50), tolerancia: 0) == f.id)
+    #expect(doc.objeto(em: CGPoint(x: 105, y: 50), tolerancia: 0) == f.id)
+    #expect(doc.objeto(em: CGPoint(x: 106, y: 50), tolerancia: 0) == nil)
+    // A tolerância soma à metade do traço.
+    #expect(doc.objeto(em: CGPoint(x: 108, y: 50), tolerancia: 4) == f.id)
+    #expect(doc.objeto(em: CGPoint(x: 110, y: 50), tolerancia: 4) == nil)
+}

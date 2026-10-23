@@ -14,6 +14,9 @@ import Observation
 final class EditorDaCaptura {
     /// Distância de acerto, em pontos da tela (igual em qualquer zoom).
     private static let toleranciaEmPontos: CGFloat = 4
+    /// Folga das alças, em pontos: cobre o canto do quadrado de 8 pt que a vista desenha
+    /// (a meia diagonal é cerca de 5,7 pt), que a tolerância dos objetos não alcançava.
+    private static let toleranciaDasAlcasEmPontos: CGFloat = 6
     /// Distância do ponto de giro ao objeto, em pontos da tela. A vista desenha o ponto com a
     /// mesma constante com que a máquina de estados o acerta.
     static let giroEmPontos: CGFloat = 20
@@ -57,6 +60,7 @@ final class EditorDaCaptura {
         executar(
             evento,
             tolerancia: conversao.pixels(dePontos: Self.toleranciaEmPontos),
+            toleranciaDasAlcas: conversao.pixels(dePontos: Self.toleranciaDasAlcasEmPontos),
             distanciaDoGiro: conversao.pixels(dePontos: Self.giroEmPontos)
         )
     }
@@ -142,11 +146,13 @@ final class EditorDaCaptura {
     private func executar(
         _ evento: EventoDoEditor,
         tolerancia: CGFloat,
+        toleranciaDasAlcas: CGFloat? = nil,
         distanciaDoGiro: CGFloat
     ) {
         let contexto = ContextoDoEditor(
             documento: captura.documento,
             tolerancia: tolerancia,
+            toleranciaDasAlcas: toleranciaDasAlcas,
             distanciaDoGiro: distanciaDoGiro,
             novoId: novoId
         )
