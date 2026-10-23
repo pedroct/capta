@@ -41,15 +41,12 @@ def ler_pisos(arq_pisos, exigidos):
     return pisos
 
 
-PREFIXO_CASCA = "Packages/CaptaNucleo/Sources/CaptaSistema/Casca/"
-
-
-def ler_exclusoes(arq_exclusoes, raiz):
+def ler_exclusoes(arq_exclusoes, raiz, prefixo):
     """Devolve {caminho relativo à raiz: motivo} de ferramentas/cobertura.exclusoes.
 
     Formato: uma linha por arquivo, `caminho | motivo`; `#` comenta. Só arquivos sob
-    Casca/ podem ser listados, o motivo é obrigatório e o arquivo precisa existir
-    (lista velha falha). Só o portão do pacote usa isto; o do app não tem exclusões."""
+    `prefixo` podem ser listados, o motivo é obrigatório e o arquivo precisa existir
+    (lista velha falha). Os dois portões usam isto, cada um com o seu arquivo e prefixo."""
     exclusoes = {}
     with open(arq_exclusoes, encoding="utf-8") as f:
         for n, linha in enumerate(f, 1):
@@ -61,8 +58,8 @@ def ler_exclusoes(arq_exclusoes, raiz):
             caminho, motivo = caminho.strip(), motivo.strip()
             if not sep or not caminho or not motivo:
                 erro(f"exclusão inválida em {onde}: '{linha}' (use 'caminho | motivo')")
-            if not caminho.startswith(PREFIXO_CASCA) or ".." in caminho.split("/"):
-                erro(f"exclusão fora de {PREFIXO_CASCA} em {onde}: '{caminho}'")
+            if not caminho.startswith(prefixo) or ".." in caminho.split("/"):
+                erro(f"exclusão fora de {prefixo} em {onde}: '{caminho}'")
             if not os.path.isfile(os.path.join(raiz, caminho)):
                 erro(f"exclusão de arquivo inexistente em {onde}: '{caminho}' (lista velha?)")
             if caminho in exclusoes:

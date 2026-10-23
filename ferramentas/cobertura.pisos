@@ -1,7 +1,8 @@
 # Piso de cobertura de linhas (%) por alvo. Só sobe; nunca desce (exceção: o piso do App é provisório e pode ser reajustado ao valor medido na CI).
 CaptaNucleo=98
 CaptaSistema=98
-# App/Fontes sem CaptaApp.swift, medido por `make cobertura-app` (fora do `make verificar`).
+# App/Fontes sem CaptaApp.swift e sem os arquivos de cobertura-app.exclusoes, medido por
+# `make cobertura-app` (fora do `make verificar`).
 # Provisório: local 89,96 % (1856/2063) depois do Plano 3 (a CI ainda não mediu esta versão; antes
 # dela, local 84,38 % e CI 84,27 %, com o runner contando uma linha a mais no JanelaDeCapturaView).
 # Folga de 1,0 ponto de propósito: a casca do overlay e da contagem é AppKit difícil de testar.

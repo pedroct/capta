@@ -1,0 +1,7 @@
+# Arquivos fora da conta de cobertura do alvo App (make cobertura-app). Também saem do XML do Sonar.
+# Formato: uma linha por arquivo, `caminho relativo à raiz | motivo`; `#` comenta.
+# Regras: só arquivos sob App/Fontes/ podem entrar (casca de view ou janela que só se verifica
+# com tela e interação reais); o motivo é obrigatório; arquivo listado que não existe mais, ou
+# listado duas vezes, falha o portão. Lógica real fica fora da casca e é testada.
+# CaptaApp.swift (ponto de entrada) já fica fora por regra do cobertura_app.sh, sem constar aqui.
+# O portão do pacote (cobertura.sh) usa cobertura.exclusoes, não este arquivo.

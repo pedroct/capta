@@ -1,15 +1,20 @@
 #!/bin/bash
 # Portão de cobertura do app: roda o alvo CaptaTests (hospedado no Capta.app, sem assinatura)
 # com cobertura, resume App/Fontes por arquivo e falha se o total ficar abaixo do piso `App=`
-# em cobertura.pisos. CaptaApp.swift (ponto de entrada, sem lógica) fica fora da conta (spec §4).
+# em cobertura.pisos. CaptaApp.swift (ponto de entrada, sem lógica) fica fora da conta (spec §4);
+# os arquivos de cobertura-app.exclusoes (casca de view sem como rodar sem tela, com motivo por
+# arquivo) também saem da conta e do XML do Sonar, e aparecem em "Fora da conta" no resumo.
 # Espera o .xcodeproj já gerado (`make cobertura-app` roda `make gerar` antes).
 # Sem assinatura, os entitlements não entram no binário: os testes rodam fora do sandbox.
 # PISOS=<arquivo> sobrescreve o arquivo de pisos (usado para conferir o próprio portão).
+# EXCLUSOES_APP=<arquivo> sobrescreve o arquivo de exclusões, como PISOS faz com o de pisos.
 set -eu -o pipefail
 
 raiz=$(cd "$(dirname "$0")/.." && pwd)
 pisos="${PISOS:-$raiz/ferramentas/cobertura.pisos}"
 case "$pisos" in /*) ;; *) pisos="$PWD/$pisos" ;; esac
+exclusoes="${EXCLUSOES_APP:-$raiz/ferramentas/cobertura-app.exclusoes}"
+case "$exclusoes" in /*) ;; *) exclusoes="$PWD/$exclusoes" ;; esac
 saida="$raiz/build/cobertura"
 trabalho="$raiz/build/cobertura-app"
 resultado="$trabalho/Testes.xcresult"
@@ -18,6 +23,21 @@ if [[ ! -f "$pisos" ]]; then
   echo "cobertura-app: arquivo de pisos não encontrado: $pisos" >&2
   exit 1
 fi
+
+if [[ ! -e "$exclusoes" ]]; then
+  echo "cobertura-app: arquivo de exclusões não encontrado: $exclusoes" >&2
+  exit 1
+fi
+
+# Valida o registro antes do build demorado: erro de digitação falha em segundos.
+python3 -I -c '
+import os, sys
+raiz = sys.argv[1]
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.join(raiz, "ferramentas"))
+from pisos import ler_exclusoes
+ler_exclusoes(sys.argv[2], raiz, "App/Fontes/")
+' "$raiz" "$exclusoes"
 
 mkdir -p "$saida" "$trabalho"
 # O xcodebuild recusa um pacote de resultados que já exista.
@@ -33,20 +53,21 @@ xcodebuild test -scheme Capta -destination 'platform=macOS' \
 xcrun xccov view --report --json "$resultado" >"$trabalho/relatorio.json"
 xcrun xccov view --archive --json "$resultado" >"$trabalho/linhas.json"
 
-python3 -I - "$raiz" "$saida" "$trabalho" "$pisos" <<'PY'
+python3 -I - "$raiz" "$saida" "$trabalho" "$pisos" "$exclusoes" <<'PY'
 import json, os, sys
 import xml.etree.ElementTree as ET
 
-raiz, saida, trabalho, arq_pisos = sys.argv[1:5]
+raiz, saida, trabalho, arq_pisos, arq_exclusoes = sys.argv[1:6]
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(raiz, "ferramentas"))
-from pisos import erro, ler_pisos
+from pisos import erro, ler_exclusoes, ler_pisos
 
 ALVO = "App"
 PASTA = "App/Fontes/"
 FORA_DA_CONTA = {"CaptaApp.swift"}
 
 pisos = ler_pisos(arq_pisos, [ALVO])
+exclusoes = ler_exclusoes(arq_exclusoes, raiz, PASTA)
 
 with open(os.path.join(trabalho, "relatorio.json"), encoding="utf-8") as f:
     relatorio = json.load(f)
@@ -66,6 +87,8 @@ for alvo in relatorio.get("targets", []):
             continue
         if os.path.basename(rel) in FORA_DA_CONTA:
             ignorados.append(rel)
+            continue
+        if rel in exclusoes:
             continue
         medidos[rel] = (arq["coveredLines"], arq["executableLines"], arq["path"])
 if not medidos:
@@ -89,6 +112,11 @@ p = pct(tc, tl)
 txt.append(f"{'TOTAL ' + ALVO:<76} {tc:>5}/{tl:<5} {p:>6.1f}%   (piso {pisos[ALVO]:g}%)")
 for rel in sorted(ignorados):
     txt.append(f"fora da conta (ponto de entrada, sem lógica): {rel}")
+if exclusoes:
+    txt.append("")
+    txt.append("Fora da conta (cobertura-app.exclusoes):")
+    for rel, motivo in sorted(exclusoes.items()):
+        txt.append(f"  {rel} | {motivo}")
 texto = "\n".join(txt) + "\n"
 with open(os.path.join(saida, "resumo-app.txt"), "w", encoding="utf-8") as f:
     f.write(texto)

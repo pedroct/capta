@@ -84,7 +84,8 @@ def alvo_do_arquivo(caminho):
 
 
 pisos = ler_pisos(arq_pisos, ALVOS)
-exclusoes = ler_exclusoes(arq_exclusoes, raiz)
+exclusoes = ler_exclusoes(arq_exclusoes, raiz,
+                          "Packages/CaptaNucleo/Sources/CaptaSistema/Casca/")
 
 arquivos = {a: {} for a in ALVOS}
 for alvo in ALVOS:
