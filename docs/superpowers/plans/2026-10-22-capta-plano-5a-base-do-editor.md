@@ -409,3 +409,24 @@ Hoje o renderizador **ignora** `Anotacao.rotacao`: o esquema guarda o campo, mas
 - **Cobertura da spec (Plano 5a, §7 item 1):** esquema v2 e migração (T1, com o desvio declarado acima); `Edicao.lote` (T2); limites, acerto e alças (T3, T4); renderizador com área suja (T5); janela do editor no lugar da de resultado (T12); canvas com zoom (T11); Seleção com mover, redimensionar, girar, excluir e duplicar (T4, T6, T11); desfazer e refazer (T2, T10, T11); salvar sozinho, inclusive ao fechar, ao sair e com rascunho que falhou (T10); Capturas recentes (T8, T13); Seta, Linha, Forma e Realce com propriedades e memória por ferramenta (T7, T12); registro de exclusões do app antes do canvas (T9); lista manual e desempenho (T14). **Fica para o 5b e o 5c, de propósito:** texto, callout, caneta, etapa, carimbo, desfoque e recorte como ferramentas; ponta, fonte, alinhamento e rótulo no painel; copiar e colar objetos; ordem das camadas e alinhar na interface; agrupar, bloquear, achatar; girar, espelhar e redimensionar a imagem; Tab entre objetos.
 - **Consistência de tipos:** `Edicao` (com `.lote`), `SessaoEdicao.simular`, `AlcaDeObjeto`, `Ferramenta`, `EventoDoEditor`, `AcaoDoEditor`, `ContextoDoEditor`, `EstadoDoEditor`, `MemoriaDeEstilos`, `AreaASerRedesenhada`, `CapturaRecente`, `SalvamentoAutomatico`, `EstadoDoSalvamento`, `ConversaoDoCanvas`, `ComposicaoDoCanvas` e `EditorDaCaptura` têm a mesma assinatura entre a tarefa que os define e as que os usam.
 - **Escolhas do plano que a spec deixou ao construtor:** atalhos de letra `V A L R H`, `⌘9` e `⌘0` (como no Preview); padrões de estilo por ferramenta; forma sem preenchimento só acerta no contorno; criação abaixo da tolerância é descartada; a ferramenta continua ativa depois de criar; a composição do canvas é um bitmap do tamanho da base atualizado por área.
+
+---
+
+## Status
+
+Tarefas 1 a 14 (passos 1 a 3) concluídas na branch `plano-5a-editor`. **Pendentes do Pedro:** passo 4 (rodar `make app && open build/Capta.app` e percorrer `docs/verificacao-manual-editor.md`, registrando aqui as falhas e o número de desempenho) e passo 5 (`git push`, conferir `gh run list --limit 1` e, se o piso do app medido na CI for menor que o local, ajustar `App=` em commit próprio).
+
+**Números:** pacote com 452 testes em 33 suítes passando; cobertura do pacote acima do piso de 98 % (`CaptaNucleo` e `CaptaSistema` em 99,4 % na tarefa 12); `make cobertura-app` mede 94,1 % (2529/2688 linhas), e o piso `App=` subiu de 89 para 93 (folga de 1 ponto, provisório até a CI medir). Desempenho (5K, 30 objetos, 2 desfoques): ainda não medido, depende do passo 4.
+
+**Decisões e desvios que vale conhecer:**
+
+- Commits sem `Co-Authored-By` e sem menção a IA, com o autor do projeto, como manda o `CLAUDE.md`; trabalho num worktree fora da `main`; passos 🔒 não executados por agentes.
+- Esquema v2 e migração na tarefa 1, com o desvio declarado no início do plano.
+- Renderizador (T5): bitmap por objeto recortado nos limites em vez de camada de transparência, para manter a igualdade de pixels; número de etapa com 3 ou mais dígitos pode ser cortado (o 5b trata a etapa).
+- Acerto (T11): a tolerância de 5 pt do plano era aritmeticamente inconsistente com o acerto do núcleo (a meia espessura do traço soma 1 a 2 pt na tela); valeu o teste de 3 pt acerta e 7 pt erra, independente do zoom.
+- Gesto (T6/T7): o colapso da seleção ao soltar é decidido por `moveu`, não pelo deslocamento final; só afeta arrastar para fora e voltar ao ponto exato.
+- Fechamento sem perda (T10/T13): as bordas de "última edição perdida" (⌘Q durante o rascunho inicial, rascunho que falha, `salvarCapta` com flush falho) foram tratadas na tarefa 13.
+- A janela do editor ficou mais larga que o brief pedia (inclui o painel de 232 pt); atalhos de zoom e seleção vivem em botões invisíveis porque o app não tem menu próprio.
+- Capturas recentes: plano B implementado (a lista é relida depois do rascunho, a cada salvamento e ao iniciar), porque a reavaliação do `MenuBarExtra` ao abrir não foi confirmada; abrir uma recente não muda a ordem.
+
+**Menores adiados (para o 5b/5c ou limpeza):** seta e linha ignoram a rotação em limites e acerto; elipse com acerto aproximado; três cópias da matemática de rotação (Alças, Limites, distância do giro); comandos de teclado no meio de um arraste deixam o gesto vivo; sliders sem prévia ao vivo; `compor` engole falha de alocação com `try?`; corrida estreita ao reabrir pelo menu uma captura recém-fechada ainda gravando (o final deve olhar); `salvarAgora` espera sem limite se um gravador de rascunho nunca terminar; helpers de teste do esquema v2 emprestados do v1 congelado; extensão `.capta` comparada com diferença de caixa e pacotes por link simbólico ignorados no registro de recentes; `GerenciadorDeJanelas` com 79 % de cobertura (alertas e reinício, já sem teste antes).
